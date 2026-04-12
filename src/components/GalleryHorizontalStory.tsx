@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
@@ -14,6 +14,7 @@ import {
   horizontalSlideSnap,
   measureHorizontalScrollEnd,
 } from "@/lib/horizontal-gallery-scroll";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { site } from "@/lib/site";
 import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
 
@@ -126,10 +127,13 @@ function StorySlide({
   slide,
   index,
   horizontal,
+  carouselSnap,
 }: {
   slide: (typeof story.slides)[number];
   index: number;
   horizontal: boolean;
+  /** Mobile: full-viewport slides in a horizontal snap scroller. */
+  carouselSnap?: boolean;
 }) {
   const wl = site.works.length;
   const extraA = workToImg(site.works[(index * 3 + 2) % wl]!);
@@ -155,66 +159,96 @@ function StorySlide({
     </p>
   );
 
+  /** Mobile carousel: shorter collage so title + caption stay on-screen; desktop unchanged. */
+  const collageBox = (inner: ReactNode) => (
+    <div
+      className={
+        carouselSnap
+          ? "relative mt-2 min-h-0 flex-1 overflow-hidden"
+          : "relative mt-4 min-h-[min(46vh,460px)] flex-1 overflow-hidden md:mt-6 md:min-h-[min(52vh,580px)]"
+      }
+    >
+      <div
+        className={
+          carouselSnap
+            ? "relative h-full min-h-[min(26vh,220px)] max-h-[min(40vh,400px)]"
+            : "relative h-full min-h-[min(46vh,460px)] md:min-h-[min(52vh,580px)]"
+        }
+      >
+        {inner}
+      </div>
+    </div>
+  );
+
   /** Staggered image collage — three variants for rhythm. */
   const collage =
     variant === 0 ? (
-      <div className="relative mt-4 min-h-[min(46vh,460px)] flex-1 overflow-hidden md:mt-6 md:min-h-[min(52vh,580px)]">
-        <EditorialImage
-          img={main}
-          priority={index === 0}
-          className="absolute bottom-0 left-0 max-h-[96%] w-[min(48%,302px)] shadow-sm md:w-[44%]"
-        />
-        <EditorialImage
-          img={{ image: extraA.image, frameW: extraA.frameW, frameH: extraA.frameH }}
-          revealClass="gallery-float-a overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
-          className="absolute left-[34%] top-[4%] max-h-[58%] w-[min(32%,216px)] shadow-sm md:left-[36%]"
-        />
-        <EditorialImage
-          img={{ image: extraB.image, frameW: extraB.frameW, frameH: extraB.frameH }}
-          revealClass="gallery-float-b overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
-          className="absolute bottom-4 right-0 max-h-[92%] w-[min(42%,278px)] shadow-sm md:bottom-8 md:w-[40%]"
-        />
-      </div>
+      collageBox(
+        <>
+          <EditorialImage
+            img={main}
+            priority={index === 0}
+            className="absolute bottom-0 left-0 max-h-[96%] w-[min(48%,302px)] shadow-sm md:w-[44%]"
+          />
+          <EditorialImage
+            img={{ image: extraA.image, frameW: extraA.frameW, frameH: extraA.frameH }}
+            revealClass="gallery-float-a overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
+            className="absolute left-[34%] top-[4%] max-h-[58%] w-[min(32%,216px)] shadow-sm md:left-[36%]"
+          />
+          <EditorialImage
+            img={{ image: extraB.image, frameW: extraB.frameW, frameH: extraB.frameH }}
+            revealClass="gallery-float-b overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
+            className="absolute bottom-4 right-0 max-h-[92%] w-[min(42%,278px)] shadow-sm md:bottom-8 md:w-[40%]"
+          />
+        </>,
+      )
     ) : variant === 1 ? (
-      <div className="relative mt-4 min-h-[min(46vh,460px)] flex-1 overflow-hidden md:mt-6 md:min-h-[min(52vh,580px)]">
-        <EditorialImage
-          img={{ image: extraB.image, frameW: extraB.frameW, frameH: extraB.frameH }}
-          revealClass="gallery-float-b overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
-          className="absolute bottom-0 left-0 max-h-[74%] w-[min(38%,256px)] shadow-sm"
-        />
-        <EditorialImage
-          img={main}
-          priority={index === 0}
-          className="absolute left-[22%] top-0 max-h-[86%] w-[min(54%,344px)] shadow-sm md:left-[26%]"
-        />
-        <EditorialImage
-          img={{ image: extraA.image, frameW: extraA.frameW, frameH: extraA.frameH }}
-          revealClass="gallery-float-a overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
-          className="absolute bottom-10 right-0 max-h-[66%] w-[min(36%,238px)] shadow-sm md:bottom-14"
-        />
-      </div>
+      collageBox(
+        <>
+          <EditorialImage
+            img={{ image: extraB.image, frameW: extraB.frameW, frameH: extraB.frameH }}
+            revealClass="gallery-float-b overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
+            className="absolute bottom-0 left-0 max-h-[74%] w-[min(38%,256px)] shadow-sm"
+          />
+          <EditorialImage
+            img={main}
+            priority={index === 0}
+            className="absolute left-[22%] top-0 max-h-[86%] w-[min(54%,344px)] shadow-sm md:left-[26%]"
+          />
+          <EditorialImage
+            img={{ image: extraA.image, frameW: extraA.frameW, frameH: extraA.frameH }}
+            revealClass="gallery-float-a overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
+            className="absolute bottom-10 right-0 max-h-[66%] w-[min(36%,238px)] shadow-sm md:bottom-14"
+          />
+        </>,
+      )
     ) : (
-      <div className="relative mt-4 min-h-[min(46vh,460px)] flex-1 overflow-hidden md:mt-6 md:min-h-[min(52vh,580px)]">
-        <EditorialImage
-          img={main}
-          priority={index === 0}
-          className="absolute right-0 top-0 max-h-[82%] w-[min(50%,322px)] shadow-sm md:w-[47%]"
-        />
-        <EditorialImage
-          img={{ image: extraA.image, frameW: extraA.frameW, frameH: extraA.frameH }}
-          revealClass="gallery-float-a overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
-          className="absolute left-0 top-[18%] max-h-[60%] w-[min(36%,238px)] shadow-sm"
-        />
-        <EditorialImage
-          img={{ image: extraB.image, frameW: extraB.frameW, frameH: extraB.frameH }}
-          revealClass="gallery-float-b overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
-          className="absolute bottom-2 left-[28%] max-h-[76%] w-[min(40%,260px)] shadow-sm md:bottom-6"
-        />
-      </div>
+      collageBox(
+        <>
+          <EditorialImage
+            img={main}
+            priority={index === 0}
+            className="absolute right-0 top-0 max-h-[82%] w-[min(50%,322px)] shadow-sm md:w-[47%]"
+          />
+          <EditorialImage
+            img={{ image: extraA.image, frameW: extraA.frameW, frameH: extraA.frameH }}
+            revealClass="gallery-float-a overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
+            className="absolute left-0 top-[18%] max-h-[60%] w-[min(36%,238px)] shadow-sm"
+          />
+          <EditorialImage
+            img={{ image: extraB.image, frameW: extraB.frameW, frameH: extraB.frameH }}
+            revealClass="gallery-float-b overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
+            className="absolute bottom-2 left-[28%] max-h-[76%] w-[min(40%,260px)] shadow-sm md:bottom-6"
+          />
+        </>,
+      )
     );
 
+  const snap = carouselSnap ? "snap-center snap-always " : "";
   const shell = horizontal
-    ? `relative flex h-[100dvh] w-screen shrink-0 flex-col bg-[#ede8de] px-5 pb-10 pt-16 text-neutral-900 dark:bg-[var(--background)] dark:text-neutral-100 md:px-12 md:pb-14 md:pt-20 lg:px-16`
+    ? carouselSnap
+      ? `${snap}relative flex h-[100dvh] w-screen shrink-0 flex-col bg-[#ede8de] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pt-[max(0.75rem,calc(var(--site-header-height)+0.5rem))] pb-[max(5.25rem,calc(env(safe-area-inset-bottom,0px)+4.5rem))] text-neutral-900 dark:bg-[var(--background)] dark:text-neutral-100`
+      : `${snap}relative flex h-[100dvh] w-screen shrink-0 flex-col bg-[#ede8de] px-5 pb-10 pt-16 text-neutral-900 dark:bg-[var(--background)] dark:text-neutral-100 md:px-12 md:pb-14 md:pt-20 lg:px-16`
     : `relative flex min-h-[100dvh] w-full flex-col bg-[#ede8de] px-6 py-20 text-neutral-900 dark:bg-[var(--background)] dark:text-neutral-100 md:px-14`;
 
   return (
@@ -223,7 +257,7 @@ function StorySlide({
       className={shell}
       aria-label={`${slide.kicker}: ${slide.title}`}
     >
-      <div className="gallery-reveal-panel relative mx-auto flex min-h-0 h-full w-full max-w-[1400px] flex-col">
+      <div className="gallery-reveal-panel relative mx-auto flex min-h-0 h-full w-full max-w-[1400px] flex-col overflow-hidden">
         <div className="gallery-reveal-head relative z-10 flex shrink-0 flex-col gap-1 md:max-w-[90%]">
           {kickerBlock}
           <SlideHeadline title={slide.title} />
@@ -231,9 +265,15 @@ function StorySlide({
 
         {collage}
 
-        <div className="mt-auto shrink-0 pt-6 md:max-w-xl md:pt-8">{body}</div>
+        <div
+          className={`mt-auto w-full shrink-0 md:max-w-xl ${
+            carouselSnap ? "pt-3" : "pt-6 md:pt-8"
+          }`}
+        >
+          {body}
+        </div>
 
-        {horizontal ? <ScrollArrowHint /> : null}
+        {horizontal && !carouselSnap ? <ScrollArrowHint /> : null}
       </div>
     </section>
   );
@@ -246,13 +286,14 @@ export function GalleryHorizontalStory() {
   const [dragging, setDragging] = useState(false);
   const chrome = useWorkGalleryChrome();
   const slideCount = story.slides.length;
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   useEffect(() => {
     setReduceMotion(shouldReduceMotion());
   }, []);
 
   useEffect(() => {
-    if (reduceMotion) return;
+    if (reduceMotion || !isDesktop) return;
     const outer = outerRef.current;
     if (!outer) return;
     const onDown = () => setDragging(true);
@@ -265,11 +306,11 @@ export function GalleryHorizontalStory() {
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
     };
-  }, [reduceMotion]);
+  }, [reduceMotion, isDesktop]);
 
   useGSAP(
     () => {
-      if (reduceMotion) return;
+      if (reduceMotion || !isDesktop) return;
       registerGsapPlugins();
       const track = trackRef.current;
       const outer = outerRef.current;
@@ -289,7 +330,7 @@ export function GalleryHorizontalStory() {
           end: () => `+=${maxX()}`,
           pin: true,
           pinType: "transform",
-          scrub: 0.75,
+          scrub: 1.45,
           snap: horizontalSlideSnap(slideCount),
           fastScrollEnd: false,
           anticipatePin: 0,
@@ -373,7 +414,7 @@ export function GalleryHorizontalStory() {
         const dx = e.clientX - dragLastX;
         dragLastX = e.clientX;
         if (Math.abs(dx) < 0.15) return;
-        window.scrollBy({ top: -dx, left: 0, behavior: "auto" });
+        window.scrollBy({ top: -dx * 0.82, left: 0, behavior: "auto" });
         ScrollTrigger.update();
       }
 
@@ -415,7 +456,7 @@ export function GalleryHorizontalStory() {
         const absY = Math.abs(dy);
         if (!(absX > absY * 1.2 && absX > 1.5)) return;
         e.preventDefault();
-        window.scrollBy({ top: -dx, left: 0, behavior: "auto" });
+        window.scrollBy({ top: -dx * 0.82, left: 0, behavior: "auto" });
         ScrollTrigger.update();
       };
       outer.addEventListener("wheel", onWheelGallery, { passive: false });
@@ -435,7 +476,7 @@ export function GalleryHorizontalStory() {
         tween.kill();
       };
     },
-    { scope: outerRef, dependencies: [reduceMotion, slideCount] },
+    { scope: outerRef, dependencies: [reduceMotion, slideCount, isDesktop] },
   );
 
   return (
@@ -450,6 +491,29 @@ export function GalleryHorizontalStory() {
               horizontal={false}
             />
           ))}
+        </div>
+      ) : !isDesktop ? (
+        <div className="relative mt-0">
+          <div
+            className="pointer-events-none absolute bottom-[max(1rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] z-10 max-w-[9rem] text-right font-mono text-[9px] uppercase leading-snug tracking-[0.3em] text-neutral-400 dark:text-neutral-500"
+            aria-hidden
+          >
+            Swipe · slides
+          </div>
+          <div
+            data-lenis-prevent
+            className="flex h-[100dvh] w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {story.slides.map((slide, wi) => (
+              <StorySlide
+                key={`gallery-mobile-${wi}`}
+                slide={slide}
+                index={wi}
+                horizontal
+                carouselSnap
+              />
+            ))}
+          </div>
         </div>
       ) : (
         <div
