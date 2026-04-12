@@ -15,7 +15,7 @@ export default function GalleryPage() {
     <LenisScroll>
       <ScrollProgress />
       <SiteHeader />
-      <main className="min-h-[100dvh] p-0">
+      <main className="min-h-[100dvh] bg-[#ede8de] p-0 dark:bg-[var(--background)]">
         <GalleryHorizontalStory />
       </main>
     </LenisScroll>

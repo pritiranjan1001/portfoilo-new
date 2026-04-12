@@ -122,7 +122,7 @@ export function WorkGalleryCursor({ zoneRef, enabled, dragging }: Props) {
     >
       <div className="-translate-x-1/2 -translate-y-1/2">
         <div
-          className={`h-12 w-12 rounded-full border-2 border-white bg-white/15 shadow-[0_0_0_1px_rgba(0,0,0,0.6),0_6px_28px_rgba(0,0,0,0.55)] transition-[transform,opacity] duration-200 ${
+          className={`h-12 w-12 rounded-full border-2 border-white bg-white/15 shadow-[0_0_0_1px_rgba(0,0,0,0.6),0_6px_28px_rgba(0,0,0,0.55)] transition-[transform,opacity] duration-200 dark:border-zinc-200/85 dark:bg-zinc-900/35 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.75)] ${
             dragging ? "scale-90 opacity-95" : "opacity-100"
           }`}
         />

@@ -33,7 +33,7 @@ export function SiteHeader() {
       ref={root}
       className={
         immersive
-          ? "fixed top-0 z-50 w-full border-b border-black/[0.06] bg-[color-mix(in_oklab,#ede8de_88%,transparent)] backdrop-blur-md"
+          ? "fixed top-0 z-50 w-full border-b border-black/[0.06] bg-[color-mix(in_oklab,#ede8de_88%,transparent)] backdrop-blur-md dark:border-white/[0.08] dark:bg-[color-mix(in_oklab,var(--background)_92%,transparent)]"
           : "fixed top-0 z-50 w-full border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_90%,transparent)] backdrop-blur-md"
       }
     >
@@ -48,15 +48,15 @@ export function SiteHeader() {
             alt=""
             width={320}
             height={320}
-            sizes="(max-width: 768px) 48px, 64px"
-            className="block h-12 w-auto max-w-[min(11rem,42vw)] object-contain object-left invert transition-[filter] duration-300 dark:invert-0 sm:h-14 md:h-16"
+            sizes="(max-width: 768px) 36px, 48px"
+            className="block h-8 w-auto max-w-[min(8.25rem,34vw)] object-contain object-left invert transition-[filter] duration-300 dark:invert-0 sm:h-10 md:h-12"
             priority
           />
         </Link>
         <nav
           className={`site-nav flex items-center gap-3 text-sm font-medium sm:gap-5 md:gap-6 ${
             immersive
-              ? "text-neutral-600 [&_a]:transition-colors [&_a]:duration-300 [&_a:hover]:text-neutral-900"
+              ? "text-neutral-600 [&_a]:transition-colors [&_a]:duration-300 [&_a:hover]:text-neutral-900 dark:text-neutral-400 dark:[&_a:hover]:text-neutral-100"
               : "text-[var(--muted)] [&_a]:transition-colors [&_a]:duration-300 [&_a:hover]:text-[var(--foreground)]"
           }`}
         >

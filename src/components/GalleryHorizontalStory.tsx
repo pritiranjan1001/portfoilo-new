@@ -44,11 +44,11 @@ function slideToImg(slide: (typeof story.slides)[number]): ImgRef {
 /** Hero title + light graphic ring — matches Korr’s single bold word-mark feel. */
 function SlideHeadline({ title }: { title: string }) {
   return (
-    <h2 className="relative inline-block font-display text-[clamp(2rem,9vw,5rem)] font-semibold leading-[0.92] tracking-tight text-neutral-950">
+    <h2 className="relative inline-block font-display text-[clamp(2rem,9vw,5rem)] font-semibold leading-[0.92] tracking-tight text-neutral-950 dark:text-neutral-50">
       <span className="relative z-[1]">{title}</span>
       <svg
         aria-hidden
-        className="pointer-events-none absolute -right-1 top-[52%] h-[0.72em] w-[0.72em] -translate-y-1/2 text-neutral-950/[0.13] md:h-[0.78em] md:w-[0.78em]"
+        className="pointer-events-none absolute -right-1 top-[52%] h-[0.72em] w-[0.72em] -translate-y-1/2 text-neutral-950/[0.13] dark:text-white/[0.14] md:h-[0.78em] md:w-[0.78em]"
         viewBox="0 0 100 100"
       >
         <circle
@@ -77,7 +77,7 @@ function EditorialImage({
 }) {
   return (
     <div
-      className={`${revealClass} max-h-full overflow-hidden bg-neutral-200/40 ${className ?? ""}`}
+      className={`${revealClass} max-h-full overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65 ${className ?? ""}`}
     >
       <Image
         src={img.image}
@@ -99,7 +99,7 @@ function ScrollArrowHint() {
       className="pointer-events-none absolute bottom-6 right-6 z-10 flex items-center gap-3 md:bottom-10 md:right-10"
       aria-hidden
     >
-      <span className="hidden font-mono text-[9px] uppercase tracking-[0.4em] text-neutral-400 sm:inline">
+      <span className="hidden font-mono text-[9px] uppercase tracking-[0.4em] text-neutral-400 dark:text-neutral-500 sm:inline">
         Scroll
       </span>
       <svg
@@ -107,7 +107,7 @@ function ScrollArrowHint() {
         height="12"
         viewBox="0 0 48 12"
         fill="none"
-        className="text-neutral-950/35"
+        className="text-neutral-950/35 dark:text-neutral-200/45"
         xmlns="http://www.w3.org/2000/svg"
       >
         <path
@@ -143,14 +143,14 @@ function StorySlide({
       data-lenis-prevent
       className="gallery-reveal w-full max-w-md"
     >
-      <p className="gallery-reveal-inner text-[11px] leading-relaxed text-neutral-500 md:text-[12px] md:leading-relaxed">
+      <p className="gallery-reveal-inner text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400 md:text-[12px] md:leading-relaxed">
         {slide.dek}
       </p>
     </div>
   );
 
   const kickerBlock = (
-    <p className="max-w-[28ch] font-mono text-[9px] uppercase leading-snug tracking-[0.32em] text-neutral-400">
+    <p className="max-w-[28ch] font-mono text-[9px] uppercase leading-snug tracking-[0.32em] text-neutral-400 dark:text-neutral-500">
       {slide.kicker}
     </p>
   );
@@ -166,12 +166,12 @@ function StorySlide({
         />
         <EditorialImage
           img={{ image: extraA.image, frameW: extraA.frameW, frameH: extraA.frameH }}
-          revealClass="gallery-float-a overflow-hidden bg-neutral-200/40"
+          revealClass="gallery-float-a overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
           className="absolute left-[34%] top-[4%] max-h-[58%] w-[min(32%,216px)] shadow-sm md:left-[36%]"
         />
         <EditorialImage
           img={{ image: extraB.image, frameW: extraB.frameW, frameH: extraB.frameH }}
-          revealClass="gallery-float-b overflow-hidden bg-neutral-200/40"
+          revealClass="gallery-float-b overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
           className="absolute bottom-4 right-0 max-h-[92%] w-[min(42%,278px)] shadow-sm md:bottom-8 md:w-[40%]"
         />
       </div>
@@ -179,7 +179,7 @@ function StorySlide({
       <div className="relative mt-4 min-h-[min(46vh,460px)] flex-1 overflow-hidden md:mt-6 md:min-h-[min(52vh,580px)]">
         <EditorialImage
           img={{ image: extraB.image, frameW: extraB.frameW, frameH: extraB.frameH }}
-          revealClass="gallery-float-b overflow-hidden bg-neutral-200/40"
+          revealClass="gallery-float-b overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
           className="absolute bottom-0 left-0 max-h-[74%] w-[min(38%,256px)] shadow-sm"
         />
         <EditorialImage
@@ -189,7 +189,7 @@ function StorySlide({
         />
         <EditorialImage
           img={{ image: extraA.image, frameW: extraA.frameW, frameH: extraA.frameH }}
-          revealClass="gallery-float-a overflow-hidden bg-neutral-200/40"
+          revealClass="gallery-float-a overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
           className="absolute bottom-10 right-0 max-h-[66%] w-[min(36%,238px)] shadow-sm md:bottom-14"
         />
       </div>
@@ -202,20 +202,20 @@ function StorySlide({
         />
         <EditorialImage
           img={{ image: extraA.image, frameW: extraA.frameW, frameH: extraA.frameH }}
-          revealClass="gallery-float-a overflow-hidden bg-neutral-200/40"
+          revealClass="gallery-float-a overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
           className="absolute left-0 top-[18%] max-h-[60%] w-[min(36%,238px)] shadow-sm"
         />
         <EditorialImage
           img={{ image: extraB.image, frameW: extraB.frameW, frameH: extraB.frameH }}
-          revealClass="gallery-float-b overflow-hidden bg-neutral-200/40"
+          revealClass="gallery-float-b overflow-hidden bg-neutral-200/40 dark:bg-zinc-800/65"
           className="absolute bottom-2 left-[28%] max-h-[76%] w-[min(40%,260px)] shadow-sm md:bottom-6"
         />
       </div>
     );
 
   const shell = horizontal
-    ? `relative flex h-[100dvh] w-screen shrink-0 flex-col bg-[#ede8de] px-5 pb-10 pt-16 text-neutral-900 md:px-12 md:pb-14 md:pt-20 lg:px-16`
-    : `relative flex min-h-[100dvh] w-full flex-col bg-[#ede8de] px-6 py-20 text-neutral-900 md:px-14`;
+    ? `relative flex h-[100dvh] w-screen shrink-0 flex-col bg-[#ede8de] px-5 pb-10 pt-16 text-neutral-900 dark:bg-[var(--background)] dark:text-neutral-100 md:px-12 md:pb-14 md:pt-20 lg:px-16`
+    : `relative flex min-h-[100dvh] w-full flex-col bg-[#ede8de] px-6 py-20 text-neutral-900 dark:bg-[var(--background)] dark:text-neutral-100 md:px-14`;
 
   return (
     <section
@@ -439,7 +439,7 @@ export function GalleryHorizontalStory() {
   );
 
   return (
-    <section id="gallery" className="bg-[#ede8de]">
+    <section id="gallery" className="bg-[#ede8de] dark:bg-[var(--background)]">
       {reduceMotion ? (
         <div className="mt-0">
           {story.slides.map((slide, wi) => (
