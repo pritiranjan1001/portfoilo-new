@@ -36,6 +36,11 @@ export function LenisScroll({
       syncTouchLerp: immersive ? 0.055 : 0.075,
     });
 
+    /** Align Lenis with the window after route changes (SPA keeps scroll Y). */
+    if (!window.location.hash || window.location.hash.length <= 1) {
+      lenis.scrollTo(0, { immediate: true });
+    }
+
     lenis.on("scroll", ScrollTrigger.update);
 
     /** Same-page #anchors use Lenis (native scroll + Lenis fight; hash jumps feel abrupt). */

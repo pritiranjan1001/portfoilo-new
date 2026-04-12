@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { DM_Sans, JetBrains_Mono, Libre_Baskerville, Syne } from "next/font/google";
+import { ScrollToTopOnNavigate } from "@/components/ScrollToTopOnNavigate";
 import { site } from "@/lib/site";
 import { themeInitScript } from "@/lib/theme-script";
 import "./globals.css";
@@ -64,6 +65,7 @@ export default function RootLayout({
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
+        <ScrollToTopOnNavigate />
         {children}
       </body>
     </html>
