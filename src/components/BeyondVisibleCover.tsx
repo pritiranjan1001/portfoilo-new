@@ -304,20 +304,6 @@ export function BeyondVisibleCover() {
         return;
       }
 
-      gsap.set(
-        [
-          ".bvc-kicker",
-          ".bvc-step",
-          ".bvc-line1",
-          ".bvc-line2",
-          ".bvc-eye",
-          ".bvc-tag",
-          ".bvc-cta",
-          ".bvc-bottom-cap",
-        ],
-        { opacity: 0, y: 24 },
-      );
-      gsap.set(".bvc-eye", { opacity: 0, scale: 0.88 });
       if (grad) gsap.set(grad, { backgroundPosition: "0% 50%" });
 
       const tl = gsap.timeline({ defaults: { ease: "power2.out" } });

@@ -38,9 +38,12 @@ export function LenisScroll({
       stopInertiaOnNavigate: true,
     });
 
-    /** Align Lenis with the window after route changes (SPA keeps scroll Y). */
+    /** Align Lenis with the window after route changes (avoid redundant scroll on cold load). */
     if (!window.location.hash || window.location.hash.length <= 1) {
-      lenis.scrollTo(0, { immediate: true });
+      const y = window.scrollY || window.pageYOffset || 0;
+      if (y > 1) {
+        lenis.scrollTo(0, { immediate: true });
+      }
     }
 
     lenis.on("scroll", ScrollTrigger.update);

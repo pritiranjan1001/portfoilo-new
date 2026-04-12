@@ -62,6 +62,32 @@ export default function RootLayout({
       className={`${fontDisplay.variable} ${fontSerif.variable} ${fontBody.variable} ${fontMono.variable} h-full scroll-smooth antialiased`}
     >
       <body className="min-h-full min-h-[100dvh] bg-[var(--background)] font-body text-[var(--foreground)]">
+        <noscript>
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `
+.header-inner--entrance,
+#top .landing-hero-tagline,
+#top .landing-hero-name .landing-hero-name-line,
+#top .landing-hero-cta > a,
+#top .landing-hero-cta .landing-hero-cta-rule,
+#top .landing-hero-portrait-motion,
+#top .landing-hero-scroll,
+#prelude .bvc-kicker,
+#prelude .bvc-step,
+#prelude .bvc-line1,
+#prelude .bvc-line2,
+#prelude .bvc-eye,
+#prelude .bvc-tag,
+#prelude .bvc-cta,
+#prelude .bvc-bottom-cap {
+  opacity: 1 !important;
+  transform: none !important;
+}
+`,
+            }}
+          />
+        </noscript>
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>

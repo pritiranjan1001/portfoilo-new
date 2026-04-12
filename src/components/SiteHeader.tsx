@@ -18,6 +18,9 @@ const navItems = [
   { href: "/#contact", label: "Contact" },
 ] as const;
 
+/** First home visit per tab: CSS + GSAP entrance; later returns to `/` stay visible (no flicker). */
+const HEADER_HOME_ENTRANCE_KEY = "pf-header-home-in";
+
 export function SiteHeader() {
   const pathname = usePathname();
   const immersive = pathname === "/gallery";
@@ -138,17 +141,49 @@ export function SiteHeader() {
     };
   }, [menuOpen]);
 
+  const home = pathname === "/";
+  const [headerEntrance, setHeaderEntrance] = useState(home);
+
+  useLayoutEffect(() => {
+    if (!home) {
+      setHeaderEntrance(false);
+      return;
+    }
+    try {
+      setHeaderEntrance(sessionStorage.getItem(HEADER_HOME_ENTRANCE_KEY) !== "1");
+    } catch {
+      setHeaderEntrance(true);
+    }
+  }, [home]);
+
   useGSAP(
     () => {
       registerGsapPlugins();
+      const inner = root.current?.querySelector<HTMLElement>(".header-inner");
+      if (!inner) return;
       if (shouldReduceMotion()) return;
-      gsap.from(".header-inner", {
-        opacity: 0,
+      if (!home) {
+        gsap.set(inner, { clearProps: "opacity" });
+        return;
+      }
+      if (!headerEntrance) {
+        gsap.set(inner, { opacity: 1, clearProps: "opacity" });
+        return;
+      }
+      gsap.to(inner, {
+        opacity: 1,
         duration: 0.85,
         ease: "power1.out",
+        onComplete: () => {
+          try {
+            sessionStorage.setItem(HEADER_HOME_ENTRANCE_KEY, "1");
+          } catch {
+            /* ignore */
+          }
+        },
       });
     },
-    { scope: root },
+    { scope: root, dependencies: [home, headerEntrance] },
   );
 
   const navTone = immersive
@@ -166,7 +201,9 @@ export function SiteHeader() {
         ref={root}
         className={`fixed top-0 right-0 left-0 z-50 w-full pt-[env(safe-area-inset-top)] ${headerBar}`}
       >
-        <div className="header-inner mx-auto flex max-w-6xl items-center justify-between gap-3 px-[max(1rem,env(safe-area-inset-left))] py-3 md:gap-4 md:px-8 md:py-4">
+        <div
+          className={`header-inner mx-auto flex max-w-6xl items-center justify-between gap-3 px-[max(1rem,env(safe-area-inset-left))] py-3 md:gap-4 md:px-8 md:py-4${home && headerEntrance ? " header-inner--entrance" : ""}`}
+        >
           <Link
             href="/"
             className="site-logo relative inline-flex min-w-0 shrink items-center leading-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"

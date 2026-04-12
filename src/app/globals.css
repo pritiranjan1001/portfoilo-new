@@ -199,3 +199,78 @@ body {
     animation: none !important;
   }
 }
+
+/**
+ * Page entrance: initial paint matches pre-GSAP state so SSR/hydration does not
+ * flash full content before client animations (see LandingHero, SiteHeader, BeyondVisibleCover).
+ * Portrait: inner `.landing-hero-portrait-motion` only fades in (opacity) — no scale/move,
+ * so layout stays full-size and outer `lg:scale-*` is never overwritten by GSAP transforms.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  #top .landing-hero-tagline {
+    opacity: 0;
+    transform: translate3d(0, 1.75rem, 0);
+  }
+
+  #top .landing-hero-name .landing-hero-name-line {
+    opacity: 0;
+    transform: translate3d(0, 2.75rem, 0);
+  }
+
+  #top .landing-hero-cta > a,
+  #top .landing-hero-cta .landing-hero-cta-rule {
+    opacity: 0;
+    transform: translate3d(0, 1.125rem, 0);
+  }
+
+  #top .landing-hero-portrait-motion {
+    opacity: 0;
+  }
+
+  #top .landing-hero-scroll {
+    opacity: 0;
+    transform: translate3d(0, 0.875rem, 0);
+  }
+
+  #prelude .bvc-kicker,
+  #prelude .bvc-step,
+  #prelude .bvc-line1,
+  #prelude .bvc-line2,
+  #prelude .bvc-tag,
+  #prelude .bvc-cta,
+  #prelude .bvc-bottom-cap {
+    opacity: 0;
+    transform: translate3d(0, 1.5rem, 0);
+  }
+
+  #prelude .bvc-eye {
+    opacity: 0;
+    transform: scale(0.88);
+    transform-origin: center center;
+  }
+
+  .header-inner--entrance {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-inner--entrance,
+  #top .landing-hero-tagline,
+  #top .landing-hero-name .landing-hero-name-line,
+  #top .landing-hero-cta > a,
+  #top .landing-hero-cta .landing-hero-cta-rule,
+  #top .landing-hero-portrait-motion,
+  #top .landing-hero-scroll,
+  #prelude .bvc-kicker,
+  #prelude .bvc-step,
+  #prelude .bvc-line1,
+  #prelude .bvc-line2,
+  #prelude .bvc-eye,
+  #prelude .bvc-tag,
+  #prelude .bvc-cta,
+  #prelude .bvc-bottom-cap {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

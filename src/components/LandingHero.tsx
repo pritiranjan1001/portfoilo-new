@@ -23,46 +23,45 @@ export function LandingHero() {
         defaults: { ease: "power2.out" },
       });
 
-      tl.from(".landing-hero-tagline", {
-        opacity: 0,
-        y: 28,
+      tl.to(".landing-hero-tagline", {
+        opacity: 1,
+        y: 0,
         duration: 0.75,
       })
-        .from(
+        .to(
           ".landing-hero-name .landing-hero-name-line",
           {
-            opacity: 0,
-            y: 44,
+            opacity: 1,
+            y: 0,
             duration: 0.82,
             stagger: 0.11,
           },
           "-=0.45",
         )
-        .from(
+        .to(
           ".landing-hero-cta a, .landing-hero-cta .landing-hero-cta-rule",
           {
-            opacity: 0,
-            y: 18,
+            opacity: 1,
+            y: 0,
             duration: 0.55,
             stagger: 0.07,
           },
           "-=0.5",
         )
-        .from(
-          ".landing-hero-portrait",
+        .to(
+          ".landing-hero-portrait-motion",
           {
-            opacity: 0,
-            y: 24,
-            scale: 0.98,
+            opacity: 1,
             duration: 0.95,
+            ease: "power2.out",
           },
           "-=0.85",
         )
-        .from(
+        .to(
           ".landing-hero-scroll",
           {
-            opacity: 0,
-            y: 14,
+            opacity: 1,
+            y: 0,
             duration: 0.55,
           },
           "-=0.45",
@@ -134,26 +133,32 @@ export function LandingHero() {
         </div>
 
         <div className="landing-hero-portrait relative mx-auto aspect-[1211/816] w-full min-w-0 max-w-[min(100%,48rem)] sm:max-w-[min(100%,56rem)] lg:mx-0 lg:max-w-none lg:origin-bottom lg:justify-self-end lg:scale-[1.12] xl:scale-[1.18] 2xl:scale-[1.24]">
-          <Image
-            src={site.heroPortrait.light.image}
-            alt={`Illustrated portrait of ${site.name}`}
-            width={site.heroPortrait.light.width}
-            height={site.heroPortrait.light.height}
-            className="absolute inset-0 h-full w-full object-contain object-bottom dark:hidden"
-            sizes="(max-width: 1024px) 100vw, (max-width: 1280px) 56vw, 52vw"
-            priority
-            unoptimized
-          />
-          <Image
-            src={site.heroPortrait.dark.image}
-            alt={`Illustrated portrait of ${site.name}`}
-            width={site.heroPortrait.dark.width}
-            height={site.heroPortrait.dark.height}
-            className="absolute inset-0 hidden h-full w-full object-contain object-bottom dark:block"
-            sizes="(max-width: 1024px) 100vw, (max-width: 1280px) 56vw, 52vw"
-            priority
-            unoptimized
-          />
+          {/*
+            Entrance motion lives on an inner wrapper so GSAP never overwrites the outer
+            responsive scale (lg/xl/2xl) — that scale is what reads as the “full” portrait size.
+          */}
+          <div className="landing-hero-portrait-motion relative h-full w-full">
+            <Image
+              src={site.heroPortrait.light.image}
+              alt={`Illustrated portrait of ${site.name}`}
+              width={site.heroPortrait.light.width}
+              height={site.heroPortrait.light.height}
+              className="absolute inset-0 h-full w-full object-contain object-bottom dark:hidden"
+              sizes="(max-width: 1024px) 100vw, (max-width: 1280px) 56vw, 52vw"
+              priority
+              unoptimized
+            />
+            <Image
+              src={site.heroPortrait.dark.image}
+              alt={`Illustrated portrait of ${site.name}`}
+              width={site.heroPortrait.dark.width}
+              height={site.heroPortrait.dark.height}
+              className="absolute inset-0 hidden h-full w-full object-contain object-bottom dark:block"
+              sizes="(max-width: 1024px) 100vw, (max-width: 1280px) 56vw, 52vw"
+              priority
+              unoptimized
+            />
+          </div>
         </div>
       </div>
 
