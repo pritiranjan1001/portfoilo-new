@@ -133,14 +133,14 @@ export function LandingHero() {
           </div>
         </div>
 
-        <div className="landing-hero-portrait relative mx-auto aspect-[1211/816] w-full max-w-xl sm:max-w-2xl lg:mx-0 lg:max-w-none lg:origin-bottom lg:scale-[1.12] xl:scale-[1.14] lg:justify-self-end">
+        <div className="landing-hero-portrait relative mx-auto aspect-[1211/816] w-full max-w-3xl sm:max-w-4xl lg:mx-0 lg:max-w-none lg:origin-bottom lg:scale-[1.2] xl:scale-[1.26] lg:justify-self-end">
           <Image
             src={site.heroPortrait.light.image}
             alt={`Illustrated portrait of ${site.name}`}
             width={site.heroPortrait.light.width}
             height={site.heroPortrait.light.height}
             className="absolute inset-0 h-full w-full object-contain object-bottom dark:hidden"
-            sizes="(max-width: 1024px) 100vw, (max-width: 1280px) 52vw, 48vw"
+            sizes="(max-width: 1024px) 100vw, (max-width: 1280px) 56vw, 52vw"
             priority
             unoptimized
           />
@@ -150,7 +150,7 @@ export function LandingHero() {
             width={site.heroPortrait.dark.width}
             height={site.heroPortrait.dark.height}
             className="absolute inset-0 hidden h-full w-full object-contain object-bottom dark:block"
-            sizes="(max-width: 1024px) 100vw, (max-width: 1280px) 52vw, 48vw"
+            sizes="(max-width: 1024px) 100vw, (max-width: 1280px) 56vw, 52vw"
             priority
             unoptimized
           />
