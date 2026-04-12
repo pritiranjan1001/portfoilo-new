@@ -80,7 +80,8 @@ export function SiteHeader() {
             alt=""
             width={320}
             height={320}
-            sizes="(max-width: 768px) 36px, 48px"
+            sizes="(max-width: 768px) min(50vw, 8.25rem), 8.25rem"
+            quality={100}
             className="block h-8 w-auto max-w-[min(8.25rem,50vw)] object-contain object-left invert transition-[filter] duration-300 dark:invert-0 sm:h-10 md:h-12"
             priority
           />
