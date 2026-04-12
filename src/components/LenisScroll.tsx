@@ -27,13 +27,13 @@ export function LenisScroll({
 
     const immersive = variant === "immersive";
     const lenis = new Lenis({
-      /** Lower lerp = silkier catch-up; immersive tightens further for /work. */
-      lerp: immersive ? 0.045 : 0.08,
+      /** Immersive /work: slightly softer wheel + touch so gallery scrub feels less harsh. */
+      lerp: immersive ? 0.038 : 0.08,
       smoothWheel: true,
       syncTouch: true,
-      touchMultiplier: immersive ? 0.92 : 1,
-      wheelMultiplier: immersive ? 0.82 : 0.95,
-      syncTouchLerp: immersive ? 0.055 : 0.075,
+      touchMultiplier: immersive ? 0.88 : 1,
+      wheelMultiplier: immersive ? 0.72 : 0.95,
+      syncTouchLerp: immersive ? 0.048 : 0.075,
       /** Clicking a Link to another route: stop inertia so scroll state does not carry over. */
       stopInertiaOnNavigate: true,
     });

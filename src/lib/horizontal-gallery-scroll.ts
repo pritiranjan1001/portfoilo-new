@@ -1,14 +1,14 @@
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-/** Even snap increments along the pinned scroll range — lands each slide without in-between jitter. */
+/** Even snap increments — longer, softer easing so slides don’t feel abrupt. */
 export function horizontalSlideSnap(slideCount: number) {
   if (slideCount <= 1) return undefined;
   return {
     snapTo: 1 / (slideCount - 1),
-    duration: { min: 0.1, max: 0.26 },
-    delay: 0,
-    inertia: false,
-    ease: "power2.out",
+    duration: { min: 0.45, max: 1.05 },
+    delay: 0.08,
+    inertia: true,
+    ease: "power3.inOut",
   } as const;
 }
 

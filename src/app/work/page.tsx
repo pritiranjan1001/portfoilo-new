@@ -16,7 +16,7 @@ export default function WorkPage() {
     <LenisScroll variant="immersive">
       <ScrollProgress />
       <SiteHeader />
-      <main className="min-h-[100dvh] pb-16 pt-20 md:pt-24">
+      <main className="min-h-[100dvh] pb-16 pt-[max(5rem,calc(var(--site-header-height)+1rem))] md:pt-[max(6rem,calc(var(--site-header-height)+1.25rem))]">
         <WorkHorizontalGallery />
       </main>
       <SiteFooter />

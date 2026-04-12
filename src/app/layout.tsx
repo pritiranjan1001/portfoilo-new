@@ -61,7 +61,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${fontDisplay.variable} ${fontSerif.variable} ${fontBody.variable} ${fontMono.variable} h-full scroll-smooth antialiased`}
     >
-      <body className="min-h-full min-h-[100dvh] bg-[var(--background)] font-body text-[var(--foreground)]">
+      <body
+        className="min-h-full min-h-[100dvh] bg-[var(--background)] font-body text-[var(--foreground)]"
+        suppressHydrationWarning
+      >
         <noscript>
           <style
             dangerouslySetInnerHTML={{
