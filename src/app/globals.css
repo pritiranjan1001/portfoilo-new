@@ -83,9 +83,13 @@ html {
   transition: color-scheme 0.45s ease;
   /* Hash / in-page links: align section tops with fixed header (not scroll-mt on each section) */
   scroll-padding-top: var(--site-header-height);
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 body {
+  overflow-x: clip;
+  max-width: 100%;
   font-family: var(--font-body);
   transition:
     background-color 0.45s cubic-bezier(0.33, 1, 0.68, 1),

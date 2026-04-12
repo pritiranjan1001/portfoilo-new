@@ -98,10 +98,10 @@ export function LandingHero() {
     <section
       ref={root}
       id="top"
-      className="relative bg-[var(--background)] text-[var(--foreground)] dark:bg-black dark:text-[color-mix(in_oklab,var(--foreground)_92%,white)]"
+      className="relative w-full max-w-[100vw] overflow-x-clip bg-[var(--background)] text-[var(--foreground)] dark:bg-black dark:text-[color-mix(in_oklab,var(--foreground)_92%,white)]"
     >
-      <div className="mx-auto grid min-h-[100dvh] max-w-5xl grid-cols-1 items-center gap-2 px-6 pb-10 pt-28 md:gap-16 md:px-14 md:pb-12 md:pt-32 lg:grid-cols-2 lg:gap-2 xl:gap-10">
-        <div className="flex flex-col justify-center">
+      <div className="mx-auto grid min-h-[100svh] max-w-5xl grid-cols-1 items-center gap-6 px-[max(1rem,env(safe-area-inset-left))] pb-10 pt-[max(7rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] md:gap-16 md:px-14 md:pb-12 md:pt-32 lg:grid-cols-2 lg:gap-2 xl:gap-10">
+        <div className="flex min-w-0 flex-col justify-center">
           <p className="landing-hero-tagline font-serif text-lg italic leading-relaxed text-[var(--muted)] md:text-xl">
             {site.tagline}
           </p>
@@ -133,7 +133,7 @@ export function LandingHero() {
           </div>
         </div>
 
-        <div className="landing-hero-portrait relative mx-auto aspect-[1211/816] w-full max-w-3xl sm:max-w-4xl lg:mx-0 lg:max-w-none lg:origin-bottom lg:scale-[1.2] xl:scale-[1.26] lg:justify-self-end">
+        <div className="landing-hero-portrait relative mx-auto aspect-[1211/816] w-full min-w-0 max-w-[min(100%,48rem)] sm:max-w-[min(100%,56rem)] lg:mx-0 lg:max-w-none lg:origin-bottom lg:justify-self-end lg:scale-[1.12] xl:scale-[1.18] 2xl:scale-[1.24]">
           <Image
             src={site.heroPortrait.light.image}
             alt={`Illustrated portrait of ${site.name}`}
@@ -159,7 +159,7 @@ export function LandingHero() {
 
       <Link
         href="#prelude"
-        className="landing-hero-scroll pointer-events-auto absolute bottom-6 left-1/2 right-auto top-auto z-10 -translate-x-1/2 md:bottom-8"
+        className="landing-hero-scroll pointer-events-auto absolute bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 right-auto top-auto z-10 -translate-x-1/2 md:bottom-8"
         aria-label="Scroll to next section"
       >
         <div

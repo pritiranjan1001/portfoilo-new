@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { DM_Sans, JetBrains_Mono, Libre_Baskerville, Syne } from "next/font/google";
 import { site } from "@/lib/site";
@@ -30,6 +30,12 @@ const fontMono = JetBrains_Mono({
   weight: ["400", "500"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: {
     default: `${site.name} — ${site.tagline}`,
@@ -54,7 +60,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${fontDisplay.variable} ${fontSerif.variable} ${fontBody.variable} ${fontMono.variable} h-full scroll-smooth antialiased`}
     >
-      <body className="min-h-full bg-[var(--background)] font-body text-[var(--foreground)]">
+      <body className="min-h-full min-h-[100dvh] bg-[var(--background)] font-body text-[var(--foreground)]">
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
