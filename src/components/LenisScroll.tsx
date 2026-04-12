@@ -34,6 +34,8 @@ export function LenisScroll({
       touchMultiplier: immersive ? 0.92 : 1,
       wheelMultiplier: immersive ? 0.82 : 0.95,
       syncTouchLerp: immersive ? 0.055 : 0.075,
+      /** Clicking a Link to another route: stop inertia so scroll state does not carry over. */
+      stopInertiaOnNavigate: true,
     });
 
     /** Align Lenis with the window after route changes (SPA keeps scroll Y). */
@@ -84,6 +86,18 @@ export function LenisScroll({
       document.removeEventListener("click", onHashLinkClick);
       gsap.ticker.remove(onTick);
       gsap.ticker.lagSmoothing(500, 33);
+      try {
+        lenis.scrollTo(0, { immediate: true });
+      } catch {
+        /* ignore */
+      }
+      const html = document.documentElement;
+      const prev = html.style.scrollBehavior;
+      html.style.scrollBehavior = "auto";
+      window.scrollTo(0, 0);
+      html.scrollTop = 0;
+      document.body.scrollTop = 0;
+      html.style.scrollBehavior = prev;
       lenis.destroy();
       ScrollTrigger.refresh();
     };
