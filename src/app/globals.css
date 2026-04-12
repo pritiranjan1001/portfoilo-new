@@ -1,26 +1,197 @@
 @import "tailwindcss";
 
+/* Class-based dark mode for Tailwind `dark:` utilities (toggle via html.dark) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Fixed header: py-4 + logo row (up to ~4rem) + border — used for anchor scroll alignment */
+  --site-header-height: calc(6rem + 1px);
+  color-scheme: light;
+  --background: #f6f1e9;
+  --foreground: #14110d;
+  --muted: #5c5348;
+  --accent: #c45c2a;
+  --accent-soft: #e8a87c;
+  --surface: #fffcf7;
+  --surface-elevated: #efe8dd;
+  --border: color-mix(in oklab, #14110d 12%, transparent);
+  --border-strong: color-mix(in oklab, #14110d 28%, transparent);
+  --glow: color-mix(in oklab, var(--accent) 35%, transparent);
+  --glow-2: color-mix(in oklab, #6b5cff 22%, transparent);
+  /* Eye (BeyondVisibleCover) — iris soft in light mode; pupil always near-black */
+  --bvc-eye-iris-0: #f0eeea;
+  --bvc-eye-iris-1: #d5d1c9;
+  --bvc-eye-iris-2: #a39e95;
+  --bvc-eye-iris-3: #6e6a62;
+  --bvc-eye-pupil-0: #0a0908;
+  --bvc-eye-pupil-1: #141210;
+  --bvc-eye-pupil-2: #1e1c18;
+  --bvc-eye-sweep-end: color-mix(in oklab, var(--muted) 22%, transparent);
+  /* BeyondVisibleCover — airy cream wash (light mode) */
+  --bvc-cover-gradient: linear-gradient(
+    105deg,
+    color-mix(in oklab, var(--surface) 99%, white) 0%,
+    color-mix(in oklab, var(--background) 97%, white) 44%,
+    color-mix(in oklab, var(--surface-elevated) 90%, white) 100%
+  );
+  --bvc-shimmer-spot: color-mix(in oklab, var(--foreground) 9%, transparent);
+}
+
+html.dark {
+  color-scheme: dark;
+  --background: #0d0c0a;
+  --foreground: #f3ede4;
+  --muted: #a89f92;
+  --accent: #e8956a;
+  --accent-soft: #b8734a;
+  --surface: #161412;
+  --surface-elevated: #1c1916;
+  --border: color-mix(in oklab, #f3ede4 12%, transparent);
+  --border-strong: color-mix(in oklab, #f3ede4 26%, transparent);
+  --glow: color-mix(in oklab, var(--accent) 28%, transparent);
+  --glow-2: color-mix(in oklab, #8b7cff 18%, transparent);
+  --bvc-eye-iris-0: color-mix(in oklab, var(--foreground) 38%, white);
+  --bvc-eye-iris-1: color-mix(in oklab, var(--foreground) 68%, var(--muted));
+  --bvc-eye-iris-2: color-mix(in oklab, var(--foreground) 82%, black);
+  --bvc-eye-iris-3: color-mix(in oklab, var(--foreground) 55%, black);
+  --bvc-eye-sweep-end: color-mix(in oklab, var(--foreground) 18%, transparent);
+  --bvc-cover-gradient: linear-gradient(
+    105deg,
+    color-mix(in oklab, var(--surface) 93%, var(--foreground)) 0%,
+    color-mix(in oklab, var(--background) 82%, var(--muted)) 44%,
+    color-mix(in oklab, var(--surface-elevated) 55%, var(--foreground)) 100%
+  );
+  --bvc-shimmer-spot: color-mix(in oklab, var(--foreground) 14%, transparent);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-syne), system-ui, sans-serif;
+  --font-serif: var(--font-libre), Georgia, serif;
+  --font-body: var(--font-dm), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+::selection {
+  background: color-mix(in oklab, var(--accent) 45%, transparent);
+  color: var(--foreground);
+}
+
+/* Theme & surface: smooth color interpolation */
+html {
+  transition: color-scheme 0.45s ease;
+  /* Hash / in-page links: align section tops with fixed header (not scroll-mt on each section) */
+  scroll-padding-top: var(--site-header-height);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  transition:
+    background-color 0.45s cubic-bezier(0.33, 1, 0.68, 1),
+    color 0.45s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+:where(
+    header,
+    footer,
+    main,
+    section,
+    article,
+    nav a,
+    button:not(:disabled),
+    [role="button"]
+  ) {
+  transition:
+    background-color 0.4s cubic-bezier(0.33, 1, 0.68, 1),
+    color 0.4s cubic-bezier(0.33, 1, 0.68, 1),
+    border-color 0.4s cubic-bezier(0.33, 1, 0.68, 1),
+    box-shadow 0.4s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* Theme toggle: optional View Transitions (see ThemeToggle) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.55s;
+  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* About page — slow floating background patterns */
+@keyframes about-pattern-drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(2.5%, -2%, 0);
+  }
+}
+
+@keyframes about-pattern-drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-2%, 2.5%, 0) scale(1.02);
+  }
+}
+
+/* About “find inside” — stipple + ruling lines */
+@keyframes about-find-drift-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(2.2%, -1.2%, 0);
+  }
+}
+
+@keyframes about-find-drift-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-1.8%, 2%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .about-pattern-float-a {
+    animation: about-pattern-drift-a 26s ease-in-out infinite;
+  }
+
+  .about-pattern-float-b {
+    animation: about-pattern-drift-b 34s ease-in-out infinite reverse;
+  }
+
+  .about-find-float-a {
+    animation: about-find-drift-a 32s ease-in-out infinite;
+  }
+
+  .about-find-float-b {
+    animation: about-find-drift-b 40s ease-in-out infinite reverse;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body,
+  :where(header, footer, main, section, article, nav a, button:not(:disabled), [role="button"]) {
+    transition-duration: 0.01ms !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.01ms !important;
+  }
+
+  .about-pattern-float-a,
+  .about-pattern-float-b,
+  .about-find-float-a,
+  .about-find-float-b {
+    animation: none !important;
+  }
 }
