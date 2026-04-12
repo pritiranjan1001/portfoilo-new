@@ -483,36 +483,38 @@ export function BeyondVisibleCover() {
         02 / 03
       </span>
 
-      {/* Hero: single row — see beyond | eye | the visible (all breakpoints) */}
+      {/* Hero: stacked on mobile (see beyond / eye / the visible); horizontal row from md */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden px-2 py-8 sm:px-4 md:py-10">
         <div className="pointer-events-none absolute inset-0 z-0">
           <HeroLinePatterns className="mx-auto h-full max-h-[min(100%,26rem)] w-full" />
         </div>
-        <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,90rem)] flex-row flex-nowrap items-center justify-center gap-2 sm:gap-4 md:gap-8 lg:gap-12">
-          <h2 className="bvc-line1 min-w-0 flex-1 whitespace-nowrap text-right font-display text-[clamp(0.8rem,3.2vw+0.55rem,3.75rem)] font-bold leading-none tracking-[-0.02em] text-[var(--foreground)]">
+        <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,90rem)] flex-col items-center justify-center gap-4 sm:gap-5 md:flex-row md:flex-nowrap md:gap-8 lg:gap-12">
+          <h2 className="bvc-line1 w-full min-w-0 text-center font-display text-[clamp(1.05rem,5.5vw+0.5rem,2.75rem)] font-bold leading-tight tracking-[-0.02em] text-[var(--foreground)] md:flex-1 md:whitespace-nowrap md:text-right md:text-[clamp(0.8rem,3.2vw+0.55rem,3.75rem)] md:leading-none">
             see beyond
           </h2>
 
-          <div className="bvc-eye relative shrink-0">
+          <div className="bvc-eye relative shrink-0 py-1 md:py-0">
             <div className="bvc-eye-inner will-change-transform">
-              <EyeMark className="mx-auto w-[clamp(4.5rem,26vw,18.5rem)] text-[var(--foreground)]" />
+              <EyeMark className="mx-auto w-[clamp(5.25rem,42vw,11rem)] text-[var(--foreground)] md:w-[clamp(4.5rem,26vw,18.5rem)]" />
             </div>
           </div>
 
-          <h2 className="bvc-line2 min-w-0 flex-1 whitespace-nowrap text-left font-display text-[clamp(0.8rem,3.2vw+0.55rem,3.75rem)] font-bold leading-none tracking-[-0.02em] text-[var(--foreground)]">
+          <h2 className="bvc-line2 w-full min-w-0 text-center font-display text-[clamp(1.05rem,5.5vw+0.5rem,2.75rem)] font-bold leading-tight tracking-[-0.02em] text-[var(--foreground)] md:flex-1 md:whitespace-nowrap md:text-left md:text-[clamp(0.8rem,3.2vw+0.55rem,3.75rem)] md:leading-none">
             the visible
           </h2>
         </div>
       </div>
 
       <div className="relative z-10 mt-auto flex w-full flex-shrink-0 flex-col gap-8 pb-8 pt-6 md:flex-row md:items-end md:justify-between md:gap-10 md:px-2 md:pb-10 md:pt-8">
-        <div className="bvc-tag order-2 px-2 md:order-1 md:max-w-[11rem] md:justify-self-start md:pb-0.5">
-          <p className="font-mono text-[11px] uppercase leading-relaxed tracking-[0.32em] text-[var(--foreground)] md:text-xs">
-            light bends
-          </p>
-          <p className="mt-2 font-mono text-[11px] uppercase leading-relaxed tracking-[0.32em] text-[var(--muted)] md:text-xs">
-            meaning follows
-          </p>
+        <div className="bvc-tag order-2 flex w-full justify-center md:order-1 md:max-w-[13rem] md:justify-start md:pb-0.5">
+          <div className="flex flex-col items-center gap-2 text-center md:items-start md:gap-2.5 md:text-left">
+            <p className="font-mono text-[11px] uppercase leading-snug tracking-[0.28em] text-[var(--foreground)] md:text-xs md:tracking-[0.32em]">
+              light bends
+            </p>
+            <p className="font-mono text-[11px] uppercase leading-snug tracking-[0.28em] text-[var(--muted)] md:text-xs md:tracking-[0.32em]">
+              meaning follows
+            </p>
+          </div>
         </div>
 
         <div className="order-1 flex w-full flex-col items-center gap-4 md:order-2 md:max-w-md md:flex-1 md:gap-5">
