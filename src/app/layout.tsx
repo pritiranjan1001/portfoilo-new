@@ -37,7 +37,14 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+/** Set `NEXT_PUBLIC_SITE_URL` in production (e.g. `https://yoursite.com`) so OG/Twitter image URLs are absolute when shared. */
+const metadataBaseUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+const ogImage = site.heroPortrait.light;
+
 export const metadata: Metadata = {
+  metadataBase: new URL(metadataBaseUrl),
   title: {
     default: `${site.name} — ${site.tagline}`,
     template: `%s — ${site.name}`,
@@ -47,6 +54,21 @@ export const metadata: Metadata = {
     title: `${site.name}`,
     description: site.description,
     type: "website",
+    locale: "en",
+    images: [
+      {
+        url: ogImage.image,
+        width: ogImage.width,
+        height: ogImage.height,
+        alt: `${site.name} — hero portrait`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: site.name,
+    description: site.description,
+    images: [ogImage.image],
   },
 };
 
