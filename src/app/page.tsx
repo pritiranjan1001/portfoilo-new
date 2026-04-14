@@ -18,9 +18,15 @@ export default function Home() {
         <BeyondVisibleCover />
         <LandingAbout />
         <PracticeSection />
-        <ContactSection />
+        <div
+          id="contact"
+          tabIndex={-1}
+          className="flex min-h-[100dvh] flex-col outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--background)]"
+        >
+          <ContactSection />
+          <SiteFooter className="mt-auto shrink-0 !py-7 md:!py-8" />
+        </div>
       </main>
-      <SiteFooter />
     </LenisScroll>
   );
 }

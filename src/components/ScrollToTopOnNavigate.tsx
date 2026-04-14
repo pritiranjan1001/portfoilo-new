@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 /**
  * `scroll-smooth` on `<html>` makes `scrollTo({ behavior: "auto" })` smooth and
  * easy to interrupt; Lenis / client navigations can leave the document mid-page.
- * Force an instant jump to top on real route changes, with delayed retries so
- * we still win after Next.js / Lenis settle. Cross-route hash links: top first,
- * then scroll the target into view.
+ * Force an instant jump to top on real route changes when there is no hash target.
+ * Routes with a hash (`/#practice`) rely on `HomeHashResolver` inside `LenisScroll`
+ * plus `<Link scroll={false}>` so Next does not scroll to (0,0) after navigation.
  */
 function forceScrollWindowTop() {
   const html = document.documentElement;
@@ -25,12 +25,12 @@ function forceScrollWindowTop() {
 }
 
 function scrollForRoute() {
-  forceScrollWindowTop();
   const hash = window.location.hash;
-  if (hash.length <= 1) return;
-  const el = document.getElementById(decodeURIComponent(hash.slice(1)));
-  if (!el) return;
-  el.scrollIntoView({ block: "start", behavior: "auto" });
+  if (hash.length > 1) {
+    /** Hash scroll is handled by `HomeHashResolver` + Lenis on `/` — avoid fighting Next + native scroll. */
+    return;
+  }
+  forceScrollWindowTop();
 }
 
 export function ScrollToTopOnNavigate() {

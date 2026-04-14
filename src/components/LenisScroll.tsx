@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "lenis/dist/lenis.css";
+import { HomeHashResolver } from "@/components/HomeHashResolver";
+import { LenisInstanceContext } from "@/components/lenis-context";
+import { ANCHOR_SCROLL_NUDGE_PX } from "@/lib/scroll-anchors";
 import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
 
 type LenisScrollProps = {
@@ -21,34 +24,51 @@ export function LenisScroll({
   children,
   variant = "default",
 }: LenisScrollProps) {
+  const [lenis, setLenis] = useState<Lenis | null>(null);
+
   useEffect(() => {
     registerGsapPlugins();
     if (shouldReduceMotion()) return;
 
     const immersive = variant === "immersive";
-    const lenis = new Lenis({
-      /** Immersive /work: slightly softer wheel + touch so gallery scrub feels less harsh. */
+    const instance = new Lenis({
       lerp: immersive ? 0.038 : 0.08,
       smoothWheel: true,
       syncTouch: true,
       touchMultiplier: immersive ? 0.88 : 1,
       wheelMultiplier: immersive ? 0.72 : 0.95,
       syncTouchLerp: immersive ? 0.048 : 0.075,
-      /** Clicking a Link to another route: stop inertia so scroll state does not carry over. */
       stopInertiaOnNavigate: true,
     });
 
-    /** Align Lenis with the window after route changes (avoid redundant scroll on cold load). */
+    setLenis(instance);
+
     if (!window.location.hash || window.location.hash.length <= 1) {
       const y = window.scrollY || window.pageYOffset || 0;
       if (y > 1) {
-        lenis.scrollTo(0, { immediate: true });
+        instance.scrollTo(0, { immediate: true });
       }
     }
 
-    lenis.on("scroll", ScrollTrigger.update);
+    instance.on("scroll", ScrollTrigger.update);
 
-    /** Same-page #anchors use Lenis (native scroll + Lenis fight; hash jumps feel abrupt). */
+    const scrollToHashIfPresent = () => {
+      const hash = window.location.hash;
+      if (hash.length < 2) return;
+      const id = decodeURIComponent(hash.slice(1));
+      const el = document.getElementById(id);
+      if (!el) return;
+      instance.scrollTo(el, { offset: ANCHOR_SCROLL_NUDGE_PX });
+    };
+    scrollToHashIfPresent();
+    requestAnimationFrame(() => {
+      scrollToHashIfPresent();
+      requestAnimationFrame(scrollToHashIfPresent);
+    });
+    const hashTimeouts = [0, 32, 96, 200, 400, 700, 1100, 1700].map((ms) =>
+      window.setTimeout(scrollToHashIfPresent, ms),
+    );
+
     const onHashLinkClick = (e: MouseEvent) => {
       if (
         e.defaultPrevented ||
@@ -73,24 +93,28 @@ export function LenisScroll({
       const target = document.getElementById(decodeURIComponent(url.hash.slice(1)));
       if (!target) return;
       e.preventDefault();
-      const header = document.querySelector("header");
-      const offset = header ? -Math.round(header.getBoundingClientRect().height) : 0;
-      lenis.scrollTo(target, { offset });
+      window.history.replaceState(
+        null,
+        "",
+        `${url.pathname}${url.search}${url.hash}`,
+      );
+      instance.scrollTo(target, { offset: ANCHOR_SCROLL_NUDGE_PX });
     };
-    document.addEventListener("click", onHashLinkClick);
+    document.addEventListener("click", onHashLinkClick, true);
 
     const onTick = (time: number) => {
-      lenis.raf(time * 1000);
+      instance.raf(time * 1000);
     };
     gsap.ticker.add(onTick);
     gsap.ticker.lagSmoothing(0);
 
     return () => {
-      document.removeEventListener("click", onHashLinkClick);
+      hashTimeouts.forEach((t) => window.clearTimeout(t));
+      document.removeEventListener("click", onHashLinkClick, true);
       gsap.ticker.remove(onTick);
       gsap.ticker.lagSmoothing(500, 33);
       try {
-        lenis.scrollTo(0, { immediate: true });
+        instance.scrollTo(0, { immediate: true });
       } catch {
         /* ignore */
       }
@@ -101,10 +125,16 @@ export function LenisScroll({
       html.scrollTop = 0;
       document.body.scrollTop = 0;
       html.style.scrollBehavior = prev;
-      lenis.destroy();
+      instance.destroy();
       ScrollTrigger.refresh();
+      setLenis(null);
     };
   }, [variant]);
 
-  return <>{children}</>;
+  return (
+    <LenisInstanceContext.Provider value={lenis}>
+      {children}
+      <HomeHashResolver />
+    </LenisInstanceContext.Provider>
+  );
 }

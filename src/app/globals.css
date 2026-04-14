@@ -4,8 +4,13 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* Fixed header: py-4 + logo row (up to ~4rem) + border — used for anchor scroll alignment */
-  --site-header-height: calc(6rem + 1px);
+  /**
+   * Fixed header height — must match SiteHeader layout for `scroll-padding-top` / in-page anchors.
+   * Mobile: py-3 + row (max of logo h-8…h-10 vs menu btn h-11) + border + safe-area on `<header>`.
+   * md+: py-4 + logo h-12 + border + safe-area.
+   * (Previously 6rem+1px was ~1rem too tall on desktop → visible gap under nav for #practice / #contact.)
+   */
+  --site-header-height: calc(4.25rem + 1px + env(safe-area-inset-top, 0px));
   color-scheme: light;
   --background: #f6f1e9;
   --foreground: #14110d;
@@ -35,6 +40,12 @@
     color-mix(in oklab, var(--surface-elevated) 90%, white) 100%
   );
   --bvc-shimmer-spot: color-mix(in oklab, var(--foreground) 9%, transparent);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --site-header-height: calc(5rem + 1px + env(safe-area-inset-top, 0px));
+  }
 }
 
 html.dark {

@@ -237,7 +237,11 @@ export function SiteHeader() {
             className={`site-nav hidden items-center gap-3 text-sm font-medium sm:gap-5 md:flex md:gap-6 ${navTone}`}
           >
             {navItems.map(({ href, label }) => (
-              <Link key={href} href={href}>
+              <Link
+                key={href}
+                href={href}
+                scroll={href.includes("#") ? false : undefined}
+              >
                 {label}
               </Link>
             ))}
@@ -283,6 +287,7 @@ export function SiteHeader() {
               <Link
                 key={href}
                 href={href}
+                scroll={href.includes("#") ? false : undefined}
                 className="site-mobile-nav__link font-display text-[clamp(1.85rem,7.5vw,3.15rem)] font-medium leading-tight tracking-tight text-[var(--foreground)] transition-colors duration-300 hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)] py-2"
                 onClick={() => closeMenu(true)}
               >

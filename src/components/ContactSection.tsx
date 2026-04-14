@@ -95,8 +95,7 @@ export function ContactSection() {
   return (
     <section
       ref={root}
-      id="contact"
-      className="relative overflow-hidden border-t border-[var(--border)] bg-[color-mix(in_oklab,var(--background)_88%,var(--surface-elevated))] px-6 py-24 md:px-14 md:py-32"
+      className="relative flex flex-1 flex-col justify-center overflow-hidden border-t border-[var(--border)] bg-[color-mix(in_oklab,var(--background)_88%,var(--surface-elevated))] px-6 py-12 md:px-14 md:py-16"
     >
       {/* Soft wash + grain */}
       <div
@@ -121,7 +120,7 @@ export function ContactSection() {
       <div className="relative z-[1] mx-auto grid max-w-6xl gap-14 lg:grid-cols-12 lg:gap-10 lg:gap-y-16">
         <div className="lg:col-span-6">
           <p className="contact-anim font-mono text-xs uppercase tracking-[0.32em] text-[var(--accent)]">
-            Contact
+            Contact us
           </p>
           <h2 className="contact-anim mt-5 font-display text-[clamp(1.85rem,4.2vw,3.35rem)] font-semibold leading-[1.05] tracking-tight text-[var(--foreground)]">
             <span className="block">Collaborations,</span>

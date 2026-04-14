@@ -1,8 +1,14 @@
 import { site } from "@/lib/site";
 
-export function SiteFooter() {
+type SiteFooterProps = {
+  className?: string;
+};
+
+export function SiteFooter({ className }: SiteFooterProps) {
   return (
-    <footer className="border-t border-[var(--border)] px-5 py-10 md:px-8">
+    <footer
+      className={`border-t border-[var(--border)] px-5 py-10 md:px-8 ${className ?? ""}`}
+    >
       <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 text-sm text-[var(--muted)] md:flex-row md:items-center">
         <p>
           © {new Date().getFullYear()} {site.name}. All rights reserved.
