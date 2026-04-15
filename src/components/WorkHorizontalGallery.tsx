@@ -134,6 +134,13 @@ function WorkSlide({
   const frameH =
     "frameH" in work && typeof work.frameH === "number" ? work.frameH : 796;
 
+  const galleryImages =
+    "galleryImages" in work &&
+    Array.isArray(work.galleryImages) &&
+    work.galleryImages.length > 0
+      ? work.galleryImages
+      : null;
+
   return (
     <section id={workIds[wi]} className={base}>
       <div
@@ -141,7 +148,6 @@ function WorkSlide({
         aria-hidden
       />
       {noiseBg()}
-      <div className="deck-mid pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
 
       <div
         className={`deck-fg relative z-10 mx-auto grid min-h-0 w-full max-w-6xl flex-1 grid-cols-1 content-center items-center gap-6 md:gap-16 ${
@@ -155,27 +161,58 @@ function WorkSlide({
         >
           <div className="relative mx-auto inline-block max-w-full max-md:max-w-[min(88vw,17.5rem)] md:max-w-full">
             <div
-              className="relative overflow-hidden rounded-sm border border-white/10 bg-black/50 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.65)] [&_img]:select-none [&_img]:[-webkit-user-drag:none]"
+              className="relative overflow-hidden [&_img]:select-none [&_img]:[-webkit-user-drag:none]"
               onDragStart={(e) => e.preventDefault()}
             >
-            {imageUrl ? (
-              <>
-                <Image
-                  src={imageUrl}
-                  alt={work.title}
-                  width={frameW}
-                  height={frameH}
-                  draggable={false}
-                  className="h-auto w-auto max-w-full object-contain max-md:max-h-[min(38dvh,300px)] md:max-h-[min(70dvh,780px)]"
-                  sizes="(max-width: 768px) 88vw, min(50vw, 900px)"
-                  quality={78}
-                  placeholder="blur"
-                  blurDataURL={WORK_IMAGE_BLUR_DATA}
-                  priority={wi < WORK_IMAGE_PRELOAD_COUNT}
-                  fetchPriority={wi === 0 ? "high" : wi < WORK_IMAGE_PRELOAD_COUNT ? "auto" : "low"}
-                />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/12" />
-              </>
+            {galleryImages ? (
+              <div className="flex w-full min-w-0 items-center justify-center gap-2 px-2 py-3 sm:gap-3 sm:px-3 sm:py-4 md:gap-5 md:px-5 md:py-6">
+                {galleryImages.map((gi, ii) => (
+                  <div
+                    key={`${wi}-g-${ii}`}
+                    className="relative min-h-0 min-w-0 flex-1"
+                  >
+                    <Image
+                      src={gi.src}
+                      alt={
+                        galleryImages.length > 1
+                          ? `${work.title} (${ii + 1} of ${galleryImages.length})`
+                          : work.title
+                      }
+                      width={gi.frameW}
+                      height={gi.frameH}
+                      draggable={false}
+                      className="mx-auto h-auto max-h-[min(34dvh,300px)] w-full max-w-full object-contain md:max-h-[min(64dvh,760px)]"
+                      sizes="(max-width: 768px) 17vw, 11vw"
+                      quality={78}
+                      placeholder="blur"
+                      blurDataURL={WORK_IMAGE_BLUR_DATA}
+                      priority={wi < WORK_IMAGE_PRELOAD_COUNT}
+                      fetchPriority={
+                        wi === 0 && ii === 0
+                          ? "high"
+                          : wi < WORK_IMAGE_PRELOAD_COUNT
+                            ? "auto"
+                            : "low"
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : imageUrl ? (
+              <Image
+                src={imageUrl}
+                alt={work.title}
+                width={frameW}
+                height={frameH}
+                draggable={false}
+                className="h-auto w-auto max-w-full object-contain max-md:max-h-[min(38dvh,300px)] md:max-h-[min(70dvh,780px)]"
+                sizes="(max-width: 768px) 88vw, min(50vw, 900px)"
+                quality={78}
+                placeholder="blur"
+                blurDataURL={WORK_IMAGE_BLUR_DATA}
+                priority={wi < WORK_IMAGE_PRELOAD_COUNT}
+                fetchPriority={wi === 0 ? "high" : wi < WORK_IMAGE_PRELOAD_COUNT ? "auto" : "low"}
+              />
             ) : (
               <div className="relative min-h-[min(28dvh,240px)] w-full min-w-[min(100%,20rem)] md:min-h-[min(50dvh,420px)]">
                 <div className={`absolute inset-0 bg-gradient-to-br ${work.accent}`} />
