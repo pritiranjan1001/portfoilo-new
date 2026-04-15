@@ -180,7 +180,7 @@ function WorkSlide({
       <div
         className={
           stacked
-            ? "deck-fg relative z-10 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col justify-center gap-1 md:gap-1.5"
+            ? "deck-fg relative z-10 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col justify-center gap-5 md:gap-8"
             : `deck-fg relative z-10 mx-auto grid min-h-0 w-full max-w-6xl flex-1 grid-cols-1 content-center items-center gap-6 md:gap-16 ${
                 flip ? "md:grid-cols-[1fr_1.05fr]" : "md:grid-cols-[1.05fr_1fr]"
               }`
