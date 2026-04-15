@@ -32,10 +32,13 @@ function WorkSlideDetails({
   work,
   flip,
   horizontal,
+  centered,
 }: {
   work: (typeof site.works)[number];
   flip: boolean;
   horizontal: boolean;
+  /** Center-aligned caption (stacked image + text layout). */
+  centered?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const dimensions = "dimensions" in work ? work.dimensions : undefined;
@@ -51,18 +54,28 @@ function WorkSlideDetails({
     <div
       data-no-gallery-drag
       data-lenis-prevent
-      className={`w-full max-w-md select-text overscroll-y-contain pr-1 [scrollbar-color:rgba(255,255,255,0.25)_transparent] [scrollbar-width:thin] ${scrollShell} ${
-        flip ? "md:ml-auto" : ""
+      className={`w-full select-text overscroll-y-contain pr-1 [scrollbar-color:rgba(255,255,255,0.25)_transparent] [scrollbar-width:thin] ${scrollShell} ${
+        centered
+          ? "mx-auto max-w-5xl text-center"
+          : `max-w-md ${flip ? "md:ml-auto" : ""}`
       }`}
     >
       <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/70">
         {work.category} · {work.year}
       </p>
-      <h2 className="mt-4 font-display text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-[1.05] tracking-tight text-white">
+      <h2
+        className={`font-display text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-[1.05] tracking-tight text-white ${
+          centered ? "mt-1" : "mt-4"
+        }`}
+      >
         {work.title}
       </h2>
       {dimensions ? (
-        <p className="mt-3 font-mono text-xs text-white/65">{dimensions}</p>
+        <p
+          className={`font-mono text-xs text-white/65 ${centered ? "mt-1" : "mt-3"}`}
+        >
+          {dimensions}
+        </p>
       ) : null}
 
       <div
@@ -71,12 +84,22 @@ function WorkSlideDetails({
         }
       >
         {medium ? (
-          <p className="mt-2 text-pretty font-body text-sm leading-relaxed text-white/75">
+          <p
+            className={`text-pretty font-body text-sm leading-relaxed text-white/75 ${
+              centered ? "mt-0.5" : "mt-2"
+            }`}
+          >
             {medium}
           </p>
         ) : null}
         {extraBlurb ? (
-          <p className="mt-6 text-pretty font-body text-base leading-relaxed text-white/85 md:text-lg italic">
+          <p
+            className={`text-pretty font-body leading-snug italic text-white/85 ${
+              centered
+                ? "mt-2 text-sm md:text-base"
+                : "mt-6 text-base md:text-lg"
+            }`}
+          >
             {extraBlurb}
           </p>
         ) : null}
@@ -85,7 +108,9 @@ function WorkSlideDetails({
       {hasExpandableBody ? (
         <button
           type="button"
-          className="mt-3 font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--accent)] underline underline-offset-4 transition-colors hover:text-white md:hidden"
+          className={`font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--accent)] underline underline-offset-4 transition-colors hover:text-white md:hidden ${
+            centered ? "mt-2" : "mt-3"
+          }`}
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
         >
@@ -141,6 +166,9 @@ function WorkSlide({
       ? work.galleryImages
       : null;
 
+  const stacked =
+    "stackedCaption" in work && work.stackedCaption === true;
+
   return (
     <section id={workIds[wi]} className={base}>
       <div
@@ -150,26 +178,50 @@ function WorkSlide({
       {noiseBg()}
 
       <div
-        className={`deck-fg relative z-10 mx-auto grid min-h-0 w-full max-w-6xl flex-1 grid-cols-1 content-center items-center gap-6 md:gap-16 ${
-          flip ? "md:grid-cols-[1fr_1.05fr]" : "md:grid-cols-[1.05fr_1fr]"
-        }`}
+        className={
+          stacked
+            ? "deck-fg relative z-10 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col justify-center gap-1 md:gap-1.5"
+            : `deck-fg relative z-10 mx-auto grid min-h-0 w-full max-w-6xl flex-1 grid-cols-1 content-center items-center gap-6 md:gap-16 ${
+                flip ? "md:grid-cols-[1fr_1.05fr]" : "md:grid-cols-[1.05fr_1fr]"
+              }`
+        }
       >
         <div
           className={`flex w-full min-w-0 justify-center ${
-            flip ? "md:order-2" : ""
+            stacked
+              ? "shrink-0 flex-col items-center"
+              : flip
+                ? "md:order-2"
+                : ""
           }`}
         >
-          <div className="relative mx-auto inline-block max-w-full max-md:max-w-[min(88vw,17.5rem)] md:max-w-full">
+          <div
+            className={
+              stacked
+                ? "relative mx-auto w-full min-w-0 max-w-full"
+                : "relative mx-auto inline-block max-w-full max-md:max-w-[min(88vw,17.5rem)] md:max-w-full"
+            }
+          >
             <div
               className="relative overflow-hidden [&_img]:select-none [&_img]:[-webkit-user-drag:none]"
               onDragStart={(e) => e.preventDefault()}
             >
             {galleryImages ? (
-              <div className="flex w-full min-w-0 items-center justify-center gap-2 px-2 py-3 sm:gap-3 sm:px-3 sm:py-4 md:gap-5 md:px-5 md:py-6">
+              <div
+                className={`flex w-full min-w-0 items-center justify-center ${
+                  stacked
+                    ? "flex-nowrap gap-1.5 px-1 py-0 sm:gap-2 md:gap-2.5 md:px-2"
+                    : "gap-2 px-2 py-3 sm:gap-3 sm:px-3 sm:py-4 md:gap-5 md:px-5 md:py-6"
+                }`}
+              >
                 {galleryImages.map((gi, ii) => (
                   <div
                     key={`${wi}-g-${ii}`}
-                    className="relative min-h-0 min-w-0 flex-1"
+                    className={
+                      stacked
+                        ? "relative shrink-0"
+                        : "relative min-h-0 min-w-0 flex-1"
+                    }
                   >
                     <Image
                       src={gi.src}
@@ -181,7 +233,11 @@ function WorkSlide({
                       width={gi.frameW}
                       height={gi.frameH}
                       draggable={false}
-                      className="mx-auto h-auto max-h-[min(34dvh,300px)] w-full max-w-full object-contain md:max-h-[min(64dvh,760px)]"
+                      className={`object-contain ${
+                        stacked
+                          ? "h-[min(17dvh,140px)] w-auto shrink-0 md:h-[min(24dvh,255px)]"
+                          : "mx-auto h-auto w-full max-w-full max-h-[min(34dvh,300px)] md:max-h-[min(64dvh,760px)]"
+                      }`}
                       sizes="(max-width: 768px) 17vw, 11vw"
                       quality={78}
                       placeholder="blur"
@@ -227,11 +283,18 @@ function WorkSlide({
           </div>
         </div>
         <div
-          className={`flex min-h-0 min-w-0 flex-col justify-center ${
-            flip ? "md:order-1 md:items-end md:text-right" : ""
+          className={`flex min-h-0 min-w-0 flex-col ${
+            stacked
+              ? "shrink-0 items-center text-center"
+              : `justify-center ${flip ? "md:order-1 md:items-end md:text-right" : ""}`
           }`}
         >
-          <WorkSlideDetails work={work} flip={flip} horizontal={horizontal} />
+          <WorkSlideDetails
+            work={work}
+            flip={stacked ? false : flip}
+            horizontal={horizontal}
+            centered={stacked}
+          />
         </div>
       </div>
     </section>

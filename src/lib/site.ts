@@ -137,6 +137,8 @@ export const site = {
       year: "2016",
       dimensions: "61×48 cm",
       medium: "Ink and gouache on Mill-Waste Sheet",
+      blurb:
+        "Glances, not lotus flowers, she has strung as a garland above the entrance; a smile, not flowers, serves as her jasmine bouquet; and her two full breasts with the dew of perspiration replace the pots for offering water. The slender one prepared a solemn reception for her long-awaited lover, presenting only her own body as he entered.",
       image: "/artworks/painting-1-1077x1536.png",
       frameW: 1077,
       frameH: 1536,
@@ -148,6 +150,7 @@ export const site = {
         { src: "/artworks/painting-4-1077x1536.png", frameW: 1077, frameH: 1536 },
         { src: "/artworks/painting-5-1077x1536.png", frameW: 1077, frameH: 1536 },
       ],
+      stackedCaption: true,
     },
     {
       title: "Inscription",
