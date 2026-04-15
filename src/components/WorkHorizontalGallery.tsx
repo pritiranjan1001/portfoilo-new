@@ -21,6 +21,13 @@ import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
 
 const workIds = site.works.map((_, i) => `work-slide-${i}`);
 
+/** Preload first N slides so horizontal scroll / swipe doesn’t wait on each new image. */
+const WORK_IMAGE_PRELOAD_COUNT = 4;
+
+/** Tiny neutral placeholder while Next Image resolves (perceived faster load). */
+const WORK_IMAGE_BLUR_DATA =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
 function WorkSlideDetails({
   work,
   flip,
@@ -160,8 +167,12 @@ function WorkSlide({
                   height={frameH}
                   draggable={false}
                   className="h-auto w-auto max-w-full object-contain max-md:max-h-[min(38dvh,300px)] md:max-h-[min(70dvh,780px)]"
-                  sizes="(max-width: 768px) 72vw, min(48vw, 820px)"
-                  priority={wi === 0}
+                  sizes="(max-width: 768px) 88vw, min(50vw, 900px)"
+                  quality={78}
+                  placeholder="blur"
+                  blurDataURL={WORK_IMAGE_BLUR_DATA}
+                  priority={wi < WORK_IMAGE_PRELOAD_COUNT}
+                  fetchPriority={wi === 0 ? "high" : wi < WORK_IMAGE_PRELOAD_COUNT ? "auto" : "low"}
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/12" />
               </>
