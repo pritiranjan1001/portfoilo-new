@@ -247,7 +247,6 @@ export function WorkHorizontalGallery() {
 
       const debouncedRefresh = createDebouncedScrollTriggerRefresh(140);
 
-      /** Scrub (seconds) = catch-up smoothing; higher = silkier horizontal follow with Lenis. */
       const tween = gsap.to(track, {
         x: () => -maxX(),
         ease: "none",

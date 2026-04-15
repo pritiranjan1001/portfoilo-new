@@ -137,8 +137,7 @@ export const site = {
       year: "2016",
       dimensions: "61×48 cm",
       medium: "Ink and gouache on Mill-Waste Sheet",
-      image:
-        "https://jyotiranjanswain.com/wp-content/uploads/2024/11/painting-5-718x1024.png",
+      image: "/artworks/painting-5-718x1024.png",
       frameW: 718,
       frameH: 1024,
       accent: "from-teal-950/85 to-stone-950",
@@ -148,8 +147,7 @@ export const site = {
       category: "Text",
       year: "2016",
       medium: "Alongside the series",
-      image:
-        "https://jyotiranjanswain.com/wp-content/uploads/2024/11/Painting-14-min-818x1024.jpg",
+      image: "/artworks/Painting-14-min-818x1024.jpg",
       frameW: 818,
       frameH: 1024,
       accent: "from-stone-800/90 to-neutral-950",
@@ -162,8 +160,7 @@ export const site = {
       year: "2016",
       dimensions: "42×54 cm",
       medium: "Ink and gouache on Mill-Waste Sheet",
-      image:
-        "https://jyotiranjanswain.com/wp-content/uploads/2024/11/Painting-15-min-818x1024.jpg",
+      image: "/artworks/Painting-15-min-818x1024.jpg",
       frameW: 818,
       frameH: 1024,
       accent: "from-amber-950/85 to-stone-950",
@@ -174,8 +171,7 @@ export const site = {
       year: "2016",
       dimensions: "54×42 cm",
       medium: "Ink and colour wash on Mill-Waste Sheet",
-      image:
-        "https://jyotiranjanswain.com/wp-content/uploads/2024/11/Painting-19-min-818x1024.jpg",
+      image: "/artworks/Painting-19-min-818x1024.jpg",
       frameW: 818,
       frameH: 1024,
       accent: "from-indigo-950/85 to-neutral-950",
