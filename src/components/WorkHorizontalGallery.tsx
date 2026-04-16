@@ -40,11 +40,9 @@ function WorkSlideDetails({
   /** Center-aligned caption (stacked image + text layout). */
   centered?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
   const dimensions = "dimensions" in work ? work.dimensions : undefined;
   const medium = "medium" in work ? work.medium : undefined;
   const extraBlurb = "blurb" in work && work.blurb ? work.blurb : null;
-  const hasExpandableBody = Boolean(medium || extraBlurb);
 
   const scrollShell = horizontal
     ? "max-h-[min(52dvh,28rem)] overflow-y-auto md:max-h-[min(58dvh,32rem)] max-md:max-h-none max-md:overflow-visible"
@@ -57,7 +55,7 @@ function WorkSlideDetails({
       className={`w-full select-text overscroll-y-contain pr-1 [scrollbar-color:rgba(255,255,255,0.25)_transparent] [scrollbar-width:thin] ${scrollShell} ${
         centered
           ? "mx-auto max-w-5xl text-center"
-          : `max-w-md ${flip ? "md:ml-auto" : ""}`
+          : `max-w-md max-md:mx-auto max-md:text-center ${flip ? "md:ml-auto" : ""}`
       }`}
     >
       <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/70">
@@ -78,11 +76,7 @@ function WorkSlideDetails({
         </p>
       ) : null}
 
-      <div
-        className={
-          !expanded && hasExpandableBody ? "max-md:line-clamp-5 max-md:overflow-hidden" : ""
-        }
-      >
+      <div>
         {medium ? (
           <p
             className={`text-pretty font-body text-sm leading-relaxed text-white/75 ${
@@ -104,19 +98,6 @@ function WorkSlideDetails({
           </p>
         ) : null}
       </div>
-
-      {hasExpandableBody ? (
-        <button
-          type="button"
-          className={`font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--accent)] underline underline-offset-4 transition-colors hover:text-white md:hidden ${
-            centered ? "mt-2" : "mt-3"
-          }`}
-          onClick={() => setExpanded((v) => !v)}
-          aria-expanded={expanded}
-        >
-          {expanded ? "See less" : "See more"}
-        </button>
-      ) : null}
     </div>
   );
 }
@@ -136,6 +117,7 @@ function WorkSlide({
   flip,
   horizontal,
   carouselSnap,
+  showDetails = true,
 }: {
   work: (typeof site.works)[number];
   wi: number;
@@ -143,6 +125,8 @@ function WorkSlide({
   horizontal: boolean;
   /** Mobile horizontal snap carousel — full-viewport slides that swipe sideways. */
   carouselSnap?: boolean;
+  /** Render caption/title/details column. */
+  showDetails?: boolean;
 }) {
   const border = horizontal
     ? "border-l border-[var(--border)]"
@@ -150,7 +134,7 @@ function WorkSlide({
   const snap = carouselSnap ? "snap-center snap-always " : "";
   const base =
     horizontal
-      ? `${snap}editorial-panel relative flex h-[100dvh] min-h-0 w-screen shrink-0 select-none flex-col overflow-hidden px-6 pb-10 pt-[max(1rem,calc(var(--site-header-height)+1rem))] md:px-14 md:pb-12 md:pt-[max(1.25rem,calc(var(--site-header-height)+1.25rem))] ${border}`
+      ? `${snap}editorial-panel relative flex h-[100dvh] min-h-0 w-screen shrink-0 select-none flex-col overflow-hidden px-6 pb-10 pt-0 max-md:justify-center max-md:pb-0 md:px-14 md:pb-12 md:pt-[max(1.25rem,calc(var(--site-header-height)+1.25rem))] ${border}`
       : `relative flex min-h-[100dvh] w-full flex-col justify-center overflow-hidden px-6 py-24 md:px-14 ${border}`;
 
   const imageUrl = "image" in work ? work.image : undefined;
@@ -210,7 +194,7 @@ function WorkSlide({
               <div
                 className={`flex w-full min-w-0 items-center justify-center ${
                   stacked
-                    ? "flex-nowrap gap-1.5 px-1 py-0 sm:gap-2 md:gap-2.5 md:px-2"
+                    ? "flex-wrap gap-1.5 px-1 py-0 sm:gap-2 md:flex-nowrap md:gap-2.5 md:px-2"
                     : "gap-2 px-2 py-3 sm:gap-3 sm:px-3 sm:py-4 md:gap-5 md:px-5 md:py-6"
                 }`}
               >
@@ -235,7 +219,7 @@ function WorkSlide({
                       draggable={false}
                       className={`object-contain ${
                         stacked
-                          ? "h-[min(17dvh,140px)] w-auto shrink-0 md:h-[min(24dvh,255px)]"
+                          ? "h-[min(14dvh,112px)] w-auto shrink-0 md:h-[min(24dvh,255px)]"
                           : "mx-auto h-auto w-full max-w-full max-h-[min(34dvh,300px)] md:max-h-[min(64dvh,760px)]"
                       }`}
                       sizes="(max-width: 768px) 17vw, 11vw"
@@ -275,27 +259,33 @@ function WorkSlide({
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg viewBox=%220%200%20256%20256%22%20xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter%20id=%22n%22%3E%3CfeTurbulence%20type=%22fractalNoise%22%20baseFrequency=%220.75%22%20numOctaves=%224%22%20stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect%20width=%22100%25%22%20height=%22100%25%22%20filter=%22url(%23n)%22%20opacity=%220.2%22/%3E%3C/svg%3E')] opacity-60 mix-blend-overlay" />
               </div>
             )}
-            <span className="absolute right-3 top-3 z-[1] font-mono text-[10px] text-white/55">
-              {String(wi + 1).padStart(2, "0")} /{" "}
-              {String(site.works.length).padStart(2, "0")}
-            </span>
+            {showDetails ? (
+              <span className="absolute right-3 top-3 z-[1] font-mono text-[10px] text-white/55">
+                {String(wi + 1).padStart(2, "0")} /{" "}
+                {String(site.works.length).padStart(2, "0")}
+              </span>
+            ) : null}
           </div>
           </div>
         </div>
-        <div
-          className={`flex min-h-0 min-w-0 flex-col ${
-            stacked
-              ? "shrink-0 items-center text-center"
-              : `justify-center ${flip ? "md:order-1 md:items-end md:text-right" : ""}`
-          }`}
-        >
-          <WorkSlideDetails
-            work={work}
-            flip={stacked ? false : flip}
-            horizontal={horizontal}
-            centered={stacked}
-          />
-        </div>
+        {showDetails ? (
+          <div
+            className={`flex min-h-0 min-w-0 flex-col ${
+              stacked
+                ? "shrink-0 items-center text-center"
+                : `justify-center max-md:items-center max-md:text-center ${
+                    flip ? "md:order-1 md:items-end md:text-right" : ""
+                  }`
+            }`}
+          >
+            <WorkSlideDetails
+              work={work}
+              flip={stacked ? false : flip}
+              horizontal={horizontal}
+              centered={stacked}
+            />
+          </div>
+        ) : null}
       </div>
     </section>
   );
@@ -500,7 +490,7 @@ export function WorkHorizontalGallery() {
 
   return (
     <section id="work">
-      <div className="mx-auto max-w-6xl px-6 pt-16 md:px-14 md:pt-20">
+      <div className="mx-auto hidden max-w-6xl px-6 pt-16 md:block md:px-14 md:pt-20">
         <p className="font-mono text-xs uppercase tracking-[0.28em] text-[var(--accent)]">
           Work
         </p>
@@ -508,14 +498,8 @@ export function WorkHorizontalGallery() {
           Paintings · 2016
         </h2>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--muted)]">
-          <span className="hidden md:inline">
-            Scroll vertically to move through the gallery—drag sideways on desktop or use a
-            horizontal trackpad gesture. Long captions scroll inside the text column.
-          </span>
-          <span className="md:hidden">
-            Swipe left or right between pieces. Tap <span className="text-[var(--accent)]">See more</span>{" "}
-            when a caption is long.
-          </span>
+          Scroll vertically to move through the gallery—drag sideways on desktop or use a
+          horizontal trackpad gesture. Long captions scroll inside the text column.
         </p>
       </div>
 
@@ -532,13 +516,7 @@ export function WorkHorizontalGallery() {
           ))}
         </div>
       ) : !isDesktop ? (
-        <div className="relative mt-10">
-          <div
-            className="pointer-events-none absolute bottom-8 right-5 z-10 font-mono text-[10px] uppercase tracking-[0.35em] text-white/50"
-            aria-hidden
-          >
-            Swipe · slides
-          </div>
+        <div className="relative">
           <div
             data-lenis-prevent
             className="flex h-[100dvh] w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
