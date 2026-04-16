@@ -28,6 +28,10 @@ const WORK_IMAGE_PRELOAD_COUNT = 4;
 const WORK_IMAGE_BLUR_DATA =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
+function isLocalArtworksPath(src: unknown) {
+  return typeof src === "string" && src.startsWith("/artworks/");
+}
+
 function WorkSlideDetails({
   work,
   flip,
@@ -216,6 +220,7 @@ function WorkSlide({
                       }
                       width={gi.frameW}
                       height={gi.frameH}
+                      unoptimized={isLocalArtworksPath(gi.src)}
                       draggable={false}
                       className={`object-contain ${
                         stacked
@@ -244,6 +249,7 @@ function WorkSlide({
                 alt={work.title}
                 width={frameW}
                 height={frameH}
+                unoptimized={isLocalArtworksPath(imageUrl)}
                 draggable={false}
                 className="h-auto w-auto max-w-full object-contain max-md:max-h-[min(38dvh,300px)] md:max-h-[min(70dvh,780px)]"
                 sizes="(max-width: 768px) 88vw, min(50vw, 900px)"
