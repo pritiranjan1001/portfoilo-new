@@ -107,6 +107,18 @@ body {
     color 0.45s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
+/* /work — hide native scrollbar; wheel / drag / keys still scroll */
+html.work-hide-doc-scrollbar,
+body.work-hide-doc-scrollbar {
+  scrollbar-width: none;
+}
+html.work-hide-doc-scrollbar::-webkit-scrollbar,
+body.work-hide-doc-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 :where(
     header,
     footer,

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useLenisInstance } from "@/components/lenis-context";
 import { site } from "@/lib/site";
 import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
 
@@ -23,9 +24,15 @@ const HEADER_HOME_ENTRANCE_KEY = "pf-header-home-in";
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const home = pathname === "/";
   const immersive = pathname === "/gallery";
   const workRoute = pathname === "/work";
+  const aboutRoute = pathname === "/about";
+  const lenis = useLenisInstance();
+  /** /work: white nav only when the dark gallery sits under the fixed header (not over the cream intro). */
   const [workGalleryUnderHeader, setWorkGalleryUnderHeader] = useState(false);
+  /** Home + About: frosted bar after scrolling so nav stays legible over busy content. */
+  const [headerScrolled, setHeaderScrolled] = useState(false);
   const root = useRef<HTMLElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -143,7 +150,6 @@ export function SiteHeader() {
     };
   }, [menuOpen]);
 
-  const home = pathname === "/";
   const [headerEntrance, setHeaderEntrance] = useState(home);
 
   useLayoutEffect(() => {
@@ -158,7 +164,6 @@ export function SiteHeader() {
     }
   }, [home]);
 
-  /** /work: light intro = default nav; horizontal gallery under fixed header = white nav + logo */
   useEffect(() => {
     if (!workRoute) {
       setWorkGalleryUnderHeader(false);
@@ -182,7 +187,9 @@ export function SiteHeader() {
     window.addEventListener("scroll", measure, { passive: true });
     window.addEventListener("resize", measure);
 
-    const ticker = () => measure();
+    const ticker = () => {
+      measure();
+    };
     gsap.ticker.add(ticker);
 
     return () => {
@@ -191,6 +198,37 @@ export function SiteHeader() {
       gsap.ticker.remove(ticker);
     };
   }, [workRoute]);
+
+  const surfaceScrollRoute = home || aboutRoute;
+
+  useEffect(() => {
+    if (!surfaceScrollRoute || workRoute || immersive) {
+      setHeaderScrolled(false);
+      return;
+    }
+
+    const SCROLL_THRESHOLD = 20;
+
+    const scrollY = () =>
+      lenis ? lenis.scroll : window.scrollY || document.documentElement.scrollTop || 0;
+
+    const measure = () => {
+      setHeaderScrolled(scrollY() > SCROLL_THRESHOLD);
+    };
+
+    measure();
+
+    if (lenis) {
+      return lenis.on("scroll", measure);
+    }
+
+    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      window.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, [surfaceScrollRoute, workRoute, immersive, lenis]);
 
   useGSAP(
     () => {
@@ -222,26 +260,35 @@ export function SiteHeader() {
     { scope: root, dependencies: [home, headerEntrance] },
   );
 
-  const workOnDarkGallery = workRoute && workGalleryUnderHeader;
+  const workLightNav = workRoute && workGalleryUnderHeader;
 
   const navTone = immersive
     ? "text-neutral-600 [&_a]:transition-colors [&_a]:duration-300 [&_a:hover]:text-neutral-900 dark:text-neutral-400 dark:[&_a:hover]:text-neutral-100"
-    : workOnDarkGallery
+    : workLightNav
       ? "[&_a]:transition-colors [&_a]:duration-300 text-white/92 [&_a]:text-white/92 [&_a:hover]:text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.85),0_0_24px_rgba(0,0,0,0.35)]"
       : "text-[var(--muted)] [&_a]:transition-colors [&_a]:duration-300 [&_a:hover]:text-[var(--foreground)]";
+
+  const headerBarElevated =
+    surfaceScrollRoute && headerScrolled && !workRoute && !immersive;
 
   const headerBar =
     immersive
       ? "border-b border-black/[0.06] bg-transparent dark:border-white/[0.08]"
-      : workOnDarkGallery
-        ? "border-b border-white/[0.12] bg-gradient-to-b from-black/50 via-black/20 to-transparent backdrop-blur-[1px]"
-        : "border-b border-[var(--border)] bg-transparent";
+      : workRoute && !workLightNav
+        ? "border-b border-transparent bg-transparent"
+        : workRoute && workLightNav
+          ? "border-b border-white/15 bg-transparent"
+          : headerBarElevated
+            ? "border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_93%,transparent)] shadow-[0_12px_40px_-12px_rgba(20,17,13,0.14)] backdrop-blur-xl backdrop-saturate-150 dark:bg-[color-mix(in_oklab,var(--surface)_88%,transparent)] dark:shadow-[0_16px_48px_-16px_rgba(0,0,0,0.55)]"
+            : surfaceScrollRoute
+              ? "border-b border-transparent bg-transparent"
+              : "border-b border-[var(--border)] bg-transparent";
 
   return (
     <>
       <header
         ref={root}
-        className={`fixed top-0 right-0 left-0 z-50 w-full pt-[env(safe-area-inset-top)] transition-[border-color,background] duration-300 ease-out ${headerBar}`}
+        className={`fixed top-0 right-0 left-0 z-50 w-full pt-[env(safe-area-inset-top)] transition-[border-color,background-color,box-shadow,backdrop-filter] duration-300 ease-out ${headerBar}`}
       >
         <div
           className={`header-inner mx-auto flex max-w-6xl items-center justify-between gap-3 px-[max(1rem,env(safe-area-inset-left))] py-3 md:gap-4 md:px-8 md:py-4${home && headerEntrance ? " header-inner--entrance" : ""}`}
@@ -259,7 +306,7 @@ export function SiteHeader() {
               sizes="(max-width: 768px) min(50vw, 8.25rem), 8.25rem"
               quality={100}
               className={`block h-8 w-auto max-w-[min(8.25rem,50vw)] object-contain object-left transition-[filter] duration-300 sm:h-10 md:h-12 ${
-                workOnDarkGallery
+                workLightNav
                   ? "brightness-0 invert drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]"
                   : "invert dark:invert-0"
               }`}
@@ -270,7 +317,7 @@ export function SiteHeader() {
           <button
             type="button"
             className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg md:hidden ${
-              workOnDarkGallery
+              workLightNav
                 ? "border border-white/30 bg-black/35 text-white shadow-[0_1px_3px_rgba(0,0,0,0.6)] backdrop-blur-sm"
                 : "border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_88%,transparent)] text-[var(--foreground)]"
             }`}
@@ -297,7 +344,7 @@ export function SiteHeader() {
             ))}
             <span
               className={
-                workOnDarkGallery
+                workLightNav
                   ? "[&>div[role='group']]:border-white/35 [&>div[role='group']]:bg-black/40 [&>div[role='group']]:shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] [&_button]:text-white/95 [&_button]:ring-offset-black/50"
                   : ""
               }

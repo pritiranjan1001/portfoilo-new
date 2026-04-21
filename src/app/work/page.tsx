@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ScrollProgress } from "@/components/ScrollProgress";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { WorkHorizontalGallery } from "@/components/WorkHorizontalGallery";
@@ -14,7 +13,6 @@ export const metadata: Metadata = {
 export default function WorkPage() {
   return (
     <LenisScroll variant="immersive">
-      <ScrollProgress />
       <SiteHeader />
       <main className="min-h-[100dvh] pb-0 pt-0 md:pb-16 md:pt-[max(6rem,calc(var(--site-header-height)+1.25rem))]">
         <WorkHorizontalGallery />

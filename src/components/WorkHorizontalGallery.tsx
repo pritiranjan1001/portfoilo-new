@@ -16,6 +16,7 @@ import {
   measureHorizontalScrollEnd,
 } from "@/lib/horizontal-gallery-scroll";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useLenisInstance } from "@/components/lenis-context";
 import { site } from "@/lib/site";
 import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
 
@@ -49,7 +50,7 @@ function WorkSlideDetails({
   const extraBlurb = "blurb" in work && work.blurb ? work.blurb : null;
 
   const scrollShell = horizontal
-    ? "max-h-[min(52dvh,28rem)] overflow-y-auto md:max-h-[min(58dvh,32rem)] max-md:max-h-none max-md:overflow-visible"
+    ? "max-h-[min(52dvh,28rem)] overflow-y-auto md:max-h-[min(58dvh,32rem)] max-md:max-h-none max-md:overflow-visible [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     : "max-h-none overflow-visible";
 
   const selection = horizontal ? "select-none" : "select-text";
@@ -57,7 +58,7 @@ function WorkSlideDetails({
   return (
     <div
       data-lenis-prevent
-      className={`w-full ${selection} overscroll-y-contain pr-1 [scrollbar-color:rgba(255,255,255,0.25)_transparent] [scrollbar-width:thin] ${scrollShell} ${
+      className={`w-full ${selection} overscroll-y-contain pr-1 ${scrollShell} ${
         centered
           ? "mx-auto max-w-5xl text-center"
           : `max-w-md max-md:mx-auto max-md:text-center ${flip ? "md:ml-auto" : ""}`
@@ -305,10 +306,70 @@ export function WorkHorizontalGallery() {
   const [dragging, setDragging] = useState(false);
   const chrome = useWorkGalleryChrome();
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const lenis = useLenisInstance();
 
   useEffect(() => {
     setReduceMotion(shouldReduceMotion());
   }, []);
+
+  /** Hide document scrollbar on /work only; scrolling still works via wheel / keys / touch. */
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    root.classList.add("work-hide-doc-scrollbar");
+    body.classList.add("work-hide-doc-scrollbar");
+    return () => {
+      root.classList.remove("work-hide-doc-scrollbar");
+      body.classList.remove("work-hide-doc-scrollbar");
+    };
+  }, []);
+
+  /** Keyboard: advance the pinned gallery (vertical scroll drives horizontal scrub). */
+  useEffect(() => {
+    const stepPx = () => Math.max(280, Math.round(window.innerHeight * 0.42));
+
+    const applyScroll = (deltaY: number) => {
+      if (lenis) {
+        const next = Math.max(0, Math.min(lenis.limit, lenis.scroll + deltaY));
+        lenis.scrollTo(next, { programmatic: true });
+      } else {
+        window.scrollBy({ top: deltaY, left: 0, behavior: "auto" });
+      }
+      requestAnimationFrame(() => ScrollTrigger.update());
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el?.closest("input, textarea, select, [contenteditable='true']")) return;
+
+      if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === "PageDown") {
+        e.preventDefault();
+        applyScroll(stepPx());
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp" || e.key === "PageUp") {
+        e.preventDefault();
+        applyScroll(-stepPx());
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        if (lenis) lenis.scrollTo(0, { immediate: true, programmatic: true });
+        else window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        requestAnimationFrame(() => ScrollTrigger.update());
+      } else if (e.key === "End") {
+        e.preventDefault();
+        if (lenis) lenis.scrollTo(lenis.limit, { immediate: true, programmatic: true });
+        else
+          window.scrollTo({
+            top: document.documentElement.scrollHeight - window.innerHeight,
+            left: 0,
+            behavior: "auto",
+          });
+        requestAnimationFrame(() => ScrollTrigger.update());
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [lenis]);
 
   useEffect(() => {
     if (reduceMotion || !isDesktop) return;
@@ -500,8 +561,8 @@ export function WorkHorizontalGallery() {
           Paintings · 2016
         </h2>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--muted)]">
-          Scroll vertically to move through the gallery—drag sideways on desktop or use a
-          horizontal trackpad gesture. Long captions scroll inside the text column.
+          Use the mouse wheel, drag sideways on desktop, or arrow keys / Page Up · Page Down to move
+          through the gallery. Long captions scroll inside the text column (no visible scrollbar).
         </p>
       </div>
 
