@@ -727,7 +727,8 @@ export function BeyondVisibleCover() {
     <section
       ref={root}
       id="prelude"
-      className="relative flex min-h-[56dvh] flex-col overflow-hidden border-t border-[var(--border)] px-5 pb-10 pt-16 md:min-h-[58dvh] md:px-12 md:pb-12 md:pt-20"
+      data-home-section="prelude"
+      className="relative flex min-h-[100dvh] flex-col overflow-hidden border-t border-[var(--border)] px-5 pb-10 pt-16 md:px-12 md:pb-12 md:pt-20"
     >
       <div
         ref={layer}

@@ -192,9 +192,10 @@ export function LandingHero() {
     <section
       ref={root}
       id="top"
-      className="relative w-full max-w-[100vw] overflow-x-clip bg-[var(--background)] text-[var(--foreground)] dark:bg-black dark:text-[color-mix(in_oklab,var(--foreground)_92%,white)]"
+      data-home-section="hero"
+      className="relative flex min-h-[100dvh] w-full max-w-[100vw] flex-col overflow-x-clip bg-[var(--background)] text-[var(--foreground)] dark:bg-black dark:text-[color-mix(in_oklab,var(--foreground)_92%,white)]"
     >
-      <div className="mx-auto grid min-h-[100svh] max-w-5xl grid-cols-1 items-center gap-6 px-[max(1rem,env(safe-area-inset-left))] pb-10 pt-[max(7rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] md:gap-16 md:px-14 md:pb-12 md:pt-32 lg:grid-cols-2 lg:gap-2 xl:gap-10">
+      <div className="mx-auto grid min-h-0 w-full max-w-5xl flex-1 grid-cols-1 content-center items-center gap-6 px-[max(1rem,env(safe-area-inset-left))] pb-10 pt-[max(7rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] md:gap-16 md:px-14 md:pb-12 md:pt-32 lg:grid-cols-2 lg:gap-2 xl:gap-10">
         <div className="landing-hero-copy flex min-w-0 flex-col justify-center [contain:layout_style]">
           <p className="landing-hero-tagline font-serif text-lg italic leading-relaxed text-[var(--muted)] md:text-xl">
             {site.tagline}

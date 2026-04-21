@@ -1,5 +1,6 @@
 import { BeyondVisibleCover } from "@/components/BeyondVisibleCover";
 import { ContactSection } from "@/components/ContactSection";
+import { HomeScrollOrchestrator } from "@/components/HomeScrollOrchestrator";
 import { LandingAbout } from "@/components/LandingAbout";
 import { LandingHero } from "@/components/LandingHero";
 import { LenisScroll } from "@/components/LenisScroll";
@@ -13,7 +14,8 @@ export default function Home() {
     <LenisScroll>
       <ScrollProgress />
       <SiteHeader />
-      <main>
+      <main id="home-main" className="relative">
+        <HomeScrollOrchestrator />
         <LandingHero />
         <BeyondVisibleCover />
         <LandingAbout />
@@ -21,10 +23,10 @@ export default function Home() {
         <div
           id="contact"
           tabIndex={-1}
-          className="flex min-h-[100dvh] flex-col outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--background)]"
+          className="flex flex-col outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--background)]"
         >
           <ContactSection />
-          <SiteFooter className="mt-auto shrink-0 !py-7 md:!py-8" />
+          <SiteFooter className="shrink-0 !py-7 md:!py-8" />
         </div>
       </main>
     </LenisScroll>

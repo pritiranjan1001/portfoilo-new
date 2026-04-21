@@ -10,6 +10,15 @@ import { LenisInstanceContext } from "@/components/lenis-context";
 import { ANCHOR_SCROLL_NUDGE_PX } from "@/lib/scroll-anchors";
 import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
 
+function isKeyboardFocusEditable(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el?.closest) return false;
+  const tag = el.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  if (el.isContentEditable) return true;
+  return Boolean(el.closest("[contenteditable='true']"));
+}
+
 type LenisScrollProps = {
   children: ReactNode;
   /** Heavier inertia + gentler wheel steps (best on /work horizontal gallery). */
@@ -32,12 +41,12 @@ export function LenisScroll({
 
     const immersive = variant === "immersive";
     const instance = new Lenis({
-      lerp: immersive ? 0.038 : 0.08,
+      lerp: immersive ? 0.038 : 0.09,
       smoothWheel: true,
       syncTouch: true,
       touchMultiplier: immersive ? 0.88 : 1,
-      wheelMultiplier: immersive ? 0.72 : 0.95,
-      syncTouchLerp: immersive ? 0.048 : 0.075,
+      wheelMultiplier: immersive ? 0.72 : 1,
+      syncTouchLerp: immersive ? 0.048 : 0.08,
       stopInertiaOnNavigate: true,
     });
 
@@ -58,7 +67,11 @@ export function LenisScroll({
       const id = decodeURIComponent(hash.slice(1));
       const el = document.getElementById(id);
       if (!el) return;
-      instance.scrollTo(el, { offset: ANCHOR_SCROLL_NUDGE_PX });
+      /** `immediate` keeps hash scroll reliable; animated element scroll can stall if Lenis state drifts from the document. */
+      instance.scrollTo(el, {
+        offset: ANCHOR_SCROLL_NUDGE_PX,
+        immediate: true,
+      });
     };
     scrollToHashIfPresent();
     requestAnimationFrame(() => {
@@ -98,9 +111,70 @@ export function LenisScroll({
         "",
         `${url.pathname}${url.search}${url.hash}`,
       );
-      instance.scrollTo(target, { offset: ANCHOR_SCROLL_NUDGE_PX });
+      instance.scrollTo(target, {
+        offset: ANCHOR_SCROLL_NUDGE_PX,
+        immediate: true,
+      });
     };
     document.addEventListener("click", onHashLinkClick, true);
+
+    /**
+     * Native arrow / Page / Home / End scroll the document, but Lenis ignores those
+     * `scroll` events while a wheel-driven smooth scroll is active (`isScrolling === "smooth"`),
+     * which feels like lag or dropped keys. Route the same keys through `scrollTo` with
+     * `programmatic: false` so they use the same smoothing path as the wheel.
+     * `/work` uses its own key handler for the horizontal gallery — leave that alone.
+     */
+    const arrowStepPx = () => Math.max(72, Math.round(window.innerHeight * 0.08));
+    const pageStepPx = () => Math.round(window.innerHeight * 0.85);
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (window.location.pathname === "/work") return;
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isKeyboardFocusEditable(e.target)) return;
+
+      const { key } = e;
+      if (
+        key !== "ArrowDown" &&
+        key !== "ArrowUp" &&
+        key !== "PageDown" &&
+        key !== "PageUp" &&
+        key !== "Home" &&
+        key !== "End"
+      ) {
+        return;
+      }
+
+      e.preventDefault();
+
+      const o = instance.options;
+      const smoothOpts = {
+        programmatic: false as const,
+        lerp: o.lerp,
+        ...(typeof o.duration === "number" && typeof o.easing === "function"
+          ? { duration: o.duration, easing: o.easing }
+          : {}),
+      };
+
+      if (key === "Home") {
+        instance.scrollTo(0, smoothOpts);
+        return;
+      }
+      if (key === "End") {
+        instance.scrollTo(instance.limit, smoothOpts);
+        return;
+      }
+
+      let delta = 0;
+      if (key === "ArrowDown") delta = arrowStepPx();
+      else if (key === "ArrowUp") delta = -arrowStepPx();
+      else if (key === "PageDown") delta = pageStepPx();
+      else if (key === "PageUp") delta = -pageStepPx();
+
+      instance.scrollTo(instance.targetScroll + delta, smoothOpts);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
 
     const onTick = (time: number) => {
       instance.raf(time * 1000);
@@ -109,6 +183,7 @@ export function LenisScroll({
     gsap.ticker.lagSmoothing(0);
 
     return () => {
+      window.removeEventListener("keydown", onKeyDown);
       hashTimeouts.forEach((t) => window.clearTimeout(t));
       document.removeEventListener("click", onHashLinkClick, true);
       gsap.ticker.remove(onTick);

@@ -33,7 +33,11 @@ export function SiteHeader() {
   const [workGalleryUnderHeader, setWorkGalleryUnderHeader] = useState(false);
   /** Home + About: frosted bar after scrolling so nav stays legible over busy content. */
   const [headerScrolled, setHeaderScrolled] = useState(false);
+  /** Home + About: tuck header away on scroll down; show again on scroll up / near top. */
+  const [headerRetracted, setHeaderRetracted] = useState(false);
   const root = useRef<HTMLElement>(null);
+  /** Avoid animating header “in” on first paint when already visible. */
+  const headerWasRetracted = useRef(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -230,6 +234,147 @@ export function SiteHeader() {
     };
   }, [surfaceScrollRoute, workRoute, immersive, lenis]);
 
+  const hideHeaderOnScrollRoute = home || aboutRoute;
+
+  useEffect(() => {
+    if (menuOpen) {
+      setHeaderRetracted(false);
+    }
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!hideHeaderOnScrollRoute || immersive || workRoute || shouldReduceMotion()) {
+      setHeaderRetracted(false);
+      return;
+    }
+
+    const TOP_ALWAYS_VISIBLE = 40;
+    const MIN_BEFORE_HIDE = 64;
+    const DELTA_MIN = 5;
+
+    const scrollY = () =>
+      lenis ? lenis.scroll : window.scrollY || document.documentElement.scrollTop || 0;
+
+    let lastY = scrollY();
+
+    const onScroll = () => {
+      if (menuOpen) {
+        setHeaderRetracted(false);
+        lastY = scrollY();
+        return;
+      }
+
+      const y = scrollY();
+      const dy = y - lastY;
+      lastY = y;
+
+      if (y <= TOP_ALWAYS_VISIBLE) {
+        setHeaderRetracted(false);
+        return;
+      }
+
+      if (y < MIN_BEFORE_HIDE) {
+        setHeaderRetracted(false);
+        return;
+      }
+
+      if (Math.abs(dy) < DELTA_MIN) return;
+
+      if (dy > 0) {
+        setHeaderRetracted(true);
+      } else {
+        setHeaderRetracted(false);
+      }
+    };
+
+    onScroll();
+
+    if (lenis) {
+      return lenis.on("scroll", onScroll);
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [hideHeaderOnScrollRoute, immersive, workRoute, lenis, menuOpen]);
+
+  /** Home / About: animated hide-on-scroll (slide + soft blur + opacity). */
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+
+    const dock =
+      hideHeaderOnScrollRoute && !immersive && !workRoute && !shouldReduceMotion();
+
+    if (!dock) {
+      gsap.killTweensOf(el);
+      gsap.set(el, { clearProps: "transform,opacity,filter" });
+      el.style.pointerEvents = "";
+      el.removeAttribute("aria-hidden");
+      headerWasRetracted.current = false;
+      return;
+    }
+
+    if (menuOpen) {
+      headerWasRetracted.current = false;
+      gsap.killTweensOf(el);
+      gsap.to(el, {
+        y: 0,
+        opacity: 1,
+        filter: "blur(0px)",
+        duration: 0.38,
+        ease: "power2.out",
+        overwrite: "auto",
+        onComplete: () => {
+          el.style.pointerEvents = "";
+          el.removeAttribute("aria-hidden");
+        },
+      });
+      return;
+    }
+
+    if (headerRetracted) {
+      gsap.to(el, {
+        y: () => -el.offsetHeight,
+        opacity: 0.82,
+        filter: "blur(2px)",
+        duration: 0.52,
+        ease: "power3.in",
+        overwrite: "auto",
+        onComplete: () => {
+          el.style.pointerEvents = "none";
+          el.setAttribute("aria-hidden", "true");
+        },
+      });
+      headerWasRetracted.current = true;
+      return;
+    }
+
+    el.style.pointerEvents = "auto";
+    el.removeAttribute("aria-hidden");
+
+    const animateIn = headerWasRetracted.current;
+    headerWasRetracted.current = false;
+
+    if (animateIn) {
+      gsap.to(el, {
+        y: 0,
+        opacity: 1,
+        filter: "blur(0px)",
+        duration: 0.58,
+        ease: "power2.out",
+        overwrite: "auto",
+      });
+    } else {
+      gsap.set(el, { y: 0, opacity: 1, filter: "none" });
+    }
+  }, [
+    headerRetracted,
+    hideHeaderOnScrollRoute,
+    immersive,
+    menuOpen,
+    workRoute,
+  ]);
+
   useGSAP(
     () => {
       registerGsapPlugins();
@@ -288,7 +433,8 @@ export function SiteHeader() {
     <>
       <header
         ref={root}
-        className={`fixed top-0 right-0 left-0 z-50 w-full pt-[env(safe-area-inset-top)] transition-[border-color,background-color,box-shadow,backdrop-filter] duration-300 ease-out ${headerBar}`}
+        aria-hidden={headerRetracted && hideHeaderOnScrollRoute && !menuOpen}
+        className={`fixed top-0 right-0 left-0 z-50 w-full pt-[env(safe-area-inset-top)] will-change-transform transition-[border-color,background-color,box-shadow,backdrop-filter] duration-300 ease-out ${headerBar}`}
       >
         <div
           className={`header-inner mx-auto flex max-w-6xl items-center justify-between gap-3 px-[max(1rem,env(safe-area-inset-left))] py-3 md:gap-4 md:px-8 md:py-4${home && headerEntrance ? " header-inner--entrance" : ""}`}

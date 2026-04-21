@@ -235,7 +235,8 @@ export function ContactSection() {
   return (
     <section
       ref={root}
-      className="relative flex flex-1 flex-col justify-center overflow-hidden border-t border-[var(--border)] bg-[color-mix(in_oklab,var(--background)_88%,var(--surface-elevated))] px-6 py-12 md:px-14 md:py-16"
+      data-home-section="contact"
+      className="relative flex min-h-[100dvh] flex-col justify-center overflow-hidden border-t border-[var(--border)] bg-[color-mix(in_oklab,var(--background)_88%,var(--surface-elevated))] px-6 py-12 md:px-14 md:py-16"
     >
       {/* Soft wash + grain */}
       <div

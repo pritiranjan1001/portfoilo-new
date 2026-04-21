@@ -134,8 +134,9 @@ export function PracticeSection() {
     <section
       ref={root}
       id="practice"
+      data-home-section="practice"
       tabIndex={-1}
-      className="relative flex flex-col items-center overflow-hidden border-t border-[var(--border)] bg-[var(--surface-elevated)] px-6 py-16 md:px-14 md:py-24 outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-elevated)]"
+      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-x-hidden overflow-y-auto overscroll-y-contain border-t border-[var(--border)] bg-[var(--surface-elevated)] px-6 py-12 outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-elevated)] md:overflow-y-visible md:px-14 md:py-16"
     >
       <div className="relative w-full max-w-6xl">
         <header className="max-w-3xl [perspective:1000px]">

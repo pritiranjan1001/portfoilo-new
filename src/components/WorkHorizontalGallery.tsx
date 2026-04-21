@@ -330,8 +330,15 @@ export function WorkHorizontalGallery() {
 
     const applyScroll = (deltaY: number) => {
       if (lenis) {
-        const next = Math.max(0, Math.min(lenis.limit, lenis.scroll + deltaY));
-        lenis.scrollTo(next, { programmatic: true });
+        const next = Math.max(0, Math.min(lenis.limit, lenis.targetScroll + deltaY));
+        const o = lenis.options;
+        lenis.scrollTo(next, {
+          programmatic: false,
+          lerp: o.lerp,
+          ...(typeof o.duration === "number" && typeof o.easing === "function"
+            ? { duration: o.duration, easing: o.easing }
+            : {}),
+        });
       } else {
         window.scrollBy({ top: deltaY, left: 0, behavior: "auto" });
       }

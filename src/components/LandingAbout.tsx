@@ -115,7 +115,8 @@ export function LandingAbout() {
     <section
       ref={root}
       id="about"
-      className="border-t border-[var(--border)] px-6 py-24 md:px-14 md:py-32"
+      data-home-section="about"
+      className="flex min-h-[100dvh] flex-col justify-center border-t border-[var(--border)] px-6 py-16 md:box-border md:px-14 md:py-24"
     >
       <div className="mx-auto max-w-3xl">
         <p className="landing-about-eyebrow font-mono text-xs uppercase tracking-[0.28em] text-[var(--accent)]">
