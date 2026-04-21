@@ -52,11 +52,12 @@ function WorkSlideDetails({
     ? "max-h-[min(52dvh,28rem)] overflow-y-auto md:max-h-[min(58dvh,32rem)] max-md:max-h-none max-md:overflow-visible"
     : "max-h-none overflow-visible";
 
+  const selection = horizontal ? "select-none" : "select-text";
+
   return (
     <div
-      data-no-gallery-drag
       data-lenis-prevent
-      className={`w-full select-text overscroll-y-contain pr-1 [scrollbar-color:rgba(255,255,255,0.25)_transparent] [scrollbar-width:thin] ${scrollShell} ${
+      className={`w-full ${selection} overscroll-y-contain pr-1 [scrollbar-color:rgba(255,255,255,0.25)_transparent] [scrollbar-width:thin] ${scrollShell} ${
         centered
           ? "mx-auto max-w-5xl text-center"
           : `max-w-md max-md:mx-auto max-md:text-center ${flip ? "md:ml-auto" : ""}`
@@ -429,8 +430,6 @@ export function WorkHorizontalGallery() {
 
       const onPointerDown = (e: PointerEvent) => {
         if (e.pointerType === "mouse" && e.button !== 0) return;
-        const t = e.target as HTMLElement | null;
-        if (t?.closest("[data-no-gallery-drag]")) return;
         dragActive = true;
         dragPointerId = e.pointerId;
         dragLastX = e.clientX;
@@ -457,9 +456,6 @@ export function WorkHorizontalGallery() {
        * and map them to vertical scroll — those would not move the page otherwise.
        */
       const onWheelGallery = (e: WheelEvent) => {
-        const t = e.target;
-        if (t instanceof HTMLElement && t.closest("[data-no-gallery-drag]")) return;
-
         const dx = e.deltaX;
         const dy = e.deltaY;
         const absX = Math.abs(dx);

@@ -143,7 +143,6 @@ function StorySlide({
 
   const body = (
     <div
-      data-no-gallery-drag
       data-lenis-prevent
       className="gallery-reveal w-full max-w-md"
     >
@@ -425,8 +424,6 @@ export function GalleryHorizontalStory() {
 
       const onPointerDown = (e: PointerEvent) => {
         if (e.pointerType === "mouse" && e.button !== 0) return;
-        const t = e.target as HTMLElement | null;
-        if (t?.closest("[data-no-gallery-drag]")) return;
         dragActive = true;
         dragPointerId = e.pointerId;
         dragLastX = e.clientX;
@@ -448,8 +445,6 @@ export function GalleryHorizontalStory() {
       outer.addEventListener("pointerdown", onPointerDown);
 
       const onWheelGallery = (e: WheelEvent) => {
-        const t = e.target;
-        if (t instanceof HTMLElement && t.closest("[data-no-gallery-drag]")) return;
         const dx = e.deltaX;
         const dy = e.deltaY;
         const absX = Math.abs(dx);
