@@ -192,8 +192,8 @@ export function SiteHeader() {
 
   const headerBar =
     immersive
-      ? "border-b border-black/[0.06] bg-[color-mix(in_oklab,#ede8de_88%,transparent)] backdrop-blur-md dark:border-white/[0.08] dark:bg-[color-mix(in_oklab,var(--background)_92%,transparent)]"
-      : "border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_90%,transparent)] backdrop-blur-md";
+      ? "border-b border-black/[0.06] bg-transparent dark:border-white/[0.08]"
+      : "border-b border-[var(--border)] bg-transparent";
 
   return (
     <>
