@@ -24,6 +24,8 @@ const HEADER_HOME_ENTRANCE_KEY = "pf-header-home-in";
 export function SiteHeader() {
   const pathname = usePathname();
   const immersive = pathname === "/gallery";
+  const workRoute = pathname === "/work";
+  const [workGalleryUnderHeader, setWorkGalleryUnderHeader] = useState(false);
   const root = useRef<HTMLElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -156,6 +158,40 @@ export function SiteHeader() {
     }
   }, [home]);
 
+  /** /work: light intro = default nav; horizontal gallery under fixed header = white nav + logo */
+  useEffect(() => {
+    if (!workRoute) {
+      setWorkGalleryUnderHeader(false);
+      return;
+    }
+
+    const HEADER_ZONE = 76;
+
+    const measure = () => {
+      const el = document.getElementById("work-gallery-pin");
+      if (!el) {
+        setWorkGalleryUnderHeader(false);
+        return;
+      }
+      const r = el.getBoundingClientRect();
+      setWorkGalleryUnderHeader(r.top < HEADER_ZONE && r.bottom > HEADER_ZONE);
+    };
+
+    measure();
+
+    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+
+    const ticker = () => measure();
+    gsap.ticker.add(ticker);
+
+    return () => {
+      window.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+      gsap.ticker.remove(ticker);
+    };
+  }, [workRoute]);
+
   useGSAP(
     () => {
       registerGsapPlugins();
@@ -186,20 +222,26 @@ export function SiteHeader() {
     { scope: root, dependencies: [home, headerEntrance] },
   );
 
+  const workOnDarkGallery = workRoute && workGalleryUnderHeader;
+
   const navTone = immersive
     ? "text-neutral-600 [&_a]:transition-colors [&_a]:duration-300 [&_a:hover]:text-neutral-900 dark:text-neutral-400 dark:[&_a:hover]:text-neutral-100"
-    : "text-[var(--muted)] [&_a]:transition-colors [&_a]:duration-300 [&_a:hover]:text-[var(--foreground)]";
+    : workOnDarkGallery
+      ? "[&_a]:transition-colors [&_a]:duration-300 text-white/92 [&_a]:text-white/92 [&_a:hover]:text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.85),0_0_24px_rgba(0,0,0,0.35)]"
+      : "text-[var(--muted)] [&_a]:transition-colors [&_a]:duration-300 [&_a:hover]:text-[var(--foreground)]";
 
   const headerBar =
     immersive
       ? "border-b border-black/[0.06] bg-transparent dark:border-white/[0.08]"
-      : "border-b border-[var(--border)] bg-transparent";
+      : workOnDarkGallery
+        ? "border-b border-white/[0.12] bg-gradient-to-b from-black/50 via-black/20 to-transparent backdrop-blur-[1px]"
+        : "border-b border-[var(--border)] bg-transparent";
 
   return (
     <>
       <header
         ref={root}
-        className={`fixed top-0 right-0 left-0 z-50 w-full pt-[env(safe-area-inset-top)] ${headerBar}`}
+        className={`fixed top-0 right-0 left-0 z-50 w-full pt-[env(safe-area-inset-top)] transition-[border-color,background] duration-300 ease-out ${headerBar}`}
       >
         <div
           className={`header-inner mx-auto flex max-w-6xl items-center justify-between gap-3 px-[max(1rem,env(safe-area-inset-left))] py-3 md:gap-4 md:px-8 md:py-4${home && headerEntrance ? " header-inner--entrance" : ""}`}
@@ -216,14 +258,22 @@ export function SiteHeader() {
               height={320}
               sizes="(max-width: 768px) min(50vw, 8.25rem), 8.25rem"
               quality={100}
-              className="block h-8 w-auto max-w-[min(8.25rem,50vw)] object-contain object-left invert transition-[filter] duration-300 dark:invert-0 sm:h-10 md:h-12"
+              className={`block h-8 w-auto max-w-[min(8.25rem,50vw)] object-contain object-left transition-[filter] duration-300 sm:h-10 md:h-12 ${
+                workOnDarkGallery
+                  ? "brightness-0 invert drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]"
+                  : "invert dark:invert-0"
+              }`}
               priority
             />
           </Link>
 
           <button
             type="button"
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_88%,transparent)] text-[var(--foreground)] md:hidden"
+            className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg md:hidden ${
+              workOnDarkGallery
+                ? "border border-white/30 bg-black/35 text-white shadow-[0_1px_3px_rgba(0,0,0,0.6)] backdrop-blur-sm"
+                : "border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_88%,transparent)] text-[var(--foreground)]"
+            }`}
             aria-expanded={menuOpen}
             aria-controls="site-mobile-nav"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -245,7 +295,15 @@ export function SiteHeader() {
                 {label}
               </Link>
             ))}
-            <ThemeToggle />
+            <span
+              className={
+                workOnDarkGallery
+                  ? "[&>div[role='group']]:border-white/35 [&>div[role='group']]:bg-black/40 [&>div[role='group']]:shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] [&_button]:text-white/95 [&_button]:ring-offset-black/50"
+                  : ""
+              }
+            >
+              <ThemeToggle />
+            </span>
           </nav>
         </div>
       </header>

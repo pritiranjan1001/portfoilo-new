@@ -510,7 +510,10 @@ export function WorkHorizontalGallery() {
       </div>
 
       {reduceMotion ? (
-        <div className="mt-12 bg-[var(--background)]">
+        <div
+          id="work-gallery-pin"
+          className="mt-12 bg-[var(--background)]"
+        >
           {site.works.map((work, wi) => (
             <WorkSlide
               key={`work-stack-${wi}`}
@@ -524,6 +527,7 @@ export function WorkHorizontalGallery() {
       ) : !isDesktop ? (
         <div className="relative">
           <div
+            id="work-gallery-pin"
             data-lenis-prevent
             className="flex h-[100dvh] w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
@@ -541,6 +545,7 @@ export function WorkHorizontalGallery() {
         </div>
       ) : (
         <div
+          id="work-gallery-pin"
           ref={outerRef}
           className={`relative mt-10 h-[100dvh] min-h-[100dvh] touch-pan-y overflow-hidden md:mt-14 ${
             chrome && !reduceMotion ? "cursor-none" : ""
