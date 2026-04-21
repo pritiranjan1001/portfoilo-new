@@ -6,7 +6,12 @@ import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { site } from "@/lib/site";
-import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
+import {
+  registerGsapPlugins,
+  registerSplitText,
+  shouldReduceMotion,
+  SplitText,
+} from "@/lib/gsap-plugins";
 
 export function LandingHero() {
   const root = useRef<HTMLElement>(null);
@@ -17,37 +22,122 @@ export function LandingHero() {
   useGSAP(
     () => {
       registerGsapPlugins();
+      registerSplitText(gsap);
       if (shouldReduceMotion()) return;
+
+      const el = root.current;
+      if (!el) return;
+
+      const taglineEl = el.querySelector<HTMLElement>(".landing-hero-tagline");
+      const nameLines = el.querySelectorAll<HTMLElement>(".landing-hero-name-line");
+      if (!taglineEl || nameLines.length === 0) return;
+
+      const taglineSplit = new SplitText(taglineEl, {
+        type: "words",
+        wordsClass: "landing-hero-smoke-w",
+      });
+      const nameSplits = [...nameLines].map(
+        (line) =>
+          new SplitText(line, {
+            type: "chars",
+            charsClass: "landing-hero-smoke-c",
+          }),
+      );
+
+      gsap.set(taglineEl, { opacity: 1, transform: "none" });
+      gsap.set([...nameLines], { opacity: 1, transform: "none" });
+
+      gsap.set(taglineSplit.words, {
+        display: "inline-block",
+        opacity: 0,
+        y: 18,
+        filter: "blur(14px)",
+        willChange: "transform, opacity, filter",
+      });
+
+      nameSplits.forEach((split) => {
+        split.chars.forEach((node, i) => {
+          gsap.set(node, {
+            display: "inline-block",
+            opacity: 0,
+            y: 12 + (i % 5) * 2,
+            x: (i % 2 === 0 ? -1 : 1) * (3 + (i % 4)),
+            filter: `blur(${10 + (i % 6) * 1.5}px)`,
+            willChange: "transform, opacity, filter",
+          });
+        });
+      });
+
+      gsap.set(
+        el.querySelectorAll<HTMLElement>(
+          ".landing-hero-cta a, .landing-hero-cta .landing-hero-cta-rule",
+        ),
+        { filter: "blur(8px)" },
+      );
 
       const tl = gsap.timeline({
         defaults: { ease: "power2.out" },
       });
 
-      tl.to(".landing-hero-tagline", {
+      tl.to(taglineSplit.words, {
         opacity: 1,
         y: 0,
-        duration: 0.75,
+        filter: "blur(0px)",
+        duration: 0.92,
+        stagger: {
+          each: 0.05,
+          from: "start",
+        },
+        ease: "sine.out",
       })
         .to(
-          ".landing-hero-name .landing-hero-name-line",
+          nameSplits[0].chars,
           {
             opacity: 1,
             y: 0,
-            duration: 0.82,
-            stagger: 0.11,
+            x: 0,
+            filter: "blur(0px)",
+            duration: 1.12,
+            stagger: {
+              each: 0.028,
+              from: "random",
+            },
+            ease: "power3.out",
           },
-          "-=0.45",
-        )
-        .to(
-          ".landing-hero-cta a, .landing-hero-cta .landing-hero-cta-rule",
+          "-=0.48",
+        );
+
+      if (nameSplits[1]) {
+        tl.to(
+          nameSplits[1].chars,
           {
             opacity: 1,
             y: 0,
-            duration: 0.55,
-            stagger: 0.07,
+            x: 0,
+            filter: "blur(0px)",
+            duration: 1.12,
+            stagger: {
+              each: 0.028,
+              from: "random",
+            },
+            ease: "power3.out",
           },
-          "-=0.5",
-        )
+          "-=0.58",
+        );
+      }
+
+      tl.to(
+        ".landing-hero-cta a, .landing-hero-cta .landing-hero-cta-rule",
+        {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          duration: 0.62,
+          stagger: 0.08,
+          ease: "power2.out",
+        },
+        "-=0.52",
+      )
         .to(
           ".landing-hero-portrait-motion",
           {
@@ -89,6 +179,11 @@ export function LandingHero() {
         yoyo: true,
         ease: "sine.inOut",
       });
+
+      return () => {
+        taglineSplit.revert();
+        nameSplits.forEach((s) => s.revert());
+      };
     },
     { scope: root },
   );
@@ -100,7 +195,7 @@ export function LandingHero() {
       className="relative w-full max-w-[100vw] overflow-x-clip bg-[var(--background)] text-[var(--foreground)] dark:bg-black dark:text-[color-mix(in_oklab,var(--foreground)_92%,white)]"
     >
       <div className="mx-auto grid min-h-[100svh] max-w-5xl grid-cols-1 items-center gap-6 px-[max(1rem,env(safe-area-inset-left))] pb-10 pt-[max(7rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] md:gap-16 md:px-14 md:pb-12 md:pt-32 lg:grid-cols-2 lg:gap-2 xl:gap-10">
-        <div className="flex min-w-0 flex-col justify-center">
+        <div className="landing-hero-copy flex min-w-0 flex-col justify-center [contain:layout_style]">
           <p className="landing-hero-tagline font-serif text-lg italic leading-relaxed text-[var(--muted)] md:text-xl">
             {site.tagline}
           </p>

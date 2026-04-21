@@ -4,7 +4,12 @@ import { useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { site } from "@/lib/site";
-import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
+import {
+  registerGsapPlugins,
+  registerSplitText,
+  shouldReduceMotion,
+  SplitText,
+} from "@/lib/gsap-plugins";
 
 function ContactScribble({ className }: { className?: string }) {
   return (
@@ -49,22 +54,149 @@ export function ContactSection() {
   useGSAP(
     () => {
       registerGsapPlugins();
+      registerSplitText(gsap);
       if (shouldReduceMotion()) return;
       const el = root.current;
       if (!el) return;
 
-      gsap.from(".contact-anim", {
-        scrollTrigger: {
-          trigger: el,
-          start: "top 80%",
-          toggleActions: "play none none none",
-        },
-        opacity: 0,
-        y: 28,
-        duration: 0.95,
-        stagger: 0.09,
-        ease: "power2.out",
+      const eyebrow = el.querySelector<HTMLElement>(".contact-eyebrow");
+      const line1 = el.querySelector<HTMLElement>(".contact-h2-line1");
+      const line2 = el.querySelector<HTMLElement>(".contact-h2-line2");
+      const accent = el.querySelector<HTMLElement>(".contact-split-accent");
+      const body = el.querySelector<HTMLElement>(".contact-body");
+      if (!eyebrow || !line1 || !line2 || !accent || !body) return;
+
+      const eyebrowSplit = new SplitText(eyebrow, {
+        type: "words",
+        wordsClass: "contact-split-w",
       });
+      const line1Split = new SplitText(line1, {
+        type: "words",
+        wordsClass: "contact-split-w",
+      });
+      const line2Split = new SplitText(line2, {
+        type: "words",
+        wordsClass: "contact-split-w",
+      });
+      const accentSplit = new SplitText(accent, {
+        type: "words",
+        wordsClass: "contact-split-w",
+      });
+      const bodySplit = new SplitText(body, {
+        type: "words",
+        wordsClass: "contact-split-w",
+      });
+
+      gsap.set(
+        [eyebrow, line1, line2, accent, body],
+        { opacity: 1 },
+      );
+      gsap.set(
+        [
+          ...eyebrowSplit.words,
+          ...line1Split.words,
+          ...line2Split.words,
+          ...accentSplit.words,
+          ...bodySplit.words,
+        ],
+        {
+          display: "inline-block",
+          willChange: "transform, opacity",
+        },
+      );
+
+      const st = {
+        trigger: el,
+        start: "top 80%",
+        toggleActions: "play none none none" as const,
+      };
+
+      const copy = gsap.timeline({
+        scrollTrigger: st,
+        defaults: { ease: "power2.out" },
+      });
+
+      copy
+        .fromTo(
+          eyebrowSplit.words,
+          { opacity: 0, y: 16 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.48,
+            stagger: 0.06,
+            ease: "power3.out",
+          },
+        )
+        .fromTo(
+          line1Split.words,
+          { opacity: 0, y: 22 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.55,
+            stagger: 0.07,
+            ease: "power3.out",
+          },
+          "-=0.2",
+        )
+        .fromTo(
+          line2Split.words,
+          { opacity: 0, y: 22 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.55,
+            stagger: 0.07,
+            ease: "power3.out",
+          },
+          "-=0.35",
+        )
+        .fromTo(
+          accentSplit.words,
+          { opacity: 0, y: 18 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.52,
+            stagger: 0.08,
+            ease: "power3.out",
+          },
+          "-=0.32",
+        )
+        .fromTo(
+          bodySplit.words,
+          { opacity: 0, y: 14 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.42,
+            stagger: 0.018,
+            ease: "power2.out",
+          },
+          "-=0.28",
+        )
+        .from(
+          ".contact-status",
+          {
+            opacity: 0,
+            y: 10,
+            duration: 0.48,
+            ease: "power2.out",
+          },
+          "-=0.22",
+        )
+        .from(
+          ".contact-rail .contact-anim",
+          {
+            opacity: 0,
+            y: 26,
+            duration: 0.75,
+            stagger: 0.1,
+            ease: "power2.out",
+          },
+          "-=0.15",
+        );
 
       gsap.from(".contact-scribble-svg", {
         scrollTrigger: {
@@ -78,6 +210,14 @@ export function ContactSection() {
         duration: 1.25,
         ease: "power3.out",
       });
+
+      return () => {
+        eyebrowSplit.revert();
+        line1Split.revert();
+        line2Split.revert();
+        accentSplit.revert();
+        bodySplit.revert();
+      };
     },
     { scope: root },
   );
@@ -119,15 +259,15 @@ export function ContactSection() {
 
       <div className="relative z-[1] mx-auto grid max-w-6xl gap-14 lg:grid-cols-12 lg:gap-10 lg:gap-y-16">
         <div className="lg:col-span-6">
-          <p className="contact-anim font-mono text-xs uppercase tracking-[0.32em] text-[var(--accent)]">
+          <p className="contact-eyebrow font-mono text-xs uppercase tracking-[0.32em] text-[var(--accent)]">
             Contact us
           </p>
-          <h2 className="contact-anim mt-5 font-display text-[clamp(1.85rem,4.2vw,3.35rem)] font-semibold leading-[1.05] tracking-tight text-[var(--foreground)]">
-            <span className="block">Collaborations,</span>
-            <span className="block">commissions,</span>
+          <h2 className="mt-5 font-display text-[clamp(1.85rem,4.2vw,3.35rem)] font-semibold leading-[1.05] tracking-tight text-[var(--foreground)]">
+            <span className="contact-h2-line1 block">Collaborations,</span>
+            <span className="contact-h2-line2 block">commissions,</span>
             <span className="mt-1 block font-normal">
               <span className="relative inline-block">
-                <span className="font-serif italic text-[var(--accent)]">
+                <span className="contact-split-accent font-serif italic text-[var(--accent)]">
                   conversations
                 </span>
                 <span
@@ -137,11 +277,11 @@ export function ContactSection() {
               </span>
             </span>
           </h2>
-          <p className="contact-anim mt-8 max-w-md text-[15px] leading-relaxed text-[var(--muted)] md:text-base">
+          <p className="contact-body mt-8 max-w-md text-[15px] leading-relaxed text-[var(--muted)] md:text-base">
             Open to exhibitions, editorial projects, readings, and unusual ideas.{" "}
             <span className="whitespace-nowrap">{site.location}</span>
           </p>
-          <p className="contact-anim mt-6 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
+          <p className="contact-status mt-6 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
             <span
               className="inline-block size-1.5 rounded-full bg-[var(--accent)]"
               aria-hidden
@@ -150,8 +290,8 @@ export function ContactSection() {
           </p>
         </div>
 
-        <div className="contact-anim flex flex-col justify-center gap-10 lg:col-span-5 lg:col-start-8">
-          <div className="relative rounded-2xl border border-[var(--border)] bg-[var(--surface)]/90 p-6 shadow-[0_24px_60px_-28px_color-mix(in_oklab,var(--foreground)_18%,transparent)] backdrop-blur-sm dark:bg-[var(--surface)]/80 md:p-8">
+        <div className="contact-rail flex flex-col justify-center gap-10 lg:col-span-5 lg:col-start-8">
+          <div className="contact-anim relative rounded-2xl border border-[var(--border)] bg-[var(--surface)]/90 p-6 shadow-[0_24px_60px_-28px_color-mix(in_oklab,var(--foreground)_18%,transparent)] backdrop-blur-sm dark:bg-[var(--surface)]/80 md:p-8">
             <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
               Write
             </p>
@@ -178,7 +318,7 @@ export function ContactSection() {
             </div>
           </div>
 
-          <div>
+          <div className="contact-anim">
             <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
               Elsewhere
             </p>

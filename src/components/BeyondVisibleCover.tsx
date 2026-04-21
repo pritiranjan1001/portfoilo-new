@@ -4,7 +4,13 @@ import Link from "next/link";
 import { useId, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import {
+  registerGsapPlugins,
+  registerSplitText,
+  shouldReduceMotion,
+  SplitText,
+} from "@/lib/gsap-plugins";
 
 function HeroLinePatterns({ className }: { className?: string }) {
   return (
@@ -306,15 +312,278 @@ export function BeyondVisibleCover() {
 
       if (grad) gsap.set(grad, { backgroundPosition: "0% 50%" });
 
-      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-      tl.to(".bvc-kicker", { opacity: 1, y: 0, duration: 0.7 }, 0.1)
+      const kickerEl = el.querySelector<HTMLElement>(".bvc-kicker");
+      const line1El = el.querySelector<HTMLElement>(".bvc-line1");
+      const line2El = el.querySelector<HTMLElement>(".bvc-line2");
+      const tagL1 = el.querySelector<HTMLElement>(".bvc-tag-line1");
+      const tagL2 = el.querySelector<HTMLElement>(".bvc-tag-line2");
+      const ctaWords = el.querySelector<HTMLElement>(".bvc-cta-words");
+      const capEl = el.querySelector<HTMLElement>(".bvc-bottom-cap");
+      const tagRoot = el.querySelector<HTMLElement>(".bvc-tag");
+      const ctaRoot = el.querySelector<HTMLElement>(".bvc-cta");
+      if (
+        !kickerEl ||
+        !line1El ||
+        !line2El ||
+        !tagL1 ||
+        !tagL2 ||
+        !ctaWords ||
+        !capEl ||
+        !tagRoot ||
+        !ctaRoot
+      ) {
+        return;
+      }
+
+      registerSplitText(gsap);
+
+      const kickerSplit = new SplitText(kickerEl, {
+        type: "chars",
+        charsClass: "bvc-split-c",
+      });
+      const line1Split = new SplitText(line1El, {
+        type: "chars",
+        charsClass: "bvc-line1-c",
+      });
+      const line2Split = new SplitText(line2El, {
+        type: "chars",
+        charsClass: "bvc-line2-c",
+      });
+      const tag1Split = new SplitText(tagL1, {
+        type: "words",
+        wordsClass: "bvc-split-w",
+      });
+      const tag2Split = new SplitText(tagL2, {
+        type: "words",
+        wordsClass: "bvc-split-w",
+      });
+      const ctaSplit = new SplitText(ctaWords, {
+        type: "words",
+        wordsClass: "bvc-split-w",
+      });
+      const capSplit = new SplitText(capEl, {
+        type: "words",
+        wordsClass: "bvc-split-w",
+      });
+
+      gsap.set(
+        [
+          ...kickerSplit.chars,
+          ...line1Split.chars,
+          ...line2Split.chars,
+          ...tag1Split.words,
+          ...tag2Split.words,
+          ...ctaSplit.words,
+          ...capSplit.words,
+        ],
+        {
+          display: "inline-block",
+          willChange: "transform, opacity, filter",
+        },
+      );
+
+      gsap.set(line1El, { transformStyle: "preserve-3d" });
+      gsap.set(line2El, { transformStyle: "preserve-3d" });
+
+      kickerSplit.chars.forEach((node, i) => {
+        gsap.set(node, {
+          opacity: 0,
+          y: 36,
+          scale: 0.35,
+          rotateZ: (i % 2 === 0 ? -1 : 1) * (10 + (i % 4) * 3),
+          filter: "blur(10px)",
+        });
+      });
+
+      gsap.set(line1Split.chars, {
+        opacity: 0,
+        x: -36,
+        rotateY: 72,
+        rotateZ: -5,
+        transformOrigin: "left center",
+        filter: "blur(7px)",
+      });
+      gsap.set(line2Split.chars, {
+        opacity: 0,
+        x: 36,
+        rotateY: -72,
+        rotateZ: 5,
+        transformOrigin: "right center",
+        filter: "blur(7px)",
+      });
+      gsap.set(tag1Split.words, {
+        opacity: 0,
+        y: 22,
+        skewX: -10,
+        filter: "blur(5px)",
+      });
+      gsap.set(tag2Split.words, {
+        opacity: 0,
+        y: 22,
+        skewX: 10,
+        filter: "blur(5px)",
+      });
+      gsap.set(ctaSplit.words, {
+        opacity: 0,
+        y: 28,
+        scale: 0.82,
+        rotateZ: -6,
+      });
+      gsap.set(capSplit.words, {
+        opacity: 0,
+        y: 16,
+        rotateZ: -5,
+        filter: "blur(5px)",
+      });
+
+      const tl = gsap.timeline({
+        defaults: { ease: "power2.out" },
+        scrollTrigger: {
+          trigger: el,
+          start: "top 82%",
+          toggleActions: "play none none none",
+          once: true,
+        },
+      });
+
+      tl.set(kickerEl, { opacity: 1, transform: "none" }, 0.04)
+        .to(
+          kickerSplit.chars,
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            rotateZ: 0,
+            filter: "blur(0px)",
+            duration: 0.55,
+            stagger: {
+              each: 0.038,
+              from: "random",
+            },
+            ease: "back.out(1.55)",
+          },
+          0.1,
+        )
         .to(".bvc-step", { opacity: 0.55, y: 0, duration: 0.55 }, 0.15)
-        .to(".bvc-line1", { opacity: 1, y: 0, duration: 0.75 }, 0.2)
-        .to(".bvc-eye", { opacity: 1, scale: 1, duration: 0.95, ease: "power3.out" }, 0.35)
-        .to(".bvc-line2", { opacity: 1, y: 0, duration: 0.75 }, 0.45)
-        .to(".bvc-tag", { opacity: 1, y: 0, duration: 0.65 }, 0.55)
-        .to(".bvc-cta", { opacity: 1, y: 0, duration: 0.65 }, 0.65)
-        .to(".bvc-bottom-cap", { opacity: 0.85, y: 0, duration: 0.6 }, 0.7);
+        .set(line1El, { opacity: 1, transform: "none" }, 0.17)
+        .to(
+          line1Split.chars,
+          {
+            opacity: 1,
+            x: 0,
+            rotateY: 0,
+            rotateZ: 0,
+            filter: "blur(0px)",
+            duration: 0.78,
+            stagger: {
+              each: 0.034,
+            },
+            ease: "expo.out",
+          },
+          0.18,
+        )
+        .to(
+          ".bvc-eye",
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 0.95,
+            ease: "power3.out",
+          },
+          0.35,
+        )
+        .set(line2El, { opacity: 1, transform: "none" }, 0.41)
+        .to(
+          line2Split.chars,
+          {
+            opacity: 1,
+            x: 0,
+            rotateY: 0,
+            rotateZ: 0,
+            filter: "blur(0px)",
+            duration: 0.78,
+            stagger: {
+              each: 0.034,
+            },
+            ease: "expo.out",
+          },
+          0.42,
+        )
+        .set(tagRoot, { opacity: 1, transform: "none" }, 0.51)
+        .to(
+          tag1Split.words,
+          {
+            opacity: 1,
+            y: 0,
+            skewX: 0,
+            filter: "blur(0px)",
+            duration: 0.5,
+            stagger: 0.075,
+            ease: "power3.out",
+          },
+          0.52,
+        )
+        .to(
+          tag2Split.words,
+          {
+            opacity: 1,
+            y: 0,
+            skewX: 0,
+            filter: "blur(0px)",
+            duration: 0.5,
+            stagger: 0.075,
+            ease: "power3.out",
+          },
+          0.6,
+        )
+        .set(ctaRoot, { opacity: 1, transform: "none" }, 0.61)
+        .to(
+          ctaSplit.words,
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            rotateZ: 0,
+            duration: 0.58,
+            stagger: {
+              each: 0.09,
+              from: "center",
+            },
+            ease: "back.out(1.35)",
+          },
+          0.62,
+        )
+        .set(capEl, { opacity: 1, transform: "none" }, 0.67)
+        .to(
+          capSplit.words,
+          {
+            opacity: 0.85,
+            y: 0,
+            rotateZ: 0,
+            filter: "blur(0px)",
+            duration: 0.55,
+            stagger: {
+              amount: 0.42,
+              from: "center",
+            },
+            ease: "power2.inOut",
+          },
+          0.68,
+        );
+
+      const textSplits = [
+        kickerSplit,
+        line1Split,
+        line2Split,
+        tag1Split,
+        tag2Split,
+        ctaSplit,
+        capSplit,
+      ];
+
+      requestAnimationFrame(() => {
+        ScrollTrigger.refresh();
+      });
 
       const floatTween = gsap.to(".bvc-eye-inner", {
         y: -4,
@@ -391,6 +660,7 @@ export function BeyondVisibleCover() {
 
       return () => {
         tl.kill();
+        textSplits.forEach((s) => s.revert());
         floatTween.kill();
         gradTween?.kill();
         shimmerTween.kill();
@@ -484,22 +754,22 @@ export function BeyondVisibleCover() {
       </span>
 
       {/* Hero: stacked on mobile (see beyond / eye / the visible); horizontal row from md */}
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden px-2 py-8 sm:px-4 md:py-10">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center overflow-x-clip overflow-y-visible px-2 py-8 sm:px-4 md:py-10">
         <div className="pointer-events-none absolute inset-0 z-0">
           <HeroLinePatterns className="mx-auto h-full max-h-[min(100%,26rem)] w-full" />
         </div>
-        <div className="relative z-10 mx-auto flex w-full max-w-[min(100%,90rem)] flex-col items-center justify-center gap-4 sm:gap-5 md:flex-row md:flex-nowrap md:gap-8 lg:gap-12">
-          <h2 className="bvc-line1 w-full min-w-0 text-center font-display text-[clamp(1.05rem,5.5vw+0.5rem,2.75rem)] font-bold leading-tight tracking-[-0.02em] text-[var(--foreground)] md:flex-1 md:whitespace-nowrap md:text-right md:text-[clamp(0.8rem,3.2vw+0.55rem,3.75rem)] md:leading-none">
+        <div className="bvc-hero-type relative z-10 mx-auto flex w-full max-w-[min(100%,90rem)] flex-col items-center justify-center gap-4 sm:gap-5 [perspective:min(1100px,92vw)] [transform-style:preserve-3d] md:flex-row md:flex-nowrap md:gap-8 lg:gap-12">
+          <h2 className="bvc-line1 w-full min-w-0 text-center font-display text-[clamp(1.05rem,5.5vw+0.5rem,2.75rem)] font-bold leading-tight tracking-[-0.02em] text-[var(--foreground)] [transform-style:preserve-3d] md:flex-1 md:whitespace-nowrap md:text-right md:text-[clamp(0.8rem,3.2vw+0.55rem,3.75rem)] md:leading-none">
             see beyond
           </h2>
 
-          <div className="bvc-eye relative shrink-0 py-1 md:py-0">
+          <div className="bvc-eye relative shrink-0 py-1 md:py-0 [transform:translateZ(24px)]">
             <div className="bvc-eye-inner will-change-transform">
               <EyeMark className="mx-auto w-[clamp(5.25rem,42vw,11rem)] text-[var(--foreground)] md:w-[clamp(4.5rem,26vw,18.5rem)]" />
             </div>
           </div>
 
-          <h2 className="bvc-line2 w-full min-w-0 text-center font-display text-[clamp(1.05rem,5.5vw+0.5rem,2.75rem)] font-bold leading-tight tracking-[-0.02em] text-[var(--foreground)] md:flex-1 md:whitespace-nowrap md:text-left md:text-[clamp(0.8rem,3.2vw+0.55rem,3.75rem)] md:leading-none">
+          <h2 className="bvc-line2 w-full min-w-0 text-center font-display text-[clamp(1.05rem,5.5vw+0.5rem,2.75rem)] font-bold leading-tight tracking-[-0.02em] text-[var(--foreground)] [transform-style:preserve-3d] md:flex-1 md:whitespace-nowrap md:text-left md:text-[clamp(0.8rem,3.2vw+0.55rem,3.75rem)] md:leading-none">
             the visible
           </h2>
         </div>
@@ -508,10 +778,10 @@ export function BeyondVisibleCover() {
       <div className="relative z-10 mt-auto flex w-full flex-shrink-0 flex-col gap-8 pb-8 pt-6 md:flex-row md:items-end md:justify-between md:gap-10 md:px-2 md:pb-10 md:pt-8">
         <div className="bvc-tag order-2 flex w-full justify-center md:order-1 md:max-w-[13rem] md:justify-start md:pb-0.5">
           <div className="flex flex-col items-center gap-2 text-center md:items-start md:gap-2.5 md:text-left">
-            <p className="font-mono text-[11px] uppercase leading-snug tracking-[0.28em] text-[var(--foreground)] md:text-xs md:tracking-[0.32em]">
+            <p className="bvc-tag-line1 font-mono text-[11px] uppercase leading-snug tracking-[0.28em] text-[var(--foreground)] md:text-xs md:tracking-[0.32em]">
               light bends
             </p>
-            <p className="font-mono text-[11px] uppercase leading-snug tracking-[0.28em] text-[var(--muted)] md:text-xs md:tracking-[0.32em]">
+            <p className="bvc-tag-line2 font-mono text-[11px] uppercase leading-snug tracking-[0.28em] text-[var(--muted)] md:text-xs md:tracking-[0.32em]">
               meaning follows
             </p>
           </div>
@@ -523,7 +793,7 @@ export function BeyondVisibleCover() {
               href="#about"
               className="group inline-flex flex-col items-center gap-2 font-display text-base font-medium tracking-wide text-[var(--foreground)] md:text-lg"
             >
-              <span className="border-b-2 border-[var(--foreground)] pb-1 transition-colors group-hover:border-[var(--accent)] group-hover:text-[var(--accent)]">
+              <span className="bvc-cta-words border-b-2 border-[var(--foreground)] pb-1 transition-colors group-hover:border-[var(--accent)] group-hover:text-[var(--accent)]">
                 Discover words
               </span>
             </Link>

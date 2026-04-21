@@ -4,7 +4,12 @@ import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { site } from "@/lib/site";
-import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
+import {
+  registerGsapPlugins,
+  registerSplitText,
+  shouldReduceMotion,
+  SplitText,
+} from "@/lib/gsap-plugins";
 
 export function LandingAbout() {
   const root = useRef<HTMLElement>(null);
@@ -12,10 +17,44 @@ export function LandingAbout() {
   useGSAP(
     () => {
       registerGsapPlugins();
+      registerSplitText(gsap);
       if (shouldReduceMotion()) return;
 
       const section = root.current;
       if (!section) return;
+
+      const eyebrow = section.querySelector<HTMLElement>(
+        ".landing-about-eyebrow",
+      );
+      const desc = section.querySelector<HTMLElement>(".landing-about-desc");
+      const quote = section.querySelector<HTMLElement>(".landing-about-quote");
+      if (!eyebrow || !desc || !quote) return;
+
+      const eyebrowSplit = new SplitText(eyebrow, {
+        type: "words",
+        wordsClass: "landing-about-w",
+      });
+      const descSplit = new SplitText(desc, {
+        type: "words",
+        wordsClass: "landing-about-w",
+      });
+      const quoteSplit = new SplitText(quote, {
+        type: "words",
+        wordsClass: "landing-about-w",
+      });
+
+      gsap.set([eyebrow, desc, quote], { opacity: 1 });
+      gsap.set(
+        [
+          ...eyebrowSplit.words,
+          ...descSplit.words,
+          ...quoteSplit.words,
+        ],
+        {
+          display: "inline-block",
+          willChange: "transform, opacity",
+        },
+      );
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -26,29 +65,48 @@ export function LandingAbout() {
         defaults: { ease: "power2.out" },
       });
 
-      tl.from(".landing-about-eyebrow", {
-        opacity: 0,
-        y: 20,
-        duration: 0.55,
-      })
-        .from(
-          ".landing-about-desc",
+      tl.fromTo(
+        eyebrowSplit.words,
+        { opacity: 0, y: 18 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          stagger: 0.055,
+          ease: "power3.out",
+        },
+      )
+        .fromTo(
+          descSplit.words,
+          { opacity: 0, y: 22 },
           {
-            opacity: 0,
-            y: 32,
-            duration: 0.7,
+            opacity: 1,
+            y: 0,
+            duration: 0.48,
+            stagger: 0.022,
+            ease: "power2.out",
           },
-          "-=0.28",
+          "-=0.22",
         )
-        .from(
-          ".landing-about-quote",
+        .fromTo(
+          quoteSplit.words,
+          { opacity: 0, x: -10, y: 10 },
           {
-            opacity: 0,
-            x: -16,
-            duration: 0.72,
+            opacity: 1,
+            x: 0,
+            y: 0,
+            duration: 0.52,
+            stagger: 0.032,
+            ease: "power3.out",
           },
-          "-=0.42",
+          "-=0.35",
         );
+
+      return () => {
+        eyebrowSplit.revert();
+        descSplit.revert();
+        quoteSplit.revert();
+      };
     },
     { scope: root, dependencies: [] },
   );
