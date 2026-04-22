@@ -3,7 +3,11 @@
 import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
+import {
+  getNativeScrollScroller,
+  registerGsapPlugins,
+  shouldReduceMotion,
+} from "@/lib/gsap-plugins";
 
 /** Hairline read-progress; scrubbed to the page scroll. */
 export function ScrollProgress() {
@@ -15,12 +19,16 @@ export function ScrollProgress() {
     const b = bar.current;
     if (!b) return;
 
+    const scroller = getNativeScrollScroller();
+    if (!scroller) return;
+
     gsap.set(b, { scaleX: 0, transformOrigin: "0 50%" });
 
     gsap.to(b, {
       scaleX: 1,
       ease: "none",
       scrollTrigger: {
+        scroller,
         trigger: document.documentElement,
         start: "top top",
         end: "bottom bottom",

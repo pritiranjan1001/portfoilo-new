@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AboutPageView } from "@/components/AboutPageView";
+import { LenisScroll } from "@/components/LenisScroll";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function AboutPage() {
-  return <AboutPageView />;
+  return (
+    <LenisScroll>
+      <AboutPageView />
+    </LenisScroll>
+  );
 }

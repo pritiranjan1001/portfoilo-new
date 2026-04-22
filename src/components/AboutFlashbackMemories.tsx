@@ -11,9 +11,16 @@ import {
 } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { AboutFlashbackPatterns } from "@/components/AboutFlashbackPatterns";
+import { useLenisInstance } from "@/components/lenis-context";
+import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
 import { site } from "@/lib/site";
-import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
+import {
+  getNativeScrollScroller,
+  registerGsapPlugins,
+  shouldReduceMotion,
+} from "@/lib/gsap-plugins";
 
 type UnifiedSlide = {
   kind: "image" | "video";
@@ -65,6 +72,7 @@ export function AboutFlashbackMemories({
   const viewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const lenis = useLenisInstance();
   const { aboutFlashback } = site;
 
   const slides = useMemo(
@@ -138,15 +146,28 @@ export function AboutFlashbackMemories({
         return;
       }
 
+      if (!lenis) {
+        gsap.set([...head, intro, chrome], { opacity: 1, y: 0 });
+        return;
+      }
+
       gsap.set(head, { opacity: 0, y: 28 });
       gsap.set(intro, { opacity: 0, y: 20 });
       gsap.set(chrome, { opacity: 0, y: 40 });
 
+      const stScroller = getNativeScrollScroller();
+      if (!stScroller) {
+        gsap.set([...head, intro, chrome], { opacity: 1, y: 0 });
+        return;
+      }
+
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: root,
+          scroller: stScroller,
           start: "top 78%",
           once: true,
+          invalidateOnRefresh: true,
         },
         defaults: { ease: "power2.out" },
       });
@@ -155,12 +176,17 @@ export function AboutFlashbackMemories({
         .to(intro, { opacity: 1, y: 0, duration: 0.6 }, "-=0.35")
         .to(chrome, { opacity: 1, y: 0, duration: 0.85 }, "-=0.3");
 
+      requestAnimationFrame(() => {
+        ScrollTrigger.refresh();
+      });
+      refreshLenisAndScrollTrigger(lenis);
+
       return () => {
         tl.scrollTrigger?.kill();
         tl.kill();
       };
     },
-    { scope: sectionRef },
+    { scope: sectionRef, dependencies: [lenis] },
   );
 
   useEffect(() => {

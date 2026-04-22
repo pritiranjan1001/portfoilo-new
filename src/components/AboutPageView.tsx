@@ -1,9 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { AboutExperiencePatterns } from "@/components/AboutBackgroundPatterns";
 import { AboutFindInsidePatterns } from "@/components/AboutFindInsidePatterns";
 import { AboutFlashbackMemories } from "@/components/AboutFlashbackMemories";
@@ -11,8 +12,14 @@ import { AboutKickerStripPatterns } from "@/components/AboutKickerStripPatterns"
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { useLenisInstance } from "@/components/lenis-context";
+import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
 import { site } from "@/lib/site";
-import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
+import {
+  getNativeScrollScroller,
+  registerGsapPlugins,
+  shouldReduceMotion,
+} from "@/lib/gsap-plugins";
 
 function formatAboutDate(d: Date) {
   return d.toLocaleDateString("en-GB", {
@@ -37,6 +44,7 @@ export function AboutPageView() {
   const root = useRef<HTMLElement>(null);
   const bioExtraRef = useRef<HTMLDivElement>(null);
   const [bioExpanded, setBioExpanded] = useState(false);
+  const lenis = useLenisInstance();
   const stamped = formatAboutDate(new Date());
   const bioParas = site.aboutBioParagraphs;
   const bioFirst = bioParas[0];
@@ -48,11 +56,35 @@ export function AboutPageView() {
   const sectionEndRule =
     "mt-12 border-0 border-t border-[var(--border-strong)] md:mt-14";
 
+  /** Lenis routes clear `ScrollTrigger` defaults on unmount — refresh so /about reveals run. */
+  useLayoutEffect(() => {
+    registerGsapPlugins();
+    const id = requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   useGSAP(
     () => {
       registerGsapPlugins();
       const el = root.current;
       if (!el) return;
+      /**
+       * During client navigation, `LenisScroll` initializes in a layout effect *after* children
+       * register GSAP. If we hide first and proxy comes later, triggers can miss and stay hidden.
+       */
+      if (!lenis) {
+        const safe = el.querySelectorAll(
+          ".about-anim-kicker-item, .about-anim-h1-line, .about-anim-job, .about-anim-bio-line, .about-anim-bio-p, .about-anim-bio-toggle, .about-find-heading-line, .about-find-row",
+        );
+        gsap.set(safe, { opacity: 1, y: 0, clearProps: "transform" });
+        el.querySelectorAll<HTMLElement>(".about-find-line").forEach((line) => {
+          gsap.set(line, { scaleX: 1, clearProps: "transform" });
+        });
+        return;
+      }
+      const stScroller = getNativeScrollScroller();
 
       const kicker = el.querySelectorAll(".about-anim-kicker-item");
       const h1Lines = el.querySelectorAll(".about-anim-h1-line");
@@ -152,12 +184,14 @@ export function AboutPageView() {
         );
 
       let findTl: gsap.core.Timeline | undefined;
-      if (findBlock && findRows.length > 0) {
+      if (findBlock && findRows.length > 0 && stScroller) {
         const findTimeline = gsap.timeline({
           scrollTrigger: {
             trigger: findBlock,
+            scroller: stScroller,
             start: "top 82%",
             once: true,
+            invalidateOnRefresh: true,
           },
         });
         findTimeline.to(findHead, {
@@ -187,13 +221,18 @@ export function AboutPageView() {
         findTl = findTimeline;
       }
 
+      requestAnimationFrame(() => {
+        ScrollTrigger.refresh();
+      });
+      refreshLenisAndScrollTrigger(lenis);
+
       return () => {
         tl.kill();
         findTl?.scrollTrigger?.kill();
         findTl?.kill();
       };
     },
-    { scope: root },
+    { scope: root, dependencies: [lenis] },
   );
 
   useGSAP(
@@ -231,7 +270,7 @@ export function AboutPageView() {
       <SiteHeader />
       <main
         ref={root}
-        className="relative min-h-[100dvh] overflow-x-hidden bg-[var(--background)] pb-16 pt-20 md:pt-24"
+        className="relative min-h-[100dvh] overflow-x-hidden bg-[var(--background)] pb-0 pt-20 md:pt-24"
       >
         <div className="relative">
           <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-14">
