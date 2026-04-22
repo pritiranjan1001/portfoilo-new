@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import type Lenis from "lenis";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLenisInstance } from "@/components/lenis-context";
 import { site } from "@/lib/site";
@@ -250,6 +251,7 @@ export function SiteHeader() {
 
     const TOP_ALWAYS_VISIBLE = 40;
     const MIN_BEFORE_HIDE = 64;
+    /** Native scroll only: ignore tiny jitter. Lenis moves in sub-pixel steps per frame, so delta-based detection never fires. */
     const DELTA_MIN = 5;
 
     const scrollY = () =>
@@ -257,16 +259,42 @@ export function SiteHeader() {
 
     let lastY = scrollY();
 
-    const onScroll = () => {
+    const applyScrollIntent = (y: number, direction: 1 | -1 | 0) => {
       if (menuOpen) {
         setHeaderRetracted(false);
-        lastY = scrollY();
         return;
       }
 
+      if (y <= TOP_ALWAYS_VISIBLE) {
+        setHeaderRetracted(false);
+        return;
+      }
+
+      if (y < MIN_BEFORE_HIDE) {
+        setHeaderRetracted(false);
+        return;
+      }
+
+      if (direction === 1) {
+        setHeaderRetracted(true);
+      } else if (direction === -1) {
+        setHeaderRetracted(false);
+      }
+    };
+
+    const onLenisScroll = (L: Lenis) => {
+      applyScrollIntent(L.scroll, L.direction);
+    };
+
+    const onNativeScroll = () => {
       const y = scrollY();
       const dy = y - lastY;
       lastY = y;
+
+      if (menuOpen) {
+        setHeaderRetracted(false);
+        return;
+      }
 
       if (y <= TOP_ALWAYS_VISIBLE) {
         setHeaderRetracted(false);
@@ -287,14 +315,14 @@ export function SiteHeader() {
       }
     };
 
-    onScroll();
-
     if (lenis) {
-      return lenis.on("scroll", onScroll);
+      onLenisScroll(lenis);
+      return lenis.on("scroll", onLenisScroll);
     }
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    onNativeScroll();
+    window.addEventListener("scroll", onNativeScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onNativeScroll);
   }, [hideHeaderOnScrollRoute, immersive, workRoute, lenis, menuOpen]);
 
   /** Home / About: animated hide-on-scroll (slide + soft blur + opacity). */

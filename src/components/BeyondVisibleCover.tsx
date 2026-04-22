@@ -5,6 +5,8 @@ import { useId, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useLenisInstance } from "@/components/lenis-context";
+import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
 import {
   registerGsapPlugins,
   registerSplitText,
@@ -297,6 +299,7 @@ function EyeMark({ className }: { className?: string }) {
 export function BeyondVisibleCover() {
   const root = useRef<HTMLElement>(null);
   const layer = useRef<HTMLDivElement>(null);
+  const lenis = useLenisInstance();
 
   useGSAP(
     () => {
@@ -307,6 +310,11 @@ export function BeyondVisibleCover() {
       if (!el) return;
 
       if (reduce) {
+        return;
+      }
+
+      /** ScrollTrigger + pin/scrub must run after Lenis + scrollerProxy exist. */
+      if (!lenis) {
         return;
       }
 
@@ -342,12 +350,12 @@ export function BeyondVisibleCover() {
         charsClass: "bvc-split-c",
       });
       const line1Split = new SplitText(line1El, {
-        type: "chars",
-        charsClass: "bvc-line1-c",
+        type: "words",
+        wordsClass: "bvc-line1-w",
       });
       const line2Split = new SplitText(line2El, {
-        type: "chars",
-        charsClass: "bvc-line2-c",
+        type: "words",
+        wordsClass: "bvc-line2-w",
       });
       const tag1Split = new SplitText(tagL1, {
         type: "words",
@@ -369,8 +377,8 @@ export function BeyondVisibleCover() {
       gsap.set(
         [
           ...kickerSplit.chars,
-          ...line1Split.chars,
-          ...line2Split.chars,
+          ...line1Split.words,
+          ...line2Split.words,
           ...tag1Split.words,
           ...tag2Split.words,
           ...ctaSplit.words,
@@ -382,9 +390,6 @@ export function BeyondVisibleCover() {
         },
       );
 
-      gsap.set(line1El, { transformStyle: "preserve-3d" });
-      gsap.set(line2El, { transformStyle: "preserve-3d" });
-
       kickerSplit.chars.forEach((node, i) => {
         gsap.set(node, {
           opacity: 0,
@@ -395,21 +400,19 @@ export function BeyondVisibleCover() {
         });
       });
 
-      gsap.set(line1Split.chars, {
+      /** Headlines: parents stay opaque (globals); words scrub with scroll below. */
+      gsap.set([line1El, line2El], { opacity: 1, transform: "none" });
+      gsap.set(line1Split.words, {
         opacity: 0,
-        x: -36,
-        rotateY: 72,
-        rotateZ: -5,
-        transformOrigin: "left center",
-        filter: "blur(7px)",
+        yPercent: 108,
+        x: -10,
+        filter: "blur(14px)",
       });
-      gsap.set(line2Split.chars, {
+      gsap.set(line2Split.words, {
         opacity: 0,
-        x: 36,
-        rotateY: -72,
-        rotateZ: 5,
-        transformOrigin: "right center",
-        filter: "blur(7px)",
+        yPercent: 108,
+        x: 10,
+        filter: "blur(14px)",
       });
       gsap.set(tag1Split.words, {
         opacity: 0,
@@ -436,17 +439,131 @@ export function BeyondVisibleCover() {
         filter: "blur(5px)",
       });
 
-      const tl = gsap.timeline({
-        defaults: { ease: "power2.out" },
+      const patternSvg = el.querySelector<SVGElement>(".bvc-pattern-svg");
+      const drawEls = patternSvg?.querySelectorAll<SVGGeometryElement>(
+        ".bvc-path-draw",
+      );
+      if (drawEls?.length) {
+        drawEls.forEach((node) => {
+          const len = node.getTotalLength?.() ?? 0;
+          if (len > 0) {
+            gsap.set(node, {
+              strokeDasharray: len,
+              strokeDashoffset: len,
+            });
+          }
+        });
+      }
+
+      let patternLoopsStarted = false;
+      let patternMarch: gsap.core.Tween | undefined;
+      let patternDrift: gsap.core.Tween | undefined;
+
+      const floatTween = gsap.to(
+        el.querySelector<HTMLElement>(".bvc-eye-inner")!,
+        {
+          y: -4,
+          duration: 3.2,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+          paused: true,
+        },
+      );
+
+      /**
+       * Single pinned stage: section stays full-viewport while scroll scrubs the timeline.
+       * Eye first, then “see beyond” / “the visible”, then the rest.
+       */
+      const preludeTl = gsap.timeline({
+        defaults: { ease: "none" },
         scrollTrigger: {
+          scroller: document.documentElement,
           trigger: el,
-          start: "top 82%",
-          toggleActions: "play none none none",
-          once: true,
+          /** Flush to viewport top so the section fills the screen; header is fixed on top (z-50). */
+          start: "top top",
+          end: () =>
+            `+=${Math.max(Math.round(window.innerHeight * 3.65), 3100)}`,
+          pin: true,
+          pinSpacing: true,
+          anticipatePin: 1,
+          scrub: 0.45,
+          invalidateOnRefresh: true,
+          fastScrollEnd: true,
+          onUpdate(self) {
+            const p = self.progress;
+            if (p > 0.06 && p < 0.9) floatTween.play();
+            else floatTween.pause(0);
+            if (!patternLoopsStarted && p > 0.28 && patternSvg) {
+              patternLoopsStarted = true;
+              const marchNodes =
+                patternSvg.querySelectorAll<SVGGeometryElement>(
+                  ".bvc-path-march",
+                );
+              if (marchNodes.length) {
+                patternMarch = gsap.to(marchNodes, {
+                  strokeDashoffset: "-=80",
+                  duration: 22,
+                  repeat: -1,
+                  ease: "none",
+                });
+              }
+              const driftRoot = patternSvg.querySelector(".bvc-pattern-root");
+              if (driftRoot) {
+                patternDrift = gsap.to(driftRoot, {
+                  x: 5,
+                  y: -4,
+                  duration: 14,
+                  repeat: -1,
+                  yoyo: true,
+                  ease: "sine.inOut",
+                });
+              }
+            }
+          },
         },
       });
 
-      tl.set(kickerEl, { opacity: 1, transform: "none" }, 0.04)
+      preludeTl
+        .to(
+          ".bvc-eye",
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 1.85,
+            ease: "none",
+          },
+          0,
+        )
+        .to(
+          line1Split.words,
+          {
+            opacity: 1,
+            yPercent: 0,
+            x: 0,
+            filter: "blur(0px)",
+            duration: 0.5,
+            stagger: { each: 0.2, from: "start" },
+          },
+          ">0.1",
+        )
+        .to(
+          line2Split.words,
+          {
+            opacity: 1,
+            yPercent: 0,
+            x: 0,
+            filter: "blur(0px)",
+            duration: 0.5,
+            stagger: { each: 0.2, from: "start" },
+          },
+          ">0.05",
+        )
+        .to(
+          kickerEl,
+          { opacity: 1, transform: "none", duration: 0.15, ease: "none" },
+          ">0.12",
+        )
         .to(
           kickerSplit.chars,
           {
@@ -455,61 +572,37 @@ export function BeyondVisibleCover() {
             scale: 1,
             rotateZ: 0,
             filter: "blur(0px)",
-            duration: 0.55,
-            stagger: {
-              each: 0.038,
-              from: "random",
-            },
-            ease: "back.out(1.55)",
+            duration: 1.6,
+            stagger: { each: 0.055, from: "start" },
+            ease: "none",
           },
-          0.1,
-        )
-        .to(".bvc-step", { opacity: 0.55, y: 0, duration: 0.55 }, 0.15)
-        .set(line1El, { opacity: 1, transform: "none" }, 0.17)
-        .to(
-          line1Split.chars,
-          {
-            opacity: 1,
-            x: 0,
-            rotateY: 0,
-            rotateZ: 0,
-            filter: "blur(0px)",
-            duration: 0.78,
-            stagger: {
-              each: 0.034,
-            },
-            ease: "expo.out",
-          },
-          0.18,
+          ">0.05",
         )
         .to(
-          ".bvc-eye",
+          ".bvc-step",
+          { opacity: 0.55, y: 0, duration: 0.85, ease: "none" },
+          ">0.2",
+        );
+
+      if (drawEls?.length) {
+        preludeTl.to(
+          drawEls,
           {
-            opacity: 1,
-            scale: 1,
-            duration: 0.95,
-            ease: "power3.out",
+            strokeDashoffset: 0,
+            duration: 2,
+            stagger: 0.06,
+            ease: "none",
           },
-          0.35,
-        )
-        .set(line2El, { opacity: 1, transform: "none" }, 0.41)
+          ">0.15",
+        );
+      }
+
+      preludeTl
         .to(
-          line2Split.chars,
-          {
-            opacity: 1,
-            x: 0,
-            rotateY: 0,
-            rotateZ: 0,
-            filter: "blur(0px)",
-            duration: 0.78,
-            stagger: {
-              each: 0.034,
-            },
-            ease: "expo.out",
-          },
-          0.42,
+          tagRoot,
+          { opacity: 1, transform: "none", duration: 0.08, ease: "none" },
+          ">0.45",
         )
-        .set(tagRoot, { opacity: 1, transform: "none" }, 0.51)
         .to(
           tag1Split.words,
           {
@@ -517,11 +610,11 @@ export function BeyondVisibleCover() {
             y: 0,
             skewX: 0,
             filter: "blur(0px)",
-            duration: 0.5,
-            stagger: 0.075,
-            ease: "power3.out",
+            duration: 1,
+            stagger: 0.1,
+            ease: "none",
           },
-          0.52,
+          ">0.07",
         )
         .to(
           tag2Split.words,
@@ -530,13 +623,17 @@ export function BeyondVisibleCover() {
             y: 0,
             skewX: 0,
             filter: "blur(0px)",
-            duration: 0.5,
-            stagger: 0.075,
-            ease: "power3.out",
+            duration: 1,
+            stagger: 0.1,
+            ease: "none",
           },
-          0.6,
+          ">0.23",
         )
-        .set(ctaRoot, { opacity: 1, transform: "none" }, 0.61)
+        .to(
+          ctaRoot,
+          { opacity: 1, transform: "none", duration: 0.08, ease: "none" },
+          ">0.2",
+        )
         .to(
           ctaSplit.words,
           {
@@ -544,31 +641,29 @@ export function BeyondVisibleCover() {
             y: 0,
             scale: 1,
             rotateZ: 0,
-            duration: 0.58,
-            stagger: {
-              each: 0.09,
-              from: "center",
-            },
-            ease: "back.out(1.35)",
+            duration: 1.1,
+            stagger: { each: 0.12, from: "center" },
+            ease: "none",
           },
-          0.62,
+          ">0.05",
         )
-        .set(capEl, { opacity: 1, transform: "none" }, 0.67)
+        .to(
+          capEl,
+          { opacity: 1, transform: "none", duration: 0.08, ease: "none" },
+          ">0.15",
+        )
         .to(
           capSplit.words,
           {
-            opacity: 0.85,
+            opacity: 0.92,
             y: 0,
             rotateZ: 0,
             filter: "blur(0px)",
-            duration: 0.55,
-            stagger: {
-              amount: 0.42,
-              from: "center",
-            },
-            ease: "power2.inOut",
+            duration: 1.15,
+            stagger: { amount: 0.55, from: "center" },
+            ease: "none",
           },
-          0.68,
+          ">0.05",
         );
 
       const textSplits = [
@@ -581,17 +676,7 @@ export function BeyondVisibleCover() {
         capSplit,
       ];
 
-      requestAnimationFrame(() => {
-        ScrollTrigger.refresh();
-      });
-
-      const floatTween = gsap.to(".bvc-eye-inner", {
-        y: -4,
-        duration: 3.2,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
+      refreshLenisAndScrollTrigger(lenis);
 
       const gradTween = grad
         ? gsap.to(grad, {
@@ -611,65 +696,17 @@ export function BeyondVisibleCover() {
         ease: "sine.inOut",
       });
 
-      let patternDraw: gsap.core.Tween | undefined;
-      let patternMarch: gsap.core.Tween | undefined;
-      let patternDrift: gsap.core.Tween | undefined;
-      const patternSvg = el.querySelector(".bvc-pattern-svg");
-      if (patternSvg) {
-        const drawEls = patternSvg.querySelectorAll<SVGGeometryElement>(
-          ".bvc-path-draw",
-        );
-        drawEls.forEach((node) => {
-          const len = node.getTotalLength?.() ?? 0;
-          if (len > 0) {
-            gsap.set(node, {
-              strokeDasharray: len,
-              strokeDashoffset: len,
-            });
-          }
-        });
-        patternDraw = gsap.to(drawEls, {
-          strokeDashoffset: 0,
-          duration: 1.45,
-          stagger: 0.05,
-          ease: "power2.out",
-          delay: 0.18,
-        });
-        const marchEls =
-          patternSvg.querySelectorAll<SVGGeometryElement>(".bvc-path-march");
-        patternMarch = gsap.to(marchEls, {
-          strokeDashoffset: "-=80",
-          duration: 22,
-          repeat: -1,
-          ease: "none",
-          delay: 0.65,
-        });
-        const driftRoot = patternSvg.querySelector(".bvc-pattern-root");
-        if (driftRoot) {
-          patternDrift = gsap.to(driftRoot, {
-            x: 5,
-            y: -4,
-            duration: 14,
-            repeat: -1,
-            yoyo: true,
-            ease: "sine.inOut",
-            delay: 0.4,
-          });
-        }
-      }
-
       return () => {
-        tl.kill();
+        preludeTl.kill();
         textSplits.forEach((s) => s.revert());
         floatTween.kill();
         gradTween?.kill();
         shimmerTween.kill();
-        patternDraw?.kill();
         patternMarch?.kill();
         patternDrift?.kill();
       };
     },
-    { scope: root },
+    { scope: root, dependencies: [lenis] },
   );
 
   useGSAP(
@@ -728,7 +765,7 @@ export function BeyondVisibleCover() {
       ref={root}
       id="prelude"
       data-home-section="prelude"
-      className="relative flex min-h-[100dvh] flex-col overflow-hidden border-t border-[var(--border)] px-5 pb-10 pt-16 md:px-12 md:pb-12 md:pt-20"
+      className="relative flex min-h-[100dvh] flex-col overflow-hidden border-b border-[var(--border)] px-5 pb-10 pt-[max(4rem,calc(var(--site-header-height)+0.75rem))] md:px-12 md:pb-12 md:pt-[max(5rem,calc(var(--site-header-height)+1rem))]"
     >
       <div
         ref={layer}
@@ -750,7 +787,7 @@ export function BeyondVisibleCover() {
       <p className="bvc-kicker relative z-10 text-center font-mono text-[12px] uppercase tracking-[0.42em] text-[var(--foreground)] md:text-[13px]">
         morphology.
       </p>
-      <span className="bvc-step absolute right-5 top-16 font-mono text-[11px] tracking-widest text-[var(--muted)] md:right-12 md:top-20 md:text-xs">
+      <span className="bvc-step absolute right-5 top-[max(4rem,calc(var(--site-header-height)+0.5rem))] font-mono text-[11px] tracking-widest text-[var(--muted)] md:right-12 md:top-[max(5rem,calc(var(--site-header-height)+0.75rem))] md:text-xs">
         02 / 03
       </span>
 
@@ -760,7 +797,7 @@ export function BeyondVisibleCover() {
           <HeroLinePatterns className="mx-auto h-full max-h-[min(100%,26rem)] w-full" />
         </div>
         <div className="bvc-hero-type relative z-10 mx-auto flex w-full max-w-[min(100%,90rem)] flex-col items-center justify-center gap-4 sm:gap-5 [perspective:min(1100px,92vw)] [transform-style:preserve-3d] md:flex-row md:flex-nowrap md:gap-8 lg:gap-12">
-          <h2 className="bvc-line1 w-full min-w-0 text-center font-display text-[clamp(1.05rem,5.5vw+0.5rem,2.75rem)] font-bold leading-tight tracking-[-0.02em] text-[var(--foreground)] [transform-style:preserve-3d] md:flex-1 md:whitespace-nowrap md:text-right md:text-[clamp(0.8rem,3.2vw+0.55rem,3.75rem)] md:leading-none">
+          <h2 className="bvc-line1 w-full min-w-0 text-center font-display text-[clamp(1.05rem,5.5vw+0.5rem,2.75rem)] font-bold leading-tight tracking-[-0.02em] text-[var(--foreground)] md:flex-1 md:whitespace-nowrap md:text-right md:text-[clamp(0.8rem,3.2vw+0.55rem,3.75rem)] md:leading-none">
             see beyond
           </h2>
 
@@ -770,7 +807,7 @@ export function BeyondVisibleCover() {
             </div>
           </div>
 
-          <h2 className="bvc-line2 w-full min-w-0 text-center font-display text-[clamp(1.05rem,5.5vw+0.5rem,2.75rem)] font-bold leading-tight tracking-[-0.02em] text-[var(--foreground)] [transform-style:preserve-3d] md:flex-1 md:whitespace-nowrap md:text-left md:text-[clamp(0.8rem,3.2vw+0.55rem,3.75rem)] md:leading-none">
+          <h2 className="bvc-line2 w-full min-w-0 text-center font-display text-[clamp(1.05rem,5.5vw+0.5rem,2.75rem)] font-bold leading-tight tracking-[-0.02em] text-[var(--foreground)] md:flex-1 md:whitespace-nowrap md:text-left md:text-[clamp(0.8rem,3.2vw+0.55rem,3.75rem)] md:leading-none">
             the visible
           </h2>
         </div>

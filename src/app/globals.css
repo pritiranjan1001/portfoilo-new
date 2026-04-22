@@ -161,6 +161,11 @@ body.work-hide-doc-scrollbar::-webkit-scrollbar {
   scroll-margin-top: var(--site-header-height);
 }
 
+/* Pinned full-viewport prelude: align to viewport top; fixed header overlays (see BeyondVisibleCover). */
+#prelude[data-home-section] {
+  scroll-margin-top: 0;
+}
+
 :where(
     header,
     footer,
@@ -299,13 +304,18 @@ body.work-hide-doc-scrollbar::-webkit-scrollbar {
 
   #prelude .bvc-kicker,
   #prelude .bvc-step,
-  #prelude .bvc-line1,
-  #prelude .bvc-line2,
   #prelude .bvc-tag,
   #prelude .bvc-cta,
   #prelude .bvc-bottom-cap {
     opacity: 0;
     transform: translate3d(0, 1.5rem, 0);
+  }
+
+  /* Headline h2s stay visible; SplitText word spans handle hide/reveal (BeyondVisibleCover). */
+  #prelude .bvc-line1,
+  #prelude .bvc-line2 {
+    opacity: 1;
+    transform: none;
   }
 
   #prelude .bvc-eye {

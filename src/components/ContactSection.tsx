@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { useLenisInstance } from "@/components/lenis-context";
+import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
 import { site } from "@/lib/site";
 import {
   registerGsapPlugins,
@@ -50,6 +52,7 @@ function ContactScribble({ className }: { className?: string }) {
 export function ContactSection() {
   const root = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
+  const lenis = useLenisInstance();
 
   useGSAP(
     () => {
@@ -58,6 +61,8 @@ export function ContactSection() {
       if (shouldReduceMotion()) return;
       const el = root.current;
       if (!el) return;
+
+      if (!lenis) return;
 
       const eyebrow = el.querySelector<HTMLElement>(".contact-eyebrow");
       const line1 = el.querySelector<HTMLElement>(".contact-h2-line1");
@@ -105,32 +110,59 @@ export function ContactSection() {
         },
       );
 
-      const st = {
+      gsap.set(eyebrowSplit.words, { opacity: 0, y: 16 });
+      gsap.set(line1Split.words, { opacity: 0, y: 22 });
+      gsap.set(line2Split.words, { opacity: 0, y: 22 });
+      gsap.set(accentSplit.words, { opacity: 0, y: 18 });
+      gsap.set(bodySplit.words, { opacity: 0, y: 14 });
+      const statusEl = el.querySelector<HTMLElement>(".contact-status");
+      if (statusEl) gsap.set(statusEl, { opacity: 0, y: 10 });
+      gsap.set(el.querySelectorAll(".contact-rail .contact-anim"), {
+        opacity: 0,
+        y: 26,
+      });
+      const scribble = el.querySelector<HTMLElement>(".contact-scribble-svg");
+      if (scribble) {
+        gsap.set(scribble, { opacity: 0, scale: 0.92, rotation: -4 });
+      }
+
+      const scrollSt = {
+        scroller: document.documentElement,
         trigger: el,
-        start: "top 80%",
+        start: "top bottom-=10%",
         toggleActions: "play none none none" as const,
+        invalidateOnRefresh: true,
       };
 
-      const copy = gsap.timeline({
-        scrollTrigger: st,
+      const contactTl = gsap.timeline({
+        paused: true,
+        scrollTrigger: scrollSt,
         defaults: { ease: "power2.out" },
       });
 
-      copy
-        .fromTo(
-          eyebrowSplit.words,
-          { opacity: 0, y: 16 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.48,
-            stagger: 0.06,
+      if (scribble) {
+        contactTl.add(
+          gsap.to(scribble, {
+            opacity: 0.55,
+            scale: 1,
+            rotation: 0,
+            duration: 1.25,
             ease: "power3.out",
-          },
-        )
-        .fromTo(
+          }),
+          0,
+        );
+      }
+
+      contactTl
+        .to(eyebrowSplit.words, {
+          opacity: 1,
+          y: 0,
+          duration: 0.48,
+          stagger: 0.06,
+          ease: "power3.out",
+        }, 0)
+        .to(
           line1Split.words,
-          { opacity: 0, y: 22 },
           {
             opacity: 1,
             y: 0,
@@ -140,9 +172,8 @@ export function ContactSection() {
           },
           "-=0.2",
         )
-        .fromTo(
+        .to(
           line2Split.words,
-          { opacity: 0, y: 22 },
           {
             opacity: 1,
             y: 0,
@@ -152,9 +183,8 @@ export function ContactSection() {
           },
           "-=0.35",
         )
-        .fromTo(
+        .to(
           accentSplit.words,
-          { opacity: 0, y: 18 },
           {
             opacity: 1,
             y: 0,
@@ -164,9 +194,8 @@ export function ContactSection() {
           },
           "-=0.32",
         )
-        .fromTo(
+        .to(
           bodySplit.words,
-          { opacity: 0, y: 14 },
           {
             opacity: 1,
             y: 0,
@@ -176,21 +205,21 @@ export function ContactSection() {
           },
           "-=0.28",
         )
-        .from(
+        .to(
           ".contact-status",
           {
-            opacity: 0,
-            y: 10,
+            opacity: 1,
+            y: 0,
             duration: 0.48,
             ease: "power2.out",
           },
           "-=0.22",
         )
-        .from(
+        .to(
           ".contact-rail .contact-anim",
           {
-            opacity: 0,
-            y: 26,
+            opacity: 1,
+            y: 0,
             duration: 0.75,
             stagger: 0.1,
             ease: "power2.out",
@@ -198,20 +227,10 @@ export function ContactSection() {
           "-=0.15",
         );
 
-      gsap.from(".contact-scribble-svg", {
-        scrollTrigger: {
-          trigger: el,
-          start: "top 78%",
-          toggleActions: "play none none none",
-        },
-        opacity: 0,
-        scale: 0.92,
-        rotate: -4,
-        duration: 1.25,
-        ease: "power3.out",
-      });
+      refreshLenisAndScrollTrigger(lenis);
 
       return () => {
+        contactTl.kill();
         eyebrowSplit.revert();
         line1Split.revert();
         line2Split.revert();
@@ -219,7 +238,7 @@ export function ContactSection() {
         bodySplit.revert();
       };
     },
-    { scope: root },
+    { scope: root, dependencies: [lenis] },
   );
 
   const copyEmail = async () => {

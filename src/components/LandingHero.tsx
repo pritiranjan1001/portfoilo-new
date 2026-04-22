@@ -2,9 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef } from "react";
+import { useCallback, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { useLenisInstance } from "@/components/lenis-context";
+import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
+import { ANCHOR_SCROLL_NUDGE_PX } from "@/lib/scroll-anchors";
 import { site } from "@/lib/site";
 import {
   registerGsapPlugins,
@@ -15,6 +18,28 @@ import {
 
 export function LandingHero() {
   const root = useRef<HTMLElement>(null);
+  const lenis = useLenisInstance();
+
+  const scrollToPrelude = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      const prelude = document.getElementById("prelude");
+      if (!prelude) return;
+      /** Prelude is full-bleed under the fixed header; scroll-margin on #prelude is 0. */
+      const offset = -ANCHOR_SCROLL_NUDGE_PX;
+      if (lenis) {
+        lenis.scrollTo(prelude, {
+          offset,
+          duration: 1.15,
+          onComplete: () => refreshLenisAndScrollTrigger(lenis),
+        });
+      } else {
+        prelude.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    },
+    [lenis],
+  );
+
   const nameParts = site.name.trim().split(/\s+/);
   const nameFirst = nameParts[0] ?? site.name;
   const nameRest = nameParts.slice(1).join(" ");
@@ -211,6 +236,7 @@ export function LandingHero() {
           <div className="landing-hero-cta mt-14 flex flex-wrap items-center gap-4 md:gap-6">
             <Link
               href="#prelude"
+              onClick={scrollToPrelude}
               className="font-mono text-[10px] uppercase tracking-[0.35em] text-[var(--muted)] transition-colors hover:text-[var(--foreground)] dark:hover:text-white"
             >
               Continue ↓
@@ -260,6 +286,7 @@ export function LandingHero() {
 
       <Link
         href="#prelude"
+        onClick={scrollToPrelude}
         className="landing-hero-scroll pointer-events-auto absolute bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 right-auto top-auto z-10 -translate-x-1/2 md:bottom-8"
         aria-label="Scroll to next section"
       >

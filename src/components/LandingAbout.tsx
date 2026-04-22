@@ -3,6 +3,8 @@
 import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { useLenisInstance } from "@/components/lenis-context";
+import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
 import { site } from "@/lib/site";
 import {
   registerGsapPlugins,
@@ -13,6 +15,7 @@ import {
 
 export function LandingAbout() {
   const root = useRef<HTMLElement>(null);
+  const lenis = useLenisInstance();
 
   useGSAP(
     () => {
@@ -22,6 +25,9 @@ export function LandingAbout() {
 
       const section = root.current;
       if (!section) return;
+
+      /** Lenis + scrollerProxy — pin/scrub not required; triggers must use the same scroller. */
+      if (!lenis) return;
 
       const eyebrow = section.querySelector<HTMLElement>(
         ".landing-about-eyebrow",
@@ -52,63 +58,88 @@ export function LandingAbout() {
         ],
         {
           display: "inline-block",
-          willChange: "transform, opacity",
+          willChange: "transform, opacity, filter",
         },
       );
 
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: "top 78%",
-          toggleActions: "play none none none",
-        },
-        defaults: { ease: "power2.out" },
+      /** Pre-hide all spans so nothing reads as “half on” before the trigger fires. */
+      gsap.set(eyebrowSplit.words, {
+        opacity: 0,
+        y: 22,
+        filter: "blur(10px)",
+      });
+      gsap.set(descSplit.words, {
+        opacity: 0,
+        y: 26,
+        filter: "blur(8px)",
+      });
+      gsap.set(quoteSplit.words, {
+        opacity: 0,
+        x: -12,
+        y: 16,
+        filter: "blur(6px)",
       });
 
-      tl.fromTo(
-        eyebrowSplit.words,
-        { opacity: 0, y: 18 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.5,
-          stagger: 0.055,
-          ease: "power3.out",
+      /**
+       * One-shot reveal when the section enters — not scrubbed to scroll.
+       * Scrub on long copy leaves the paragraph stuck mid-tween (clear + blurred words at once).
+       */
+      const tl = gsap.timeline({
+        defaults: { ease: "power2.out" },
+        paused: true,
+        scrollTrigger: {
+          scroller: document.documentElement,
+          trigger: section,
+          start: "top bottom-=10%",
+          toggleActions: "play none none none",
+          invalidateOnRefresh: true,
         },
-      )
-        .fromTo(
+      });
+
+      tl.to(eyebrowSplit.words, {
+        opacity: 1,
+        y: 0,
+        filter: "blur(0px)",
+        duration: 0.5,
+        stagger: { each: 0.06, from: "start" },
+        ease: "power3.out",
+      })
+        .to(
           descSplit.words,
-          { opacity: 0, y: 22 },
           {
             opacity: 1,
             y: 0,
-            duration: 0.48,
-            stagger: 0.022,
+            filter: "blur(0px)",
+            duration: 0.75,
+            stagger: { each: 0.012, from: "start" },
             ease: "power2.out",
           },
-          "-=0.22",
+          "-=0.15",
         )
-        .fromTo(
+        .to(
           quoteSplit.words,
-          { opacity: 0, x: -10, y: 10 },
           {
             opacity: 1,
             x: 0,
             y: 0,
-            duration: 0.52,
-            stagger: 0.032,
+            filter: "blur(0px)",
+            duration: 0.55,
+            stagger: { each: 0.022, from: "start" },
             ease: "power3.out",
           },
-          "-=0.35",
+          "-=0.25",
         );
 
+      refreshLenisAndScrollTrigger(lenis);
+
       return () => {
+        tl.kill();
         eyebrowSplit.revert();
         descSplit.revert();
         quoteSplit.revert();
       };
     },
-    { scope: root, dependencies: [] },
+    { scope: root, dependencies: [lenis] },
   );
 
   return (

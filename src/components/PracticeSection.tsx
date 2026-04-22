@@ -3,6 +3,8 @@
 import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { useLenisInstance } from "@/components/lenis-context";
+import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
 import { site } from "@/lib/site";
 import {
   registerGsapPlugins,
@@ -13,6 +15,7 @@ import {
 
 export function PracticeSection() {
   const root = useRef<HTMLElement>(null);
+  const lenis = useLenisInstance();
 
   useGSAP(
     () => {
@@ -23,8 +26,14 @@ export function PracticeSection() {
       const section = root.current;
       if (!section) return;
 
+      /** Align with Lenis + scrollerProxy — otherwise triggers can fire too early / wrong. */
+      if (!lenis) return;
+
       const heading = section.querySelector(".practice-split-heading");
       if (!(heading instanceof HTMLElement)) return;
+
+      const grid = section.querySelector<HTMLElement>(".practice-discipline-grid");
+      if (!grid) return;
 
       const split = new SplitText(heading, {
         type: "lines,words",
@@ -34,33 +43,41 @@ export function PracticeSection() {
 
       gsap.set(split.words, {
         display: "inline-block",
-        willChange: "transform, opacity",
+        willChange: "transform, opacity, filter",
+      });
+
+      const eyebrow = section.querySelector<HTMLElement>(".practice-eyebrow");
+      if (eyebrow) {
+        gsap.set(eyebrow, { opacity: 0, y: 14 });
+      }
+      gsap.set(split.words, {
+        opacity: 0,
+        y: 40,
+        rotateX: -14,
+        transformOrigin: "50% 100%",
+        filter: "blur(8px)",
       });
 
       const titleTl = gsap.timeline({
         scrollTrigger: {
+          scroller: document.documentElement,
           trigger: section,
-          start: "top 78%",
+          /** Fire when the section actually enters from below — not while still above the fold. */
+          start: "top bottom-=8%",
           toggleActions: "play none none none",
+          invalidateOnRefresh: true,
         },
         defaults: { ease: "power2.out" },
       });
 
       titleTl
-        .from(".practice-eyebrow", {
-          opacity: 0,
-          y: 14,
+        .to(".practice-eyebrow", {
+          opacity: 1,
+          y: 0,
           duration: 0.48,
         })
-        .fromTo(
+        .to(
           split.words,
-          {
-            opacity: 0,
-            y: 40,
-            rotateX: -14,
-            transformOrigin: "50% 100%",
-            filter: "blur(8px)",
-          },
           {
             opacity: 1,
             y: 0,
@@ -86,22 +103,30 @@ export function PracticeSection() {
 
       disciplineSplits.forEach((ds) => {
         gsap.set(ds.words, { display: "inline-block" });
+        gsap.set(ds.words, { opacity: 0, y: 20 });
       });
+
+      const cardParas = section.querySelectorAll<HTMLElement>(
+        ".practice-discipline-card p",
+      );
+      gsap.set(cardParas, { opacity: 0, y: 12 });
 
       const gridTl = gsap.timeline({
         scrollTrigger: {
-          trigger: ".practice-discipline-grid",
-          start: "top 86%",
+          scroller: document.documentElement,
+          trigger: grid,
+          start: "top bottom-=12%",
           toggleActions: "play none none none",
+          invalidateOnRefresh: true,
         },
       });
 
       disciplineSplits.forEach((ds, i) => {
-        gridTl.from(
+        gridTl.to(
           ds.words,
           {
-            opacity: 0,
-            y: 20,
+            opacity: 1,
+            y: 0,
             duration: 0.48,
             stagger: 0.035,
             ease: "power2.out",
@@ -110,11 +135,11 @@ export function PracticeSection() {
         );
       });
 
-      gridTl.from(
-        ".practice-discipline-card p",
+      gridTl.to(
+        cardParas,
         {
-          opacity: 0,
-          y: 12,
+          opacity: 1,
+          y: 0,
           duration: 0.4,
           stagger: 0.09,
           ease: "power2.out",
@@ -122,12 +147,16 @@ export function PracticeSection() {
         disciplineSplits.length ? "<0.2" : 0,
       );
 
+      refreshLenisAndScrollTrigger(lenis);
+
       return () => {
+        titleTl.kill();
+        gridTl.kill();
         split.revert();
         disciplineSplits.forEach((s) => s.revert());
       };
     },
-    { scope: root, dependencies: [] },
+    { scope: root, dependencies: [lenis] },
   );
 
   return (

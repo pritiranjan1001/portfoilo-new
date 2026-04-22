@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -35,7 +35,11 @@ export function LenisScroll({
 }: LenisScrollProps) {
   const [lenis, setLenis] = useState<Lenis | null>(null);
 
-  useEffect(() => {
+  /**
+   * Lenis drives scroll with raf + lerp; ScrollTrigger must read/write scroll through
+   * `scrollerProxy` or pin + scrub never sync (pins appear to do nothing).
+   */
+  useLayoutEffect(() => {
     registerGsapPlugins();
     if (shouldReduceMotion()) return;
 
@@ -50,7 +54,31 @@ export function LenisScroll({
       stopInertiaOnNavigate: true,
     });
 
+    /**
+     * Lenis scrolls via `window.scrollTo` → updates `document.documentElement` scroll.
+     * Proxy must match the element ScrollTrigger uses as `scroller`, or pin + scrub drift / fail.
+     */
+    const scroller = document.documentElement;
+    ScrollTrigger.scrollerProxy(scroller, {
+      scrollTop(value) {
+        if (arguments.length && typeof value === "number") {
+          instance.scrollTo(value, { immediate: true });
+        }
+        return instance.scroll;
+      },
+      getBoundingClientRect() {
+        return {
+          top: 0,
+          left: 0,
+          width: window.innerWidth,
+          height: window.innerHeight,
+        };
+      },
+    });
+    ScrollTrigger.defaults({ scroller });
+
     setLenis(instance);
+    ScrollTrigger.refresh();
 
     if (!window.location.hash || window.location.hash.length <= 1) {
       const y = window.scrollY || window.pageYOffset || 0;
@@ -201,6 +229,8 @@ export function LenisScroll({
       document.body.scrollTop = 0;
       html.style.scrollBehavior = prev;
       instance.destroy();
+      ScrollTrigger.scrollerProxy(document.documentElement, null as never);
+      ScrollTrigger.defaults({ scroller: undefined });
       ScrollTrigger.refresh();
       setLenis(null);
     };
