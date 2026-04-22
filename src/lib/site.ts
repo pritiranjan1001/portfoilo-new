@@ -283,6 +283,13 @@ export const site = {
         image: "/artworks/Painting-1-min-1024x796.webp",
         frameW: 1024,
         frameH: 796,
+        /** Optional: soft zone behind part of the slide only (see GalleryHorizontalStory). */
+        sectionBackground: {
+          src: "/artworks/Painting-17-min-1536x1194.webp",
+          frameW: 1536,
+          frameH: 1194,
+          placement: "right" as const,
+        },
       },
       {
         kicker: "Roots & beginnings",
@@ -299,6 +306,12 @@ export const site = {
         image: "/artworks/Painting-2-min-1536x1194.webp",
         frameW: 1536,
         frameH: 1194,
+        sectionBackground: {
+          src: "/artworks/Painting-18-min-1536x1194.webp",
+          frameW: 1536,
+          frameH: 1194,
+          placement: "bottom" as const,
+        },
       },
       {
         kicker: "Archive",
@@ -315,6 +328,12 @@ export const site = {
         image: "/artworks/Painting-7-min-1536x1194.webp",
         frameW: 1536,
         frameH: 1194,
+        sectionBackground: {
+          src: "/artworks/Painting-14-min-818x1024.webp",
+          frameW: 818,
+          frameH: 1024,
+          placement: "left" as const,
+        },
       },
       {
         kicker: "Studio & wall",

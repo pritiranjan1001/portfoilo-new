@@ -16,7 +16,11 @@ import {
 } from "@/lib/horizontal-gallery-scroll";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useLenisInstance } from "@/components/lenis-context";
-import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
+import {
+  lenisApplyImmediateDelta,
+  lenisScrollToImmediateClamped,
+  refreshLenisAndScrollTrigger,
+} from "@/lib/lenis-scroll-sync";
 import { site } from "@/lib/site";
 import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
 
@@ -92,6 +96,54 @@ function EditorialImage({
         sizes="(max-width: 768px) 45vw, 28vw"
         priority={priority}
       />
+    </div>
+  );
+}
+
+/** Soft artwork wash in one zone of the slide (not full-bleed) — keeps copy readable. */
+function GallerySectionBackdrop({
+  src,
+  placement,
+  priority,
+  frameW: _frameW,
+  frameH: _frameH,
+}: {
+  src: string;
+  frameW: number;
+  frameH: number;
+  placement: "left" | "right" | "bottom";
+  priority?: boolean;
+}) {
+  const zone =
+    placement === "right"
+      ? "absolute inset-y-0 right-0 w-[min(54%,30rem)] max-md:w-[min(62%,20rem)]"
+      : placement === "left"
+        ? "absolute inset-y-0 left-0 w-[min(54%,30rem)] max-md:w-[min(62%,20rem)]"
+        : "absolute bottom-0 left-0 right-0 h-[min(36vh,20rem)] max-md:h-[min(30vh,16rem)]";
+
+  const veil =
+    placement === "right"
+      ? "bg-gradient-to-r from-[#ede8de] from-[18%] via-[#ede8de]/90 to-transparent dark:from-[var(--background)] dark:from-[18%] dark:via-[color-mix(in_oklab,var(--background)_88%,transparent)]"
+      : placement === "left"
+        ? "bg-gradient-to-l from-[#ede8de] from-[18%] via-[#ede8de]/90 to-transparent dark:from-[var(--background)] dark:from-[18%] dark:via-[color-mix(in_oklab,var(--background)_88%,transparent)]"
+        : "bg-gradient-to-t from-[#ede8de] from-[22%] via-[#ede8de]/92 to-transparent dark:from-[var(--background)] dark:from-[22%] dark:via-[color-mix(in_oklab,var(--background)_90%,transparent)]";
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      aria-hidden
+    >
+      <div className={`${zone} relative h-full w-full min-h-0`}>
+        <Image
+          src={src}
+          alt=""
+          fill
+          sizes="(max-width: 768px) 100vw, 45vw"
+          className="object-cover opacity-[0.2] saturate-[0.88] dark:opacity-[0.26]"
+          priority={priority}
+        />
+        <div className={`absolute inset-0 ${veil}`} />
+      </div>
     </div>
   );
 }
@@ -248,9 +300,14 @@ function StorySlide({
   const snap = carouselSnap ? "snap-center snap-always " : "";
   const shell = horizontal
     ? carouselSnap
-      ? `${snap}relative flex h-[100dvh] w-screen shrink-0 flex-col bg-[#ede8de] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pt-[max(0.75rem,calc(var(--site-header-height)+0.5rem))] pb-[max(5.25rem,calc(env(safe-area-inset-bottom,0px)+4.5rem))] text-neutral-900 dark:bg-[var(--background)] dark:text-neutral-100`
-      : `${snap}relative flex h-[100dvh] w-screen shrink-0 flex-col bg-[#ede8de] px-5 pb-10 pt-16 text-neutral-900 dark:bg-[var(--background)] dark:text-neutral-100 md:px-12 md:pb-14 md:pt-20 lg:px-16`
-    : `relative flex min-h-[100dvh] w-full flex-col bg-[#ede8de] px-6 py-20 text-neutral-900 dark:bg-[var(--background)] dark:text-neutral-100 md:px-14`;
+      ? `${snap}relative flex h-[100dvh] w-screen shrink-0 flex-col overflow-hidden bg-[#ede8de] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))] pt-[max(0.75rem,calc(var(--site-header-height)+0.5rem))] pb-[max(5.25rem,calc(env(safe-area-inset-bottom,0px)+4.5rem))] text-neutral-900 dark:bg-[var(--background)] dark:text-neutral-100`
+      : `${snap}relative flex h-[100dvh] w-screen shrink-0 flex-col overflow-hidden bg-[#ede8de] px-5 pb-10 pt-16 text-neutral-900 dark:bg-[var(--background)] dark:text-neutral-100 md:px-12 md:pb-14 md:pt-20 lg:px-16`
+    : `relative flex min-h-[100dvh] w-full flex-col overflow-hidden bg-[#ede8de] px-6 py-20 text-neutral-900 dark:bg-[var(--background)] dark:text-neutral-100 md:px-14`;
+
+  const sectionBg =
+    "sectionBackground" in slide && slide.sectionBackground
+      ? slide.sectionBackground
+      : null;
 
   return (
     <section
@@ -258,7 +315,13 @@ function StorySlide({
       className={shell}
       aria-label={`${slide.kicker}: ${slide.title}`}
     >
-      <div className="gallery-reveal-panel relative mx-auto flex min-h-0 h-full w-full max-w-[1400px] flex-col overflow-hidden">
+      {sectionBg ? (
+        <GallerySectionBackdrop
+          {...sectionBg}
+          priority={index === 0}
+        />
+      ) : null}
+      <div className="gallery-reveal-panel relative z-[1] mx-auto flex min-h-0 h-full w-full max-w-[1400px] flex-col overflow-hidden">
         <div className="gallery-reveal-head relative z-10 flex shrink-0 flex-col gap-1 md:max-w-[90%]">
           {kickerBlock}
           <SlideHeadline title={slide.title} />
@@ -314,6 +377,7 @@ export function GalleryHorizontalStory() {
     () => {
       if (reduceMotion || !isDesktop) return;
       if (!lenis) return;
+      const lenisInstance = lenis;
       registerGsapPlugins();
       const track = trackRef.current;
       const outer = outerRef.current;
@@ -342,7 +406,7 @@ export function GalleryHorizontalStory() {
         },
       });
 
-      refreshLenisAndScrollTrigger(lenis);
+      refreshLenisAndScrollTrigger(lenisInstance);
 
       const slides = track.querySelectorAll<HTMLElement>("[data-gallery-slide]");
       slides.forEach((slideEl) => {
@@ -383,7 +447,9 @@ export function GalleryHorizontalStory() {
         });
       });
 
-      let dragLastX = 0;
+      /** Pointer-down scroll + X — absolute mapping avoids snap/pin fighting incremental deltas. */
+      let dragOriginScroll = 0;
+      let dragOriginX = 0;
       let dragActive = false;
       let dragPointerId = 0;
 
@@ -418,11 +484,11 @@ export function GalleryHorizontalStory() {
       function onWindowPointerMove(e: PointerEvent) {
         if (!dragActive || e.pointerId !== dragPointerId) return;
         clearTextSelection();
-        const dx = e.clientX - dragLastX;
-        dragLastX = e.clientX;
-        if (Math.abs(dx) < 0.15) return;
-        window.scrollBy({ top: -dx * 0.82, left: 0, behavior: "auto" });
-        ScrollTrigger.update();
+        const totalDx = e.clientX - dragOriginX;
+        lenisScrollToImmediateClamped(
+          lenisInstance,
+          dragOriginScroll - totalDx,
+        );
       }
 
       function onWindowPointerUp(e: PointerEvent) {
@@ -434,7 +500,8 @@ export function GalleryHorizontalStory() {
         if (e.pointerType === "mouse" && e.button !== 0) return;
         dragActive = true;
         dragPointerId = e.pointerId;
-        dragLastX = e.clientX;
+        dragOriginScroll = lenisInstance.scroll;
+        dragOriginX = e.clientX;
         clearTextSelection();
         document.documentElement.style.userSelect = "none";
         document.body.style.userSelect = "none";
@@ -459,8 +526,7 @@ export function GalleryHorizontalStory() {
         const absY = Math.abs(dy);
         if (!(absX > absY * 1.2 && absX > 1.5)) return;
         e.preventDefault();
-        window.scrollBy({ top: -dx * 0.82, left: 0, behavior: "auto" });
-        ScrollTrigger.update();
+        lenisApplyImmediateDelta(lenisInstance, -dx);
       };
       outer.addEventListener("wheel", onWheelGallery, { passive: false });
 

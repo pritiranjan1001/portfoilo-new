@@ -17,7 +17,11 @@ import {
 } from "@/lib/horizontal-gallery-scroll";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useLenisInstance } from "@/components/lenis-context";
-import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
+import {
+  lenisApplyImmediateDelta,
+  lenisScrollToImmediateClamped,
+  refreshLenisAndScrollTrigger,
+} from "@/lib/lenis-scroll-sync";
 import { site } from "@/lib/site";
 import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
 
@@ -403,6 +407,7 @@ export function WorkHorizontalGallery() {
       if (reduceMotion || !isDesktop) return;
       /** Pin + scrub must register after Lenis + scrollerProxy or horizontal travel won’t track scroll. */
       if (!lenis) return;
+      const lenisInstance = lenis;
       registerGsapPlugins();
       const track = trackRef.current;
       const outer = outerRef.current;
@@ -433,7 +438,7 @@ export function WorkHorizontalGallery() {
         },
       });
 
-      refreshLenisAndScrollTrigger(lenis);
+      refreshLenisAndScrollTrigger(lenisInstance);
 
       requestAnimationFrame(() => {
         requestAnimationFrame(() => debouncedRefresh.flush());
@@ -452,7 +457,8 @@ export function WorkHorizontalGallery() {
         });
       });
 
-      let dragLastX = 0;
+      let dragOriginScroll = 0;
+      let dragOriginX = 0;
       let dragActive = false;
       let dragPointerId = 0;
 
@@ -490,11 +496,11 @@ export function WorkHorizontalGallery() {
       function onWindowPointerMove(e: PointerEvent) {
         if (!dragActive || e.pointerId !== dragPointerId) return;
         clearTextSelection();
-        const dx = e.clientX - dragLastX;
-        dragLastX = e.clientX;
-        if (Math.abs(dx) < 0.15) return;
-        window.scrollBy({ top: -dx * 0.82, left: 0, behavior: "auto" });
-        ScrollTrigger.update();
+        const totalDx = e.clientX - dragOriginX;
+        lenisScrollToImmediateClamped(
+          lenisInstance,
+          dragOriginScroll - totalDx,
+        );
       }
 
       function onWindowPointerUp(e: PointerEvent) {
@@ -506,7 +512,8 @@ export function WorkHorizontalGallery() {
         if (e.pointerType === "mouse" && e.button !== 0) return;
         dragActive = true;
         dragPointerId = e.pointerId;
-        dragLastX = e.clientX;
+        dragOriginScroll = lenisInstance.scroll;
+        dragOriginX = e.clientX;
         clearTextSelection();
         document.documentElement.style.userSelect = "none";
         document.body.style.userSelect = "none";
@@ -541,8 +548,7 @@ export function WorkHorizontalGallery() {
         if (!horizontalIntent) return;
 
         e.preventDefault();
-        window.scrollBy({ top: -dx * 0.82, left: 0, behavior: "auto" });
-        ScrollTrigger.update();
+        lenisApplyImmediateDelta(lenisInstance, -dx);
       };
       outer.addEventListener("wheel", onWheelGallery, { passive: false });
 
