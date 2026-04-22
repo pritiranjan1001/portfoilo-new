@@ -15,6 +15,8 @@ import {
   measureHorizontalScrollEnd,
 } from "@/lib/horizontal-gallery-scroll";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useLenisInstance } from "@/components/lenis-context";
+import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
 import { site } from "@/lib/site";
 import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
 
@@ -286,6 +288,7 @@ export function GalleryHorizontalStory() {
   const chrome = useWorkGalleryChrome();
   const slideCount = story.slides.length;
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const lenis = useLenisInstance();
 
   useEffect(() => {
     setReduceMotion(shouldReduceMotion());
@@ -310,6 +313,7 @@ export function GalleryHorizontalStory() {
   useGSAP(
     () => {
       if (reduceMotion || !isDesktop) return;
+      if (!lenis) return;
       registerGsapPlugins();
       const track = trackRef.current;
       const outer = outerRef.current;
@@ -324,6 +328,7 @@ export function GalleryHorizontalStory() {
         x: () => -maxX(),
         ease: "none",
         scrollTrigger: {
+          scroller: document.documentElement,
           trigger: outer,
           start: "top top",
           end: () => `+=${maxX()}`,
@@ -337,6 +342,8 @@ export function GalleryHorizontalStory() {
         },
       });
 
+      refreshLenisAndScrollTrigger(lenis);
+
       const slides = track.querySelectorAll<HTMLElement>("[data-gallery-slide]");
       slides.forEach((slideEl) => {
         const panel = slideEl.querySelector<HTMLElement>(".gallery-reveal-panel");
@@ -349,6 +356,7 @@ export function GalleryHorizontalStory() {
             y: 0,
             ease: "none",
             scrollTrigger: {
+              scroller: document.documentElement,
               trigger: slideEl,
               containerAnimation: tween,
               start: "left right",
@@ -471,7 +479,7 @@ export function GalleryHorizontalStory() {
         tween.kill();
       };
     },
-    { scope: outerRef, dependencies: [reduceMotion, slideCount, isDesktop] },
+    { scope: outerRef, dependencies: [reduceMotion, slideCount, isDesktop, lenis] },
   );
 
   return (

@@ -17,6 +17,7 @@ import {
 } from "@/lib/horizontal-gallery-scroll";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useLenisInstance } from "@/components/lenis-context";
+import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
 import { site } from "@/lib/site";
 import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
 
@@ -400,6 +401,8 @@ export function WorkHorizontalGallery() {
   useGSAP(
     () => {
       if (reduceMotion || !isDesktop) return;
+      /** Pin + scrub must register after Lenis + scrollerProxy or horizontal travel won’t track scroll. */
+      if (!lenis) return;
       registerGsapPlugins();
       const track = trackRef.current;
       const outer = outerRef.current;
@@ -416,6 +419,7 @@ export function WorkHorizontalGallery() {
         x: () => -maxX(),
         ease: "none",
         scrollTrigger: {
+          scroller: document.documentElement,
           trigger: outer,
           start: "top top",
           end: () => `+=${maxX()}`,
@@ -428,6 +432,8 @@ export function WorkHorizontalGallery() {
           invalidateOnRefresh: true,
         },
       });
+
+      refreshLenisAndScrollTrigger(lenis);
 
       requestAnimationFrame(() => {
         requestAnimationFrame(() => debouncedRefresh.flush());
@@ -555,7 +561,7 @@ export function WorkHorizontalGallery() {
         tween.kill();
       };
     },
-    { scope: outerRef, dependencies: [reduceMotion, isDesktop] },
+    { scope: outerRef, dependencies: [reduceMotion, isDesktop, lenis] },
   );
 
   return (
