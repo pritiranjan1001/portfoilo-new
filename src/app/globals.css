@@ -40,6 +40,10 @@
     color-mix(in oklab, var(--surface-elevated) 90%, white) 100%
   );
   --bvc-shimmer-spot: color-mix(in oklab, var(--foreground) 9%, transparent);
+  /* Document scrollbar — matches theme; avoids content jump when bar appears */
+  --scrollbar-track: color-mix(in oklab, var(--surface-elevated) 65%, var(--background));
+  --scrollbar-thumb: color-mix(in oklab, var(--foreground) 22%, transparent);
+  --scrollbar-thumb-hover: color-mix(in oklab, var(--accent) 55%, var(--foreground));
 }
 
 @media (min-width: 768px) {
@@ -73,6 +77,9 @@ html.dark {
     color-mix(in oklab, var(--surface-elevated) 55%, var(--foreground)) 100%
   );
   --bvc-shimmer-spot: color-mix(in oklab, var(--foreground) 14%, transparent);
+  --scrollbar-track: color-mix(in oklab, var(--surface) 80%, var(--background));
+  --scrollbar-thumb: color-mix(in oklab, var(--foreground) 28%, transparent);
+  --scrollbar-thumb-hover: color-mix(in oklab, var(--accent) 45%, var(--foreground));
 }
 
 @theme inline {
@@ -96,6 +103,11 @@ html {
   scroll-padding-top: var(--site-header-height);
   overflow-x: clip;
   max-width: 100%;
+  /* Reserve space for vertical scrollbar so layout does not shift when it appears */
+  scrollbar-gutter: stable;
+  /* Stylized scrollbar (Firefox) */
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 /* Root layout uses `scroll-smooth`; Lenis controls wheel — native smooth + snap makes wheel feel stepped */
@@ -110,6 +122,26 @@ body {
   transition:
     background-color 0.45s cubic-bezier(0.33, 1, 0.68, 1),
     color 0.45s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* Stylized document scrollbar (Chromium / Safari) */
+html::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+html::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid var(--scrollbar-track);
+}
+html::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+html::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
 }
 
 /* /work — hide native scrollbar; wheel / drag / keys still scroll */
