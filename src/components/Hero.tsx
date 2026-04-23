@@ -107,10 +107,10 @@ export function Hero() {
       />
 
       <div className="relative mx-auto max-w-6xl">
-        <p className="hero-tagline mb-6 max-w-xl font-serif text-lg italic leading-relaxed text-[var(--muted)] md:text-xl">
+        <p className="hero-tagline mb-6 max-w-xl text-center font-serif text-lg italic leading-relaxed text-[var(--muted)] md:text-left md:text-xl">
           {site.tagline}
         </p>
-        <h1 className="font-display text-[clamp(2.75rem,8vw,5.5rem)] font-semibold leading-[0.95] tracking-tight text-[var(--foreground)]">
+        <h1 className="text-center font-display text-[clamp(2.75rem,8vw,5.5rem)] font-semibold leading-[0.95] tracking-tight text-[var(--foreground)] md:text-left">
           {site.name.split(" ").map((word, i) => (
             <span key={word} className="hero-line block">
               <span className="inline-block">
@@ -122,10 +122,10 @@ export function Hero() {
             </span>
           ))}
         </h1>
-        <p className="hero-desc mt-10 max-w-2xl text-pretty font-body text-lg leading-relaxed text-[var(--muted)] md:text-xl">
+        <p className="hero-desc mt-10 max-w-2xl text-center text-pretty font-body text-lg leading-relaxed text-[var(--muted)] md:text-left md:text-xl">
           {site.description}
         </p>
-        <div className="hero-cta mt-14 flex flex-wrap items-center gap-4">
+        <div className="hero-cta mt-14 flex flex-wrap items-center justify-center gap-4 md:justify-start">
           <a
             href="/work"
             className="inline-flex items-center gap-2 rounded-full border border-[var(--foreground)] bg-transparent px-7 py-3.5 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--foreground)] hover:text-[var(--background)]"

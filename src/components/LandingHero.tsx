@@ -221,7 +221,7 @@ export function LandingHero() {
       className="relative flex min-h-[100dvh] w-full max-w-[100vw] flex-col overflow-x-clip bg-[var(--background)] text-[var(--foreground)] dark:bg-black dark:text-[color-mix(in_oklab,var(--foreground)_92%,white)]"
     >
       <div className="mx-auto grid min-h-0 w-full max-w-5xl flex-1 grid-cols-1 content-center items-center gap-6 px-[max(1rem,env(safe-area-inset-left))] pb-10 pt-[max(7rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] md:gap-16 md:px-14 md:pb-12 md:pt-32 lg:grid-cols-2 lg:gap-2 xl:gap-10">
-        <div className="landing-hero-copy flex min-w-0 flex-col justify-center [contain:layout_style]">
+        <div className="landing-hero-copy flex min-w-0 flex-col justify-center text-center md:text-left [contain:layout_style]">
           <p className="landing-hero-tagline font-serif text-lg italic leading-relaxed text-[var(--muted)] md:text-xl">
             {site.tagline}
           </p>
@@ -233,7 +233,7 @@ export function LandingHero() {
               </span>
             ) : null}
           </h1>
-          <div className="landing-hero-cta mt-14 flex flex-wrap items-center gap-4 md:gap-6">
+          <div className="landing-hero-cta mt-14 flex flex-wrap items-center justify-center gap-4 md:justify-start md:gap-6">
             <Link
               href="#prelude"
               onClick={scrollToPrelude}
