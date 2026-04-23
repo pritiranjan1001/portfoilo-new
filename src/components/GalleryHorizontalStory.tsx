@@ -357,6 +357,18 @@ export function GalleryHorizontalStory() {
     setReduceMotion(shouldReduceMotion());
   }, []);
 
+  /** Match /work: hide the document scrollbar while the gallery is mounted. */
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    root.classList.add("work-hide-doc-scrollbar");
+    body.classList.add("work-hide-doc-scrollbar");
+    return () => {
+      root.classList.remove("work-hide-doc-scrollbar");
+      body.classList.remove("work-hide-doc-scrollbar");
+    };
+  }, []);
+
   useEffect(() => {
     if (reduceMotion || !isDesktop) return;
     const outer = outerRef.current;
@@ -414,10 +426,9 @@ export function GalleryHorizontalStory() {
         if (!panel) return;
         gsap.fromTo(
           panel,
-          { opacity: 0.25, y: 32 },
+          { opacity: 0.25 },
           {
             opacity: 1,
-            y: 0,
             ease: "none",
             scrollTrigger: {
               scroller: document.documentElement,
@@ -498,6 +509,7 @@ export function GalleryHorizontalStory() {
 
       const onPointerDown = (e: PointerEvent) => {
         if (e.pointerType === "mouse" && e.button !== 0) return;
+        e.preventDefault();
         dragActive = true;
         dragPointerId = e.pointerId;
         dragOriginScroll = lenisInstance.scroll;
@@ -587,7 +599,7 @@ export function GalleryHorizontalStory() {
       ) : (
         <div
           ref={outerRef}
-          className={`relative mt-0 h-[100dvh] min-h-[100dvh] touch-pan-y overflow-hidden ${
+          className={`relative mt-0 h-[100dvh] min-h-[100dvh] touch-none overflow-hidden ${
             chrome ? "cursor-none" : ""
           }`}
         >

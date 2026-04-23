@@ -44,6 +44,17 @@ export function LenisScroll({
     if (shouldReduceMotion()) return;
 
     const immersive = variant === "immersive";
+
+    // On hard reload the browser may restore scroll position before Lenis/ScrollTrigger
+    // initialize, which can cause a visible vertical "nudge" when pinning starts.
+    const prevScrollRestoration = window.history.scrollRestoration;
+    try {
+      window.history.scrollRestoration = "manual";
+    } catch {
+      /* ignore */
+    }
+    // Don't force a pre-init scroll jump here; it can fight pinning on route changes.
+
     const instance = new Lenis({
       lerp: immersive ? 0.038 : 0.09,
       smoothWheel: true,
@@ -81,10 +92,8 @@ export function LenisScroll({
     ScrollTrigger.refresh();
 
     if (!window.location.hash || window.location.hash.length <= 1) {
-      const y = window.scrollY || window.pageYOffset || 0;
-      if (y > 1) {
-        instance.scrollTo(0, { immediate: true });
-      }
+      instance.scrollTo(0, { immediate: true, programmatic: true });
+      requestAnimationFrame(() => ScrollTrigger.update());
     }
 
     instance.on("scroll", ScrollTrigger.update);
@@ -211,6 +220,11 @@ export function LenisScroll({
     gsap.ticker.lagSmoothing(0);
 
     return () => {
+      try {
+        window.history.scrollRestoration = prevScrollRestoration;
+      } catch {
+        /* ignore */
+      }
       window.removeEventListener("keydown", onKeyDown);
       hashTimeouts.forEach((t) => window.clearTimeout(t));
       document.removeEventListener("click", onHashLinkClick, true);

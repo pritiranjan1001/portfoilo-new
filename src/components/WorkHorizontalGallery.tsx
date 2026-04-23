@@ -510,6 +510,7 @@ export function WorkHorizontalGallery() {
 
       const onPointerDown = (e: PointerEvent) => {
         if (e.pointerType === "mouse" && e.button !== 0) return;
+        e.preventDefault();
         dragActive = true;
         dragPointerId = e.pointerId;
         dragOriginScroll = lenisInstance.scroll;
@@ -623,7 +624,7 @@ export function WorkHorizontalGallery() {
         <div
           id="work-gallery-pin"
           ref={outerRef}
-          className={`relative mt-10 h-[100dvh] min-h-[100dvh] touch-pan-y overflow-hidden md:mt-14 ${
+          className={`relative mt-10 h-[100dvh] min-h-[100dvh] touch-none overflow-hidden md:mt-14 ${
             chrome && !reduceMotion ? "cursor-none" : ""
           }`}
         >

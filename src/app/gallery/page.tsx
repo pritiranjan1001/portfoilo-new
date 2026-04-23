@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function GalleryPage() {
   return (
-    <LenisScroll>
+    <LenisScroll variant="immersive">
       <ScrollProgress />
       <SiteHeader />
       <main className="min-h-[100dvh] bg-[#ede8de] p-0 dark:bg-[var(--background)]">
