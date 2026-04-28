@@ -165,30 +165,47 @@ export function PracticeSection() {
       id="practice"
       data-home-section="practice"
       tabIndex={-1}
-      className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-x-hidden overflow-y-auto overscroll-y-contain border-t border-[var(--border)] bg-[var(--surface-elevated)] px-6 py-12 outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-elevated)] md:overflow-y-visible md:px-14 md:py-16"
+      className="relative flex h-[100dvh] flex-col items-center justify-center overflow-hidden border-t border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-10 outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-elevated)] md:min-h-[100dvh] md:overflow-visible md:px-14 md:py-16"
     >
       <div className="relative w-full max-w-6xl">
         <header className="max-w-3xl [perspective:1000px]">
           <p className="practice-eyebrow font-mono text-xs uppercase tracking-[0.28em] text-[var(--accent)]">
             Practice
           </p>
-          <h2 className="practice-split-heading mt-4 font-display text-[clamp(1.75rem,4vw,3rem)] font-semibold leading-tight tracking-tight text-[var(--foreground)]">
+          <h2 className="practice-split-heading mt-2 text-balance font-display text-[clamp(1.6rem,5.1vw,3rem)] font-semibold leading-[1.08] tracking-tight text-[var(--foreground)]">
             Art, literature, and the space between
           </h2>
         </header>
 
-        <ul className="practice-discipline-grid mt-12 grid gap-10 border-t border-[var(--border)] pt-10 md:grid-cols-3 md:gap-12 md:pt-12">
+        <ul className="practice-discipline-grid mt-6 grid gap-0 md:mt-12 md:grid-cols-3 md:gap-10">
           {site.disciplines.map((d, i) => (
-            <li key={d.title} className="practice-discipline-card">
-              <span className="practice-discipline-index font-mono text-[10px] text-[var(--muted)]">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <h3 className="practice-discipline-title mt-4 font-display text-xl font-semibold text-[var(--foreground)] md:text-2xl">
-                {d.title}
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--muted)] md:text-[15px]">
-                {d.blurb}
-              </p>
+            <li
+              key={d.title}
+              className="practice-discipline-card group relative py-5 first:pt-0 last:pb-0 md:py-0"
+            >
+              <div className="flex items-start gap-4">
+                <div className="pt-0.5">
+                  <span className="practice-discipline-index block font-mono text-[10px] tabular-nums tracking-[0.28em] text-[var(--muted)]">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span
+                    className="mt-3 block h-10 w-px bg-[color-mix(in_oklab,var(--accent)_65%,transparent)] opacity-70 transition-opacity duration-300 group-hover:opacity-100 md:hidden"
+                    aria-hidden
+                  />
+                </div>
+                <div className="min-w-0 flex-1 border-t border-[color-mix(in_oklab,var(--foreground)_10%,transparent)] pt-3 first:border-t-0 first:pt-0 md:border-t-0 md:pt-0">
+                  <h3 className="practice-discipline-title font-display text-lg font-semibold leading-snug tracking-tight text-[var(--foreground)] md:text-2xl">
+                    {d.title}
+                  </h3>
+                  <p className="mt-2 text-pretty text-[13px] leading-relaxed text-[var(--muted)] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] overflow-hidden md:text-[15px] md:[-webkit-line-clamp:unset]">
+                    {d.blurb}
+                  </p>
+                  <div
+                    className="mt-3 h-px w-10 bg-[color-mix(in_oklab,var(--accent)_70%,transparent)] opacity-70 transition-[width,opacity] duration-500 group-hover:w-16 group-hover:opacity-100 md:hidden"
+                    aria-hidden
+                  />
+                </div>
+              </div>
             </li>
           ))}
         </ul>

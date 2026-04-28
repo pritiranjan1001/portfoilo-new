@@ -255,7 +255,7 @@ export function ContactSection() {
     <section
       ref={root}
       data-home-section="contact"
-      className="relative flex min-h-[100dvh] flex-col justify-center overflow-hidden border-t border-[var(--border)] bg-[color-mix(in_oklab,var(--background)_88%,var(--surface-elevated))] px-6 py-12 md:px-14 md:py-16"
+      className="relative flex h-[100dvh] flex-col justify-center overflow-hidden border-t border-[var(--border)] bg-[color-mix(in_oklab,var(--background)_88%,var(--surface-elevated))] px-6 py-10 text-center md:min-h-[100dvh] md:px-14 md:py-16 md:text-left"
     >
       {/* Soft wash + grain */}
       <div
@@ -275,9 +275,9 @@ export function ContactSection() {
         aria-hidden
       />
 
-      <ContactScribble className="contact-scribble-svg pointer-events-none absolute -bottom-8 -right-4 h-[min(52vw,280px)] w-[min(95vw,520px)] text-[#1e4fd6] opacity-[0.55] select-none md:-right-2 md:bottom-0 md:h-[min(38vw,320px)] dark:text-[#6ba3ff] dark:opacity-[0.4]" />
+      <ContactScribble className="contact-scribble-svg pointer-events-none absolute -bottom-10 -right-6 h-[min(44vw,240px)] w-[min(92vw,520px)] text-[#1e4fd6] opacity-[0.5] select-none md:-right-2 md:bottom-0 md:h-[min(38vw,320px)] dark:text-[#6ba3ff] dark:opacity-[0.4]" />
 
-      <div className="relative z-[1] mx-auto grid max-w-6xl gap-14 lg:grid-cols-12 lg:gap-10 lg:gap-y-16">
+      <div className="relative z-[1] mx-auto grid max-w-6xl justify-items-center gap-10 lg:grid-cols-12 lg:justify-items-stretch lg:gap-10 lg:gap-y-16">
         <div className="lg:col-span-6">
           <p className="contact-eyebrow font-mono text-xs uppercase tracking-[0.32em] text-[var(--accent)]">
             Contact us
@@ -310,52 +310,55 @@ export function ContactSection() {
           </p>
         </div>
 
-        <div className="contact-rail flex flex-col justify-center gap-10 lg:col-span-5 lg:col-start-8">
-          <div className="contact-anim relative rounded-2xl border border-[var(--border)] bg-[var(--surface)]/90 p-6 shadow-[0_24px_60px_-28px_color-mix(in_oklab,var(--foreground)_18%,transparent)] backdrop-blur-sm dark:bg-[var(--surface)]/80 md:p-8">
-            <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
+        <div className="contact-rail flex w-full max-w-md flex-col items-center justify-center gap-7 lg:col-span-5 lg:col-start-8 lg:max-w-none lg:items-stretch lg:gap-10">
+          <div className="contact-anim relative border-t border-[color-mix(in_oklab,var(--foreground)_14%,transparent)] pt-6 md:pt-10">
+            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--muted)]">
               Write
             </p>
             <a
               href={`mailto:${site.email}`}
-              className="group mt-4 inline-flex flex-wrap items-baseline gap-x-2 gap-y-1 border-b border-[var(--border-strong)] pb-1.5 font-body text-[clamp(1.05rem,2.4vw,1.35rem)] text-[var(--foreground)] transition-colors hover:border-[var(--accent)]"
+              className="group mt-4 inline-flex max-w-full items-baseline justify-center gap-3 font-display text-[clamp(1.25rem,4.4vw,1.75rem)] font-semibold leading-[1.05] tracking-tight text-[var(--foreground)] md:justify-start"
             >
-              <span className="break-all">{site.email}</span>
+              <span className="min-w-0 break-all">
+                <span className="border-b border-[color-mix(in_oklab,var(--foreground)_22%,transparent)] pb-1 transition-colors group-hover:border-[color-mix(in_oklab,var(--accent)_65%,transparent)]">
+                  {site.email}
+                </span>
+              </span>
               <span
-                className="inline-block shrink-0 transition-transform duration-300 group-hover:translate-x-1"
+                className="inline-block shrink-0 translate-y-[1px] opacity-70 transition-[transform,opacity] duration-300 group-hover:translate-x-1 group-hover:opacity-100"
                 aria-hidden
               >
                 →
               </span>
             </a>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-3 md:justify-start">
               <button
                 type="button"
                 onClick={copyEmail}
-                className="rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--muted)] transition-colors hover:border-[var(--accent)] hover:text-[var(--foreground)]"
+                className="font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--muted)] underline decoration-[color-mix(in_oklab,var(--foreground)_18%,transparent)] decoration-2 underline-offset-[6px] transition-colors hover:text-[var(--foreground)] hover:decoration-[color-mix(in_oklab,var(--accent)_70%,transparent)]"
               >
                 {copied ? "Copied" : "Copy address"}
               </button>
             </div>
           </div>
 
-          <div className="contact-anim">
-            <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
+          <div className="contact-anim border-t border-[color-mix(in_oklab,var(--foreground)_14%,transparent)] pt-6 md:pt-10">
+            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--muted)]">
               Elsewhere
             </p>
-            <div className="mt-4 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-nowrap items-center justify-center gap-5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-1 lg:justify-items-start lg:gap-2">
               {site.social.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-5 py-2.5 text-sm font-medium text-[var(--muted)] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[var(--accent)] hover:text-[var(--foreground)] hover:shadow-md"
+                  className="group inline-flex shrink-0 items-center justify-between gap-2 py-1.5 text-[13px] font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)] md:text-[15px] lg:w-full lg:justify-between lg:py-2"
                 >
-                  {link.label}
-                  <span
-                    className="text-[10px] opacity-0 transition-opacity group-hover:opacity-100"
-                    aria-hidden
-                  >
+                  <span className="border-b border-transparent pb-0.5 transition-colors group-hover:border-[color-mix(in_oklab,var(--accent)_60%,transparent)]">
+                    {link.label}
+                  </span>
+                  <span className="text-xs opacity-60 transition-[transform,opacity] group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden>
                     ↗
                   </span>
                 </a>

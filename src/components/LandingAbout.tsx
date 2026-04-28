@@ -153,10 +153,10 @@ export function LandingAbout() {
         <p className="landing-about-eyebrow font-mono text-xs uppercase tracking-[0.28em] text-[var(--accent)]">
           A few words
         </p>
-        <p className="landing-about-desc mt-8 font-body text-lg leading-relaxed text-[var(--foreground)] md:text-xl">
+        <p className="landing-about-desc mt-8 font-body text-base leading-relaxed text-[var(--foreground)] md:text-xl">
           {site.description}
         </p>
-        <blockquote className="landing-about-quote mt-12 border-l-2 border-[var(--accent)] pl-6 font-serif text-lg italic leading-snug text-[var(--muted)] md:text-xl">
+        <blockquote className="landing-about-quote mt-12 border-l-2 border-[var(--accent)] pl-6 font-serif text-base italic leading-snug text-[var(--muted)] md:text-xl">
           I work where image and sentence overlap—neither fully explains the other,
           and that gap is the interesting part.
         </blockquote>
