@@ -9,6 +9,8 @@ import { AboutExperiencePatterns } from "@/components/AboutBackgroundPatterns";
 import { AboutFindInsidePatterns } from "@/components/AboutFindInsidePatterns";
 import { AboutFlashbackMemories } from "@/components/AboutFlashbackMemories";
 import { AboutKickerStripPatterns } from "@/components/AboutKickerStripPatterns";
+import { AboutVillageLandscape } from "@/components/AboutVillageLandscape";
+import { AboutVillageThreeScene } from "@/components/AboutVillageThreeScene";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -274,7 +276,37 @@ export function AboutPageView() {
       >
         <div className="relative">
           <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-14">
-            <div className="relative isolate overflow-hidden rounded-sm py-1">
+            <section
+              className="relative isolate -mt-20 min-h-[100dvh] w-[100vw] ml-[calc(50%-50vw)] overflow-hidden border-y border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_70%,transparent)] md:-mt-24"
+              aria-label="Village landscape"
+            >
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-44 bg-gradient-to-t from-[color-mix(in_oklab,var(--surface-elevated)_88%,var(--background))] to-transparent md:h-56"
+                aria-hidden
+              />
+              <AboutVillageThreeScene className="h-full w-full" />
+              {/* SVG fallback/texture layer */}
+              <AboutVillageLandscape
+                variant="full"
+                className="opacity-[0.18] md:opacity-[0.12]"
+              />
+
+              {/* Content stays aligned to the main grid width */}
+              <div className="relative z-10 mx-auto flex h-full min-h-[100dvh] max-w-6xl flex-col justify-between gap-10 px-6 pt-[max(4rem,calc(var(--site-header-height)+0.75rem))] pb-10 md:px-14 md:pt-[max(5rem,calc(var(--site-header-height)+1rem))] md:pb-12">
+                <div className="flex-1" aria-hidden />
+                <div className="flex flex-col gap-3 md:max-w-md">
+                  <p className="text-pretty font-serif text-[15px] italic leading-relaxed text-[var(--muted)] md:text-base">
+                    A village horizon — quiet movement, everyday rhythm.
+                  </p>
+                  <div
+                    className="h-px w-16 bg-[color-mix(in_oklab,var(--accent)_65%,transparent)]"
+                    aria-hidden
+                  />
+                </div>
+              </div>
+            </section>
+
+            <div className="relative isolate mt-10 overflow-hidden rounded-sm py-1 md:mt-12">
               <FullBleedPattern>
                 <AboutKickerStripPatterns />
               </FullBleedPattern>
