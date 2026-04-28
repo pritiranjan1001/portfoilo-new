@@ -7,7 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "lenis/dist/lenis.css";
 import { HomeHashResolver } from "@/components/HomeHashResolver";
 import { LenisInstanceContext } from "@/components/lenis-context";
-import { ANCHOR_SCROLL_NUDGE_PX } from "@/lib/scroll-anchors";
+import { getAnchorAlignFromTarget, getAnchorScrollTopPx } from "@/lib/scroll-anchors";
 import { registerGsapPlugins, shouldReduceMotion } from "@/lib/gsap-plugins";
 
 function isKeyboardFocusEditable(target: EventTarget | null): boolean {
@@ -105,10 +105,8 @@ export function LenisScroll({
       const el = document.getElementById(id);
       if (!el) return;
       /** `immediate` keeps hash scroll reliable; animated element scroll can stall if Lenis state drifts from the document. */
-      instance.scrollTo(el, {
-        offset: ANCHOR_SCROLL_NUDGE_PX,
-        immediate: true,
-      });
+      const align = getAnchorAlignFromTarget(el);
+      instance.scrollTo(getAnchorScrollTopPx(el, align), { immediate: true });
     };
     scrollToHashIfPresent();
     requestAnimationFrame(() => {
@@ -148,10 +146,8 @@ export function LenisScroll({
         "",
         `${url.pathname}${url.search}${url.hash}`,
       );
-      instance.scrollTo(target, {
-        offset: ANCHOR_SCROLL_NUDGE_PX,
-        immediate: true,
-      });
+      const align = getAnchorAlignFromTarget(target);
+      instance.scrollTo(getAnchorScrollTopPx(target, align), { immediate: true });
     };
     document.addEventListener("click", onHashLinkClick, true);
 

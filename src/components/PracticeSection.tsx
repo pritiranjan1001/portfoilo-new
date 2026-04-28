@@ -164,6 +164,7 @@ export function PracticeSection() {
       ref={root}
       id="practice"
       data-home-section="practice"
+      data-anchor-align="center"
       tabIndex={-1}
       className="relative flex h-[100dvh] flex-col items-center justify-center overflow-hidden border-t border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-10 outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--surface-elevated)] md:min-h-[100dvh] md:overflow-visible md:px-14 md:py-16"
     >

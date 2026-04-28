@@ -3,13 +3,14 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useLenisInstance } from "@/components/lenis-context";
-import { ANCHOR_SCROLL_NUDGE_PX } from "@/lib/scroll-anchors";
+import { getAnchorAlignFromTarget, getAnchorScrollTopPx } from "@/lib/scroll-anchors";
 
 function scrollToId(id: string, lenis: ReturnType<typeof useLenisInstance>) {
   const el = document.getElementById(id);
   if (!el) return false;
   if (lenis) {
-    lenis.scrollTo(el, { offset: ANCHOR_SCROLL_NUDGE_PX, immediate: true });
+    const align = getAnchorAlignFromTarget(el);
+    lenis.scrollTo(getAnchorScrollTopPx(el, align), { immediate: true });
   } else {
     el.scrollIntoView({ block: "start", behavior: "auto" });
   }

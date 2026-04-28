@@ -254,7 +254,9 @@ export function ContactSection() {
   return (
     <section
       ref={root}
+      id="contact"
       data-home-section="contact"
+      data-anchor-align="center"
       className="relative flex h-[100dvh] flex-col justify-center overflow-hidden border-t border-[var(--border)] bg-[color-mix(in_oklab,var(--background)_88%,var(--surface-elevated))] px-6 py-10 text-center md:min-h-[100dvh] md:px-14 md:py-16 md:text-left"
     >
       {/* Soft wash + grain */}

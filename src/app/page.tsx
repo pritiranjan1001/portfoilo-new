@@ -21,7 +21,6 @@ export default function Home() {
         <LandingAbout />
         <PracticeSection />
         <div
-          id="contact"
           tabIndex={-1}
           className="flex flex-col outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--background)]"
         >
