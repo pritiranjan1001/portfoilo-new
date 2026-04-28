@@ -15,7 +15,7 @@ export function AboutVillageThreeScene({ className }: AboutVillageThreeSceneProp
   const isDark = useIsDarkMode();
 
   return (
-    <div className={className} style={{ position: "absolute", inset: 0 }}>
+    <div className={className} style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
       <Canvas
         dpr={[1, 1.5]}
         gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}

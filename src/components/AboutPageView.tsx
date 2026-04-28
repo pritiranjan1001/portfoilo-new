@@ -1,10 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Link from "next/link";
 import { AboutExperiencePatterns } from "@/components/AboutBackgroundPatterns";
 import { AboutFindInsidePatterns } from "@/components/AboutFindInsidePatterns";
 import { AboutFlashbackMemories } from "@/components/AboutFlashbackMemories";
@@ -46,6 +47,9 @@ export function AboutPageView() {
   const root = useRef<HTMLElement>(null);
   const bioExtraRef = useRef<HTMLDivElement>(null);
   const [bioExpanded, setBioExpanded] = useState(false);
+  const [activeHotspot, setActiveHotspot] = useState<null | "rocks" | "grove" | "cabin">(null);
+  const [modalOrigin, setModalOrigin] = useState<{ x: number; y: number }>({ x: 0.5, y: 0.5 });
+  const [modalMounted, setModalMounted] = useState(false);
   const lenis = useLenisInstance();
   const stamped = formatAboutDate(new Date());
   const bioParas = site.aboutBioParagraphs;
@@ -57,6 +61,60 @@ export function AboutPageView() {
 
   const sectionEndRule =
     "mt-12 border-0 border-t border-[var(--border-strong)] md:mt-14";
+
+  const openHotspot = (id: "rocks" | "grove" | "cabin", el: HTMLElement) => {
+    const rect = el.getBoundingClientRect();
+    const cx = (rect.left + rect.right) / 2;
+    const cy = (rect.top + rect.bottom) / 2;
+    setModalOrigin({
+      x: window.innerWidth > 0 ? cx / window.innerWidth : 0.5,
+      y: window.innerHeight > 0 ? cy / window.innerHeight : 0.5,
+    });
+    setActiveHotspot(id);
+  };
+
+  const hotspots = [
+    {
+      id: "grove" as const,
+      title: "Grove",
+      body: "A small canopy cluster — a quiet rhythm in the middle distance.",
+      top: "33%",
+      left: "42%",
+    },
+    {
+      id: "rocks" as const,
+      title: "Gallery",
+      body: "A quick entry into the gallery sequence — publications, paintings, and archive beats.",
+      top: "55%",
+      left: "36%",
+    },
+    {
+      id: "cabin" as const,
+      title: "Flashback memory",
+      body: "Photographs and short clips from the archive — studio days, openings, and quiet moments.",
+      top: "50%",
+      left: "77%",
+    },
+  ];
+
+  useEffect(() => {
+    if (activeHotspot == null) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setActiveHotspot(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeHotspot]);
+
+  useEffect(() => {
+    if (activeHotspot != null) {
+      setModalMounted(true);
+      return;
+    }
+    // Keep mounted briefly for "vanish" animation, then unmount
+    const t = window.setTimeout(() => setModalMounted(false), 260);
+    return () => window.clearTimeout(t);
+  }, [activeHotspot]);
 
   /** Lenis routes clear `ScrollTrigger` defaults on unmount — refresh so /about reveals run. */
   useLayoutEffect(() => {
@@ -291,6 +349,211 @@ export function AboutPageView() {
                 className="opacity-[0.18] md:opacity-[0.12]"
               />
 
+              {/* Hotspots overlay */}
+              <div className="absolute inset-0 z-40 pointer-events-none">
+                {hotspots.map((h) => (
+                  <button
+                    key={h.id}
+                    type="button"
+                    className="hotspot"
+                    style={{ top: h.top, left: h.left, pointerEvents: "auto" }}
+                    aria-label={`${h.title}. Open details`}
+                    aria-haspopup="dialog"
+                    aria-expanded={activeHotspot === h.id}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      openHotspot(h.id, e.currentTarget);
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      openHotspot(h.id, e.currentTarget);
+                    }}
+                    onTouchStart={(e) => {
+                      e.stopPropagation();
+                      openHotspot(h.id, e.currentTarget);
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openHotspot(h.id, e.currentTarget);
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Modal */}
+              {modalMounted && (
+                <div className="absolute inset-0 z-50 pointer-events-auto" aria-hidden={activeHotspot ? undefined : true}>
+                  <button
+                    type="button"
+                    className={`absolute inset-0 bg-black/20 transition-opacity duration-300 ${
+                      activeHotspot ? "opacity-100" : "opacity-0"
+                    }`}
+                    aria-label="Close details"
+                    onClick={() => setActiveHotspot(null)}
+                  />
+                  <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="About"
+                    data-state={activeHotspot ? "open" : "closed"}
+                    className="magic-modal pointer-events-none absolute inset-0 grid place-items-center px-4"
+                    style={
+                      {
+                        ["--magic-x" as any]: `${Math.round(modalOrigin.x * 100)}%`,
+                        ["--magic-y" as any]: `${Math.round(modalOrigin.y * 100)}%`,
+                      } as React.CSSProperties
+                    }
+                  >
+                  <div className="magic-modal__card pointer-events-auto w-[min(860px,96vw)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_92%,transparent)] shadow-[0_34px_100px_-34px_color-mix(in_oklab,black_42%,transparent)] backdrop-blur-md">
+                    <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-5 py-4">
+                      <div className="min-w-0">
+                        {activeHotspot === "grove" ? (
+                          <>
+                            <div className="flex items-baseline justify-between gap-4 font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
+                              <span className="text-[var(--foreground)]">About</span>
+                              <time dateTime={new Date().toISOString().slice(0, 10)}>{stamped}</time>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
+                              {activeHotspot === "cabin" ? "Archive" : "Gallery"}
+                            </p>
+                            <p className="mt-1 font-display text-xl font-semibold text-[var(--foreground)]">
+                              {activeHotspot === "cabin" ? "Flashback memory" : "Gallery"}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className="shrink-0 rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_90%,transparent)] px-3 py-1 text-sm text-[var(--foreground)] transition hover:border-[var(--border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                        onClick={() => setActiveHotspot(null)}
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <div className="max-h-[78dvh] overflow-auto px-5 py-5 text-[15px] leading-relaxed text-[var(--foreground)]">
+                      {activeHotspot === "grove" && (
+                        <>
+                          <p className="text-pretty text-[color-mix(in_oklab,var(--foreground)_82%,var(--muted))]">
+                            Jyotiranjan Swain (b. 1970) is a visual artist and graphic designer with
+                            a background in applied arts from the Sir J.J. Institute of Applied Art,
+                            Mumbai. In the early 1990s, he founded Third Eye Communications in
+                            Bhubaneswar, significantly transforming the design and print production
+                            landscape in Odisha. His portfolio spans a diverse array of publications
+                            and products across various formats and media, marked by innovative design,
+                            a commitment to quality, meticulous attention to detail, and factual
+                            accuracy. His work reflects a transformative design vocabulary that has
+                            redefined standards in the field.
+                          </p>
+                          <div
+                            className="mt-5 h-px w-16 bg-[color-mix(in_oklab,var(--accent)_65%,transparent)]"
+                            aria-hidden
+                          />
+                          <button
+                            type="button"
+                            className="mt-4 inline cursor-pointer border-0 bg-transparent p-0 font-body text-base font-medium tracking-wide text-[var(--foreground)] underline decoration-[var(--border-strong)] decoration-2 underline-offset-[6px] transition hover:decoration-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                            onClick={() => setBioExpanded(true)}
+                          >
+                            See more
+                          </button>
+                        </>
+                      )}
+
+                      {activeHotspot === "rocks" && (
+                        <div className="relative isolate overflow-hidden">
+                          <div className="grid grid-cols-1 gap-10 md:grid-cols-2 md:gap-x-16">
+                            <p className="font-display text-[clamp(2.25rem,5vw,3.25rem)] font-bold leading-[0.98] tracking-tight text-[var(--foreground)]">
+                              <span className="block">{site.aboutFindInside.line1}</span>
+                              <span className="mt-1 block">{site.aboutFindInside.line2}</span>
+                            </p>
+
+                            <ol className="list-none space-y-0">
+                              {site.aboutFindInside.items.map((item, index) => (
+                                <li key={`${index}-${item.label}`} className="about-find-row">
+                                  <div className="flex items-baseline justify-between gap-6 pb-4 pt-1 md:pb-5 md:pt-2">
+                                    <span className="about-find-num font-mono text-sm tabular-nums text-[var(--foreground)] md:text-base">
+                                      {index + 1}
+                                    </span>
+                                    <span className="about-find-label max-w-[min(100%,20rem)] text-right font-display text-base font-bold tracking-tight text-[var(--foreground)] md:text-lg">
+                                      {item.label}
+                                    </span>
+                                  </div>
+                                  <div
+                                    className="about-find-line h-px w-full bg-[var(--foreground)]"
+                                    aria-hidden
+                                  />
+                                </li>
+                              ))}
+                            </ol>
+                          </div>
+
+                          <div
+                            className="pointer-events-none absolute inset-0 opacity-[0.45] dark:opacity-[0.32]"
+                            style={{
+                              background:
+                                "radial-gradient(ellipse 75% 60% at 18% 28%, color-mix(in oklab, var(--foreground) 10%, transparent) 0%, transparent 62%), radial-gradient(ellipse 60% 45% at 84% 70%, color-mix(in oklab, var(--foreground) 7%, transparent) 0%, transparent 64%)",
+                            }}
+                            aria-hidden
+                          />
+                        </div>
+                      )}
+
+                      {activeHotspot === "cabin" && (
+                        <div
+                          className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_55%,transparent)] p-6 md:p-8"
+                          style={{
+                            backgroundImage:
+                              "linear-gradient(0deg, color-mix(in oklab, var(--foreground) 6%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklab, var(--foreground) 6%, transparent) 1px, transparent 1px)",
+                            backgroundSize: "44px 44px",
+                          }}
+                        >
+                          <div className="relative z-10 grid grid-cols-1 gap-8 md:grid-cols-[1.05fr_1.25fr] md:gap-10">
+                            <div className="min-w-0">
+                              <p className="font-display text-[clamp(2.4rem,5.2vw,3.4rem)] font-bold leading-[0.96] tracking-tight text-[var(--foreground)]">
+                                <span className="block">Where I&apos;ve</span>
+                                <span className="mt-1 block">worked.</span>
+                              </p>
+                            </div>
+
+                            <ol className="space-y-6">
+                              {site.experience.map((job) => (
+                                <li key={`${job.range}-${job.company}`}>
+                                  <div className="grid grid-cols-[92px_1fr] gap-6 md:grid-cols-[110px_1fr]">
+                                    <span className="pt-1 font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
+                                      {job.range}
+                                    </span>
+                                    <div className="min-w-0">
+                                      <p className="font-display text-base font-semibold leading-snug text-[var(--foreground)] md:text-lg">
+                                        {job.title}
+                                      </p>
+                                      <p className="mt-1 text-sm text-[var(--muted)]">
+                                        {job.company}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </li>
+                              ))}
+                            </ol>
+                          </div>
+
+                          <div
+                            className="pointer-events-none absolute inset-0 opacity-[0.35] dark:opacity-[0.25]"
+                            style={{
+                              background:
+                                "radial-gradient(ellipse 70% 55% at 20% 18%, color-mix(in oklab, var(--accent) 10%, transparent) 0%, transparent 60%), radial-gradient(ellipse 60% 45% at 82% 74%, color-mix(in oklab, var(--accent) 7%, transparent) 0%, transparent 62%)",
+                            }}
+                            aria-hidden
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                </div>
+              )}
+
               {/* Content stays aligned to the main grid width */}
               <div className="relative z-10 mx-auto flex h-full min-h-[100dvh] max-w-6xl flex-col justify-between gap-10 px-6 pt-[max(4rem,calc(var(--site-header-height)+0.75rem))] pb-10 md:px-14 md:pt-[max(5rem,calc(var(--site-header-height)+1rem))] md:pb-12">
                 <div className="flex-1" aria-hidden />
@@ -306,6 +569,7 @@ export function AboutPageView() {
               </div>
             </section>
 
+            {/*
             <div className="relative isolate mt-10 overflow-hidden rounded-sm py-1 md:mt-12">
               <FullBleedPattern>
                 <AboutKickerStripPatterns />
@@ -332,11 +596,8 @@ export function AboutPageView() {
                   id="about-bio-heading"
                   className="font-display text-[clamp(2.25rem,6vw,3.75rem)] font-bold leading-[0.98] tracking-tight text-[var(--foreground)]"
                 >
-                  <span className="about-anim-bio-line block">
-                    {site.aboutStatement.line1}
-                  </span>
-                  <span className="about-anim-bio-line mt-1 block md:mt-2">
-                    {site.aboutStatement.line2}
+                  <span className="sr-only">
+                    {site.aboutStatement.line1} {site.aboutStatement.line2}
                   </span>
                 </h2>
                 <div className="min-w-0 font-body text-base leading-[1.8] text-[var(--foreground)] md:text-[17px] md:leading-[1.85]">
@@ -383,7 +644,9 @@ export function AboutPageView() {
                 </div>
               </div>
             </section>
+            */}
 
+            {/*
             <hr className={sectionEndRule} aria-hidden />
 
             <section
@@ -428,9 +691,11 @@ export function AboutPageView() {
             </section>
 
             <hr className={sectionEndRule} aria-hidden />
+            */}
           </div>
         </div>
 
+        {/*
         <section
           className="about-find-block relative isolate mt-24 overflow-hidden md:mt-32"
           aria-labelledby="about-find-heading"
@@ -472,8 +737,9 @@ export function AboutPageView() {
             </div>
           </div>
         </section>
+        */}
 
-        <AboutFlashbackMemories fullWidth className="mt-12 md:mt-16 lg:mt-20" />
+        <AboutFlashbackMemories fullWidth className="mt-0" />
       </main>
       <SiteFooter />
     </>
