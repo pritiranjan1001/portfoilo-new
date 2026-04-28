@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Sparkles } from "@react-three/drei";
 import * as THREE from "three";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -20,7 +20,7 @@ export function AboutVillageThreeScene({ className }: AboutVillageThreeSceneProp
         dpr={[1, 1.5]}
         gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}
         camera={{ position: [0, 2.15, 10.5], fov: 38, near: 0.1, far: 120 }}
-        frameloop="demand"
+        frameloop={reduce ? "demand" : "always"}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
         onCreated={({ gl }) => {
           // Lift the scene without making it "flat".
@@ -121,6 +121,11 @@ function Scene({ reduceMotion, isDark }: { reduceMotion: boolean; isDark: boolea
         reduceMotion={reduceMotion}
       />
 
+      <Birds
+        enabled={!reduceMotion}
+        color={isDark ? "rgba(255,255,255,0.55)" : "rgba(20,17,13,0.55)"}
+      />
+
       {/* Atmospheric dust */}
       <Sparkles
         count={48}
@@ -133,6 +138,79 @@ function Scene({ reduceMotion, isDark }: { reduceMotion: boolean; isDark: boolea
         noise={0.8}
       />
     </>
+  );
+}
+
+type BirdSeed = {
+  y: number;
+  z: number;
+  r: number;
+  speed: number;
+  phase: number;
+  amp: number;
+  scale: number;
+};
+
+function Birds({ enabled, color }: { enabled: boolean; color: string }) {
+  const mesh = useRef<THREE.InstancedMesh>(null);
+  const tmp = useMemo(() => new THREE.Object3D(), []);
+
+  const birds = useMemo<BirdSeed[]>(
+    () =>
+      [
+        // nearer flock
+        ...new Array(14).fill(0).map((_, i) => ({
+          y: 2.75 + (i % 4) * 0.22 + Math.random() * 0.18,
+          z: -8.5 - Math.random() * 6.0,
+          r: 11.5 + Math.random() * 9.5,
+          speed: 0.12 + Math.random() * 0.16,
+          phase: Math.random() * Math.PI * 2,
+          amp: 0.12 + Math.random() * 0.18,
+          scale: 1.0,
+        })),
+        // distant flock (smaller + slower)
+        ...new Array(10).fill(0).map(() => ({
+          y: 3.45 + Math.random() * 0.55,
+          z: -14.0 - Math.random() * 9.0,
+          r: 16 + Math.random() * 14,
+          speed: 0.07 + Math.random() * 0.1,
+          phase: Math.random() * Math.PI * 2,
+          amp: 0.06 + Math.random() * 0.1,
+          scale: 0.72,
+        })),
+      ] satisfies BirdSeed[],
+    [],
+  );
+
+  useFrame(({ clock }) => {
+    if (!enabled) return;
+    const m = mesh.current;
+    if (!m) return;
+    const t = clock.getElapsedTime();
+
+    for (let i = 0; i < birds.length; i++) {
+      const b = birds[i];
+      const a = t * b.speed + b.phase;
+      const x = Math.cos(a) * b.r;
+      const z = b.z + Math.sin(a) * b.r;
+      const y = b.y + Math.sin(a * 2.0) * b.amp;
+
+      tmp.position.set(x, y, z);
+      tmp.rotation.set(0, -a + Math.PI / 2, Math.sin(a * 6.0) * 0.22);
+      const s = (0.22 + Math.sin(a * 3.0) * 0.02) * b.scale;
+      tmp.scale.set(s, s, s);
+      tmp.updateMatrix();
+      m.setMatrixAt(i, tmp.matrix);
+    }
+    m.instanceMatrix.needsUpdate = true;
+  });
+
+  // A tiny “V” bird: very low-poly tetra looks good at this scale.
+  return (
+    <instancedMesh ref={mesh} args={[undefined, undefined, birds.length]} position={[0, 0, 0]}>
+      <tetrahedronGeometry args={[0.22, 0]} />
+      <meshStandardMaterial color={color} roughness={1} metalness={0} />
+    </instancedMesh>
   );
 }
 
