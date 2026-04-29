@@ -48,6 +48,8 @@ export function AboutPageView() {
   const bioExtraRef = useRef<HTMLDivElement>(null);
   const landscapeSectionRef = useRef<HTMLElement>(null);
   const detailsOverlayRef = useRef<HTMLDivElement>(null);
+  const detailsTimelineRef = useRef<HTMLDivElement>(null);
+  const walkerTrailRef = useRef<HTMLDivElement>(null);
   const [bioExpanded, setBioExpanded] = useState(false);
   const [activeHotspot, setActiveHotspot] = useState<null | "rocks" | "grove" | "cabin">(null);
   const [modalOrigin, setModalOrigin] = useState<{ x: number; y: number }>({ x: 0.5, y: 0.5 });
@@ -366,22 +368,22 @@ export function AboutPageView() {
       if (!overlay) return;
       const zoomPanel = overlay.querySelector(".about-details-zoom");
       const heading = overlay.querySelectorAll(".about-details-heading-line");
-      const items = overlay.querySelectorAll(".about-details-item");
+      const labels = overlay.querySelectorAll(".about-details-label");
       if (!zoomPanel) return;
 
       if (shouldReduceMotion()) {
-        gsap.set([zoomPanel, ...heading, ...items], { opacity: 1, x: 0, y: 0, scale: 1 });
+        gsap.set([zoomPanel, ...heading], { opacity: 1, x: 0, y: 0, scale: 1 });
+        gsap.set(labels, { opacity: 1, y: 0 });
         return;
       }
 
-      gsap.killTweensOf([zoomPanel, ...heading, ...items]);
+      gsap.killTweensOf([zoomPanel, ...heading]);
       gsap.set(zoomPanel, {
         opacity: 0.4,
         scale: 0.88,
         transformOrigin: `${Math.round(detailsZoomOrigin.x * 100)}% ${Math.round(detailsZoomOrigin.y * 100)}%`,
       });
       gsap.set(heading, { opacity: 0, y: 22 });
-      gsap.set(items, { opacity: 0, x: -14, y: 16 });
 
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
       tl.to(zoomPanel, {
@@ -398,22 +400,145 @@ export function AboutPageView() {
             stagger: 0.12,
           },
           "-=0.35",
-        )
-        .to(
-          items,
-          {
-            opacity: 1,
-            x: 0,
-            y: 0,
-            duration: 0.44,
-            stagger: 0.16,
-          },
-          "-=0.08",
         );
 
       return () => tl.kill();
     },
     { dependencies: [detailsOpen, detailsZoomOrigin.x, detailsZoomOrigin.y] },
+  );
+
+  useGSAP(
+    () => {
+      if (!detailsOpen) return;
+      if (shouldReduceMotion()) return;
+      const timelineEl = detailsTimelineRef.current;
+      const trailLayer = walkerTrailRef.current;
+      if (!timelineEl || !trailLayer) return;
+
+      const ol = timelineEl.querySelector<HTMLOListElement>("ol");
+      if (!ol) return;
+      const items = Array.from(ol.querySelectorAll<HTMLElement>(".about-details-item"));
+      if (items.length === 0) return;
+      const labels = items
+        .map((li) => li.querySelector<HTMLElement>(".about-details-label"))
+        .filter((v): v is HTMLElement => v != null);
+
+      // Use layout offsets (unaffected by GSAP transforms) so the trail reaches 08 reliably.
+      const padX = 8;
+      const clampX = (x: number) =>
+        Math.min(Math.max(x, padX), Math.max(padX, timelineEl.clientWidth - padX));
+
+      const points = items.map((li) => ({
+        x: clampX(ol.offsetLeft + li.offsetLeft + li.offsetWidth / 2),
+        y: ol.offsetTop + li.offsetTop + li.offsetHeight / 2,
+      }));
+
+      gsap.killTweensOf(trailLayer);
+      // Clear previous stamps
+      trailLayer.replaceChildren();
+
+      const makeStamp = () => {
+        const el = document.createElement("span");
+        el.setAttribute("aria-hidden", "true");
+        el.className =
+          "absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 text-[var(--foreground)]/85";
+        el.innerHTML = `
+<svg viewBox="0 0 28 14" width="26" height="13" style="display:block">
+  <!-- heel (smaller) -->
+  <ellipse cx="6.2" cy="8.0" rx="4.3" ry="3.2" fill="currentColor"></ellipse>
+  <!-- toe/forefoot (bigger) -->
+  <ellipse cx="19.8" cy="6.3" rx="7.1" ry="4.6" fill="currentColor"></ellipse>
+  <!-- split band -->
+  <rect x="12.6" y="2.9" width="2.4" height="8.1" rx="1.1" fill="var(--surface)"></rect>
+</svg>
+`;
+        trailLayer.appendChild(el);
+        return el;
+      };
+
+      const t = gsap.timeline({ defaults: { ease: "power2.out" } });
+      const stepEvery = 0.28; // slower cadence between steps
+      // Only keep ~2 footprints visible at a time.
+      const fadeAfter = stepEvery * 3.1;
+      const stridePx = 44; // distance between footsteps
+
+      // Build a dense set of walking steps between 01 -> 08 anchors.
+      const yFixed = points[0]?.y ?? 0;
+      const denseSteps: Array<{ x: number; y: number }> = [];
+      const anchorStepIndex: number[] = [0];
+      for (let i = 0; i < points.length - 1; i++) {
+        const a = points[i];
+        const b = points[i + 1];
+        const dx = b.x - a.x;
+        const dist = Math.max(1, Math.abs(dx));
+        const n = Math.max(1, Math.ceil(dist / stridePx));
+        for (let s = 0; s < n; s++) {
+          const t0 = s / n;
+          denseSteps.push({ x: clampX(a.x + dx * t0), y: yFixed });
+        }
+        // Always include the anchor endpoint so we reach 02..08 exactly.
+        denseSteps.push({ x: clampX(b.x), y: yFixed });
+        anchorStepIndex.push(denseSteps.length - 1);
+      }
+
+      const stamps = denseSteps.map(() => makeStamp());
+      gsap.set(stamps, { opacity: 0, scale: 0.92 });
+      if (labels.length > 0) {
+        gsap.set(labels, {
+          opacity: 0,
+          y: 10,
+        });
+      }
+
+      denseSteps.forEach((p, i) => {
+        const stamp = stamps[i];
+        const side = i % 2 === 0 ? 1 : -1;
+        const xJitter = 0; // keep the walk on the same x line
+        const yJitter = side * 7; // alternate steps slightly above/below the line
+        const rot = i % 2 === 0 ? 10 : 14;
+        const flip = i % 2 === 0 ? 1 : -1; // mirror for left/right foot
+        const at = i * stepEvery;
+        const isTail = i >= stamps.length - 2; // keep only the last two steps visible at end
+
+        t.set(
+          stamp,
+          {
+            x: p.x + xJitter,
+            y: p.y + yJitter,
+            rotate: rot,
+            scaleX: flip,
+            opacity: 0,
+            scale: 0.92,
+          },
+          at,
+        );
+        t.to(stamp, { opacity: 0.92, scale: 1, duration: 0.18 }, at);
+        t.to(stamp, { scale: 0.97, duration: 0.26 }, at + 0.18);
+        if (!isTail) {
+          t.to(stamp, { opacity: 0, duration: 0.28, ease: "power2.in" }, at + fadeAfter);
+        }
+      });
+
+      // Reveal each label when the walker reaches that anchor point.
+      anchorStepIndex.forEach((stepIdx, anchorIdx) => {
+        const label = labels[anchorIdx];
+        if (!label) return;
+        const at = stepIdx * stepEvery + 0.02;
+        t.to(
+          label,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.32,
+            ease: "power2.out",
+          },
+          at,
+        );
+      });
+
+      return () => t.kill();
+    },
+    { dependencies: [detailsOpen] },
   );
 
   return (
@@ -685,7 +810,13 @@ export function AboutPageView() {
                             </button>
                           </div>
                           <div className="min-w-0">
-                            <div className="relative pt-4">
+                            <div ref={detailsTimelineRef} className="relative pt-4">
+                              <div
+                                ref={walkerTrailRef}
+                                className="pointer-events-none absolute inset-0 z-10"
+                                aria-hidden
+                              />
+
                               <ol className="grid grid-cols-4 gap-x-6 gap-y-10 md:grid-cols-8 md:gap-x-8 md:gap-y-0">
                                 {detailsItems.map((item, index) => (
                                   <li
@@ -693,20 +824,12 @@ export function AboutPageView() {
                                     className="about-details-item relative flex min-h-[170px] items-center justify-center px-2"
                                   >
                                     <span
-                                      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-1.5 py-1 text-[var(--foreground)]/85"
+                                      data-step-anchor="true"
+                                      className="absolute left-1/2 top-1/2 h-6 w-10 -translate-x-1/2 -translate-y-1/2"
                                       aria-hidden
-                                    >
-                                      <svg
-                                        viewBox="0 0 28 14"
-                                        className={`h-[13px] w-[30px] ${index % 2 === 0 ? "rotate-[22deg]" : "rotate-[-18deg]"}`}
-                                      >
-                                        <ellipse cx="7.4" cy="8.1" rx="6.2" ry="4" fill="currentColor" />
-                                        <ellipse cx="21.1" cy="6.1" rx="5.1" ry="3.5" fill="currentColor" />
-                                        <rect x="12.9" y="3.4" width="2.1" height="6.5" rx="1" fill="var(--surface)" />
-                                      </svg>
-                                    </span>
+                                    />
                                     <div
-                                      className={`absolute left-1/2 max-w-[10rem] -translate-x-1/2 text-center ${
+                                      className={`about-details-label absolute left-1/2 max-w-[10rem] -translate-x-1/2 text-center opacity-0 ${
                                         index % 2 === 0
                                           ? "top-[calc(50%-88px)]"
                                           : index === detailsItems.length - 1
@@ -765,7 +888,7 @@ export function AboutPageView() {
                 </time>
               </div>
             </div>
-
+ 
             <section
               className="about-bio-block relative isolate mt-8 overflow-hidden md:mt-10"
               aria-labelledby="about-bio-heading"
@@ -827,7 +950,7 @@ export function AboutPageView() {
 
             {/*
             <hr className={sectionEndRule} aria-hidden />
-
+ 
             <section
               className="about-work-block relative isolate mt-14 overflow-hidden lg:mt-20"
               aria-labelledby="about-work-heading"
@@ -847,7 +970,7 @@ export function AboutPageView() {
                     </span>
                   </h1>
                 </div>
-
+ 
                 <ul className="space-y-10 md:space-y-12">
                   {site.experience.map((job, index) => (
                     <li
@@ -868,7 +991,7 @@ export function AboutPageView() {
                 </ul>
               </div>
             </section>
-
+ 
             <hr className={sectionEndRule} aria-hidden />
             */}
           </div>
