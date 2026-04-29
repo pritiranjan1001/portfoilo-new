@@ -790,13 +790,26 @@ export function AboutPageView() {
                   <div className="pointer-events-none relative z-10 h-full w-full">
                     <div className="about-details-zoom pointer-events-auto flex h-full w-full flex-col overflow-hidden border-0 bg-[color-mix(in_oklab,var(--surface)_95%,var(--background))]">
                       <div className="min-h-0 flex flex-1 items-center overflow-hidden px-6 py-4 md:px-10 md:py-5">
-                        <div className="grid w-full grid-cols-1 items-start gap-6">
-                          <div className="flex items-start justify-between gap-4">
-                            <h2 className="font-display text-[clamp(1.6rem,3.4vw,3rem)] font-bold leading-[0.96] tracking-tight text-[var(--foreground)]">
-                              <span className="about-details-heading-line block whitespace-nowrap">
-                                {site.aboutFindInside.line1} {site.aboutFindInside.line2}
-                              </span>
-                            </h2>
+                        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-6">
+                          <div className="flex items-start justify-between gap-6">
+                            <div className="min-w-0">
+                              <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
+                                A walking index
+                              </p>
+                              <h2 className="mt-3 font-display text-[clamp(1.8rem,3.8vw,3.25rem)] font-bold leading-[0.96] tracking-tight text-[var(--foreground)]">
+                                <span className="about-details-heading-line block whitespace-nowrap">
+                                  {site.aboutFindInside.line1} {site.aboutFindInside.line2}
+                                </span>
+                              </h2>
+                              <div
+                                className="mt-4 h-px w-24 bg-[color-mix(in_oklab,var(--accent)_70%,transparent)]"
+                                aria-hidden
+                              />
+                              <p className="mt-4 max-w-[60ch] text-pretty font-serif text-[15px] italic leading-relaxed text-[color-mix(in_oklab,var(--foreground)_70%,var(--muted))] md:text-base">
+                                Follow the footsteps. Each stop reveals a discipline — a small map of what
+                                lives inside the practice.
+                              </p>
+                            </div>
                             <button
                               type="button"
                               className="relative z-20 shrink-0 cursor-pointer whitespace-nowrap rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_90%,transparent)] px-3 py-1 text-sm text-[var(--foreground)] transition hover:border-[var(--border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
