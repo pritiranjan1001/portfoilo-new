@@ -440,6 +440,7 @@ export function BeyondVisibleCover() {
       });
 
       const patternSvg = el.querySelector<SVGElement>(".bvc-pattern-svg");
+      if (patternSvg) gsap.set(patternSvg, { opacity: 0 });
       const drawEls = patternSvg?.querySelectorAll<SVGGeometryElement>(
         ".bvc-path-draw",
       );
@@ -525,6 +526,15 @@ export function BeyondVisibleCover() {
       });
 
       preludeTl
+        .to(
+          patternSvg,
+          {
+            opacity: 1,
+            duration: 0.35,
+            ease: "none",
+          },
+          0,
+        )
         .to(
           ".bvc-eye",
           {

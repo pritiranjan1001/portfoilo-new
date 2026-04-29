@@ -568,6 +568,10 @@ body.work-hide-doc-scrollbar::-webkit-scrollbar {
     transform-origin: center center;
   }
 
+  #prelude .bvc-pattern-svg {
+    opacity: 0;
+  }
+
   .header-inner--entrance {
     opacity: 0;
   }
