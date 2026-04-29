@@ -148,9 +148,8 @@ export function AboutPageView() {
       setModalMounted(true);
       return;
     }
-    // Keep mounted briefly for "vanish" animation, then unmount
-    const t = window.setTimeout(() => setModalMounted(false), 260);
-    return () => window.clearTimeout(t);
+    // Unmount immediately on close (no lingering modal)
+    setModalMounted(false);
   }, [activeHotspot]);
 
   /** Lenis routes clear `ScrollTrigger` defaults on unmount — refresh so /about reveals run. */
@@ -645,10 +644,19 @@ export function AboutPageView() {
                       </div>
                       <button
                         type="button"
-                        className="shrink-0 rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_90%,transparent)] px-3 py-1 text-sm text-[var(--foreground)] transition hover:border-[var(--border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                        className="group relative grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_90%,transparent)] text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-[color-mix(in_oklab,var(--surface)_96%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                         onClick={() => setActiveHotspot(null)}
                       >
-                        Close
+                        <span className="sr-only">Close</span>
+                        <svg viewBox="0 0 24 24" className="h-5 w-5 opacity-80 transition group-hover:opacity-100" aria-hidden>
+                          <path
+                            d="M6 6 L18 18 M18 6 L6 18"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.4"
+                            strokeLinecap="round"
+                          />
+                        </svg>
                       </button>
                     </div>
                     <div className="max-h-[78dvh] overflow-auto px-5 py-5 text-[15px] leading-relaxed text-[var(--foreground)]">

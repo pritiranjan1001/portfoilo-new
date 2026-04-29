@@ -293,8 +293,8 @@ body.work-hide-doc-scrollbar::-webkit-scrollbar {
   }
   100% {
     opacity: 0;
-    transform: translate3d(0, 8px, 0) scale(0.96);
-    filter: blur(10px);
+    transform: translate3d(0, 6px, 0) scale(0.965);
+    filter: blur(1px);
   }
 }
 
@@ -303,13 +303,14 @@ body.work-hide-doc-scrollbar::-webkit-scrollbar {
 }
 
 .magic-modal[data-state="closed"] .magic-modal__card {
-  animation: magic-vanish 220ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: magic-vanish 120ms ease-out both;
 }
 
 /* Pixel-join effect: a pixel layer assembles into the card */
 .magic-modal__card {
   position: relative;
   isolation: isolate;
+  transform-origin: var(--magic-x, 50%) var(--magic-y, 50%);
 }
 
 .magic-modal[data-state="closed"] .magic-modal__card {
@@ -426,7 +427,7 @@ body.work-hide-doc-scrollbar::-webkit-scrollbar {
 
 .magic-modal[data-state="closed"] .magic-modal__card::before {
   opacity: 0;
-  animation: pixel-join-out 240ms steps(8, end) both;
+  animation: none;
 }
 
 .magic-modal[data-state="closed"] .magic-modal__card::after {
