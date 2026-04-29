@@ -560,7 +560,7 @@ export function AboutPageView() {
                 className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-44 bg-gradient-to-t from-[color-mix(in_oklab,var(--surface-elevated)_88%,var(--background))] to-transparent md:h-56"
                 aria-hidden
               />
-              <AboutVillageThreeScene className="h-full w-full" />
+              <AboutVillageThreeScene className="h-full w-full origin-top scale-[1.04] -translate-y-1 -translate-x-1 md:-translate-y-1 md:-translate-x-2" />
               {/* SVG fallback/texture layer */}
               <AboutVillageLandscape
                 variant="full"

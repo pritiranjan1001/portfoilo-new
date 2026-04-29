@@ -353,37 +353,37 @@ function LowPolyVillage({
         leaf={palette.leaf}
         wood={palette.wood}
         position={[-1.6, terrainMain.posY + terrainHeightAt(terrainMain, -1.6, 1.3) + 0.02, 1.3]}
-        scale={1.7}
+        scale={1.45}
       />
       <TreeBetter
         leaf={palette.leaf2}
         wood={palette.wood}
         position={[-3.2, terrainMain.posY + terrainHeightAt(terrainMain, -3.2, 0.7) + 0.02, 0.7]}
-        scale={1.25}
+        scale={1.1}
       />
       <TreeBetter
         leaf={palette.leaf}
         wood={palette.wood}
         position={[0.2, terrainMain.posY + terrainHeightAt(terrainMain, 0.2, 0.2) + 0.02, 0.2]}
-        scale={1.4}
+        scale={1.22}
       />
       <TreeBetter
         leaf={palette.leaf2}
         wood={palette.wood}
         position={[1.6, terrainMain.posY + terrainHeightAt(terrainMain, 1.6, 1.05) + 0.02, 1.05]}
-        scale={1.2}
+        scale={1.06}
       />
       <TreeBetter
         leaf={palette.leaf}
         wood={palette.wood}
         position={[-0.2, terrainMain.posY + terrainHeightAt(terrainMain, -0.2, 2.1) + 0.02, 2.1]}
-        scale={1.25}
+        scale={1.1}
       />
       <TreeBetter
         leaf={palette.leaf2}
         wood={palette.wood}
         position={[4.9, terrainMain.posY + terrainHeightAt(terrainMain, 4.9, 0.9) + 0.02, 0.9]}
-        scale={1.15}
+        scale={1.02}
       />
     </group>
   );
