@@ -812,14 +812,68 @@ export function AboutPageView() {
                             </div>
                             <button
                               type="button"
-                              className="relative z-20 shrink-0 cursor-pointer whitespace-nowrap rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_90%,transparent)] px-3 py-1 text-sm text-[var(--foreground)] transition hover:border-[var(--border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                              className="group relative z-20 grid h-[144px] w-[144px] shrink-0 cursor-pointer place-items-center rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_85%,transparent)] text-[var(--foreground)] shadow-[0_22px_76px_-52px_color-mix(in_oklab,black_45%,transparent)] transition hover:border-[var(--border-strong)] hover:bg-[color-mix(in_oklab,var(--surface)_92%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] md:h-[176px] md:w-[176px]"
                               onPointerDown={(e) => e.stopPropagation()}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setDetailsOpen(false);
                               }}
                             >
-                              Go back
+                              <span className="sr-only">Go back</span>
+                              <svg
+                                viewBox="0 0 100 100"
+                                className="h-full w-full motion-safe:animate-[spin_10s_linear_infinite]"
+                                aria-hidden
+                              >
+                                <defs>
+                                  <path
+                                    id="go-back-circle-text"
+                                    d="M 50,50 m -34,0 a 34,34 0 1,1 68,0 a 34,34 0 1,1 -68,0"
+                                  />
+                                </defs>
+                                <text
+                                  fontSize="10.5"
+                                  letterSpacing="3.6"
+                                  fill="currentColor"
+                                  opacity="0.72"
+                                >
+                                  <textPath
+                                    href="#go-back-circle-text"
+                                    startOffset="0%"
+                                    className="group-hover:opacity-90"
+                                  >
+                                    LETS GO BACK — LETS GO BACK — LETS GO BACK —
+                                  </textPath>
+                                </text>
+                                <g
+                                  transform="translate(50 50)"
+                                  className="transition-transform duration-300"
+                                >
+                                  <path
+                                    d="M 14 0 H -10"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="4.2"
+                                    strokeLinecap="round"
+                                  />
+                                  <path
+                                    d="M -10 0 L -1 -8"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="4.2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                  <path
+                                    d="M -10 0 L -1 8"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="4.2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </g>
+                              </svg>
                             </button>
                           </div>
                           <div className="min-w-0">
