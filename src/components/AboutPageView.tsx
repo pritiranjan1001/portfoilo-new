@@ -46,15 +46,23 @@ function FullBleedPattern({ children }: { children: ReactNode }) {
 export function AboutPageView() {
   const root = useRef<HTMLElement>(null);
   const bioExtraRef = useRef<HTMLDivElement>(null);
+  const landscapeSectionRef = useRef<HTMLElement>(null);
+  const detailsOverlayRef = useRef<HTMLDivElement>(null);
   const [bioExpanded, setBioExpanded] = useState(false);
   const [activeHotspot, setActiveHotspot] = useState<null | "rocks" | "grove" | "cabin">(null);
   const [modalOrigin, setModalOrigin] = useState<{ x: number; y: number }>({ x: 0.5, y: 0.5 });
+  const [detailsZoomOrigin, setDetailsZoomOrigin] = useState<{ x: number; y: number }>({
+    x: 0.5,
+    y: 0.5,
+  });
   const [modalMounted, setModalMounted] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const lenis = useLenisInstance();
   const stamped = formatAboutDate(new Date());
   const bioParas = site.aboutBioParagraphs;
   const bioFirst = bioParas[0];
   const bioRest = bioParas.slice(1);
+  const detailsItems = site.aboutFindInside.items;
 
   const bioToggleClass =
     "inline cursor-pointer border-0 bg-transparent p-0 font-body text-base font-medium tracking-wide text-[var(--foreground)] underline decoration-[var(--border-strong)] decoration-2 underline-offset-[6px] transition hover:decoration-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
@@ -66,6 +74,24 @@ export function AboutPageView() {
     const rect = el.getBoundingClientRect();
     const cx = (rect.left + rect.right) / 2;
     const cy = (rect.top + rect.bottom) / 2;
+    if (id === "rocks") {
+      const section = landscapeSectionRef.current;
+      if (section) {
+        const s = section.getBoundingClientRect();
+        setDetailsZoomOrigin({
+          x: s.width > 0 ? (cx - s.left) / s.width : 0.5,
+          y: s.height > 0 ? (cy - s.top) / s.height : 0.5,
+        });
+      } else {
+        setDetailsZoomOrigin({
+          x: window.innerWidth > 0 ? cx / window.innerWidth : 0.5,
+          y: window.innerHeight > 0 ? cy / window.innerHeight : 0.5,
+        });
+      }
+      setActiveHotspot(null);
+      setDetailsOpen(true);
+      return;
+    }
     setModalOrigin({
       x: window.innerWidth > 0 ? cx / window.innerWidth : 0.5,
       y: window.innerHeight > 0 ? cy / window.innerHeight : 0.5,
@@ -105,6 +131,15 @@ export function AboutPageView() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [activeHotspot]);
+
+  useEffect(() => {
+    if (!detailsOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDetailsOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [detailsOpen]);
 
   useEffect(() => {
     if (activeHotspot != null) {
@@ -324,6 +359,63 @@ export function AboutPageView() {
     { dependencies: [bioExpanded] },
   );
 
+  useGSAP(
+    () => {
+      if (!detailsOpen) return;
+      const overlay = detailsOverlayRef.current;
+      if (!overlay) return;
+      const zoomPanel = overlay.querySelector(".about-details-zoom");
+      const heading = overlay.querySelectorAll(".about-details-heading-line");
+      const items = overlay.querySelectorAll(".about-details-item");
+      if (!zoomPanel) return;
+
+      if (shouldReduceMotion()) {
+        gsap.set([zoomPanel, ...heading, ...items], { opacity: 1, x: 0, y: 0, scale: 1 });
+        return;
+      }
+
+      gsap.killTweensOf([zoomPanel, ...heading, ...items]);
+      gsap.set(zoomPanel, {
+        opacity: 0.4,
+        scale: 0.88,
+        transformOrigin: `${Math.round(detailsZoomOrigin.x * 100)}% ${Math.round(detailsZoomOrigin.y * 100)}%`,
+      });
+      gsap.set(heading, { opacity: 0, y: 22 });
+      gsap.set(items, { opacity: 0, x: -14, y: 16 });
+
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+      tl.to(zoomPanel, {
+        opacity: 1,
+        scale: 1,
+        duration: 0.78,
+      })
+        .to(
+          heading,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.54,
+            stagger: 0.12,
+          },
+          "-=0.35",
+        )
+        .to(
+          items,
+          {
+            opacity: 1,
+            x: 0,
+            y: 0,
+            duration: 0.44,
+            stagger: 0.16,
+          },
+          "-=0.08",
+        );
+
+      return () => tl.kill();
+    },
+    { dependencies: [detailsOpen, detailsZoomOrigin.x, detailsZoomOrigin.y] },
+  );
+
   return (
     <>
       <ScrollProgress />
@@ -335,6 +427,7 @@ export function AboutPageView() {
         <div className="relative">
           <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-14">
             <section
+              ref={landscapeSectionRef}
               className="relative isolate -mt-20 min-h-[100dvh] w-[100vw] ml-[calc(50%-50vw)] overflow-hidden border-y border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_70%,transparent)] md:-mt-24"
               aria-label="Village landscape"
             >
@@ -359,7 +452,7 @@ export function AboutPageView() {
                     style={{ top: h.top, left: h.left, pointerEvents: "auto" }}
                     aria-label={`${h.title}. Open details`}
                     aria-haspopup="dialog"
-                    aria-expanded={activeHotspot === h.id}
+                    aria-expanded={h.id === "rocks" ? detailsOpen : activeHotspot === h.id}
                     onPointerDown={(e) => {
                       e.stopPropagation();
                       openHotspot(h.id, e.currentTarget);
@@ -551,6 +644,92 @@ export function AboutPageView() {
                     </div>
                   </div>
                 </div>
+                </div>
+              )}
+
+              {/* Gallery details: same viewport slot as the landscape (no scroll away) */}
+              {detailsOpen && (
+                <div
+                  ref={detailsOverlayRef}
+                  className="absolute inset-0 z-[45] h-full w-full"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Gallery details"
+                >
+                  <button
+                    type="button"
+                    className="absolute inset-0 bg-black/18 backdrop-blur-[1px] transition-opacity"
+                    aria-label="Close gallery details"
+                    onClick={() => setDetailsOpen(false)}
+                  />
+                  <div className="pointer-events-none relative z-10 h-full w-full">
+                    <div className="about-details-zoom pointer-events-auto flex h-full w-full flex-col overflow-hidden border-0 bg-[color-mix(in_oklab,var(--surface)_95%,var(--background))]">
+                      <div className="min-h-0 flex flex-1 items-center overflow-hidden px-6 py-4 md:px-10 md:py-5">
+                        <div className="grid w-full grid-cols-1 items-start gap-6">
+                          <div className="flex items-start justify-between gap-4">
+                            <h2 className="font-display text-[clamp(1.6rem,3.4vw,3rem)] font-bold leading-[0.96] tracking-tight text-[var(--foreground)]">
+                              <span className="about-details-heading-line block whitespace-nowrap">
+                                {site.aboutFindInside.line1} {site.aboutFindInside.line2}
+                              </span>
+                            </h2>
+                            <button
+                              type="button"
+                              className="relative z-20 shrink-0 cursor-pointer whitespace-nowrap rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_90%,transparent)] px-3 py-1 text-sm text-[var(--foreground)] transition hover:border-[var(--border-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDetailsOpen(false);
+                              }}
+                            >
+                              Go back
+                            </button>
+                          </div>
+                          <div className="min-w-0">
+                            <div className="relative pt-4">
+                              <ol className="grid grid-cols-4 gap-x-6 gap-y-10 md:grid-cols-8 md:gap-x-8 md:gap-y-0">
+                                {detailsItems.map((item, index) => (
+                                  <li
+                                    key={`${index}-${item.label}`}
+                                    className="about-details-item relative flex min-h-[170px] items-center justify-center px-2"
+                                  >
+                                    <span
+                                      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-1.5 py-1 text-[var(--foreground)]/85"
+                                      aria-hidden
+                                    >
+                                      <svg
+                                        viewBox="0 0 28 14"
+                                        className={`h-[13px] w-[30px] ${index % 2 === 0 ? "rotate-[22deg]" : "rotate-[-18deg]"}`}
+                                      >
+                                        <ellipse cx="7.4" cy="8.1" rx="6.2" ry="4" fill="currentColor" />
+                                        <ellipse cx="21.1" cy="6.1" rx="5.1" ry="3.5" fill="currentColor" />
+                                        <rect x="12.9" y="3.4" width="2.1" height="6.5" rx="1" fill="var(--surface)" />
+                                      </svg>
+                                    </span>
+                                    <div
+                                      className={`absolute left-1/2 max-w-[10rem] -translate-x-1/2 text-center ${
+                                        index % 2 === 0
+                                          ? "top-[calc(50%-88px)]"
+                                          : index === detailsItems.length - 1
+                                            ? "top-[calc(50%+42px)]"
+                                            : "top-[calc(50%+52px)]"
+                                      }`}
+                                    >
+                                      <span className="block font-mono text-[10px] tabular-nums tracking-wide text-[var(--muted)]">
+                                        {String(index + 1).padStart(2, "0")}
+                                      </span>
+                                      <span className="mt-1 block font-display text-[0.98rem] font-semibold leading-tight tracking-tight text-[var(--foreground)]">
+                                        {item.label}
+                                      </span>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ol>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
