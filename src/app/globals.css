@@ -144,6 +144,11 @@ html::-webkit-scrollbar-corner {
   background: var(--scrollbar-track);
 }
 
+/* About overlays: hide fixed header while modal/sheet is open. */
+html[data-about-overlay-open="1"] header {
+  display: none !important;
+}
+
 /* /work — hide native scrollbar; wheel / drag / keys still scroll */
 html.work-hide-doc-scrollbar,
 body.work-hide-doc-scrollbar {

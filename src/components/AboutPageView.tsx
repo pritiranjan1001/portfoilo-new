@@ -144,6 +144,18 @@ export function AboutPageView() {
   }, [detailsOpen]);
 
   useEffect(() => {
+    const open = modalMounted || detailsOpen;
+    if (open) {
+      document.documentElement.setAttribute("data-about-overlay-open", "1");
+    } else {
+      document.documentElement.removeAttribute("data-about-overlay-open");
+    }
+    return () => {
+      document.documentElement.removeAttribute("data-about-overlay-open");
+    };
+  }, [detailsOpen, modalMounted]);
+
+  useEffect(() => {
     if (activeHotspot != null) {
       setModalMounted(true);
       return;
@@ -459,25 +471,45 @@ export function AboutPageView() {
       const stepEvery = 0.28; // slower cadence between steps
       // Only keep ~2 footprints visible at a time.
       const fadeAfter = stepEvery * 3.1;
-      const stridePx = 44; // distance between footsteps
+      const isMobile = window.matchMedia?.("(max-width: 639px)")?.matches ?? false;
+      const stridePx = isMobile ? 34 : 44; // distance between footsteps
 
       // Build a dense set of walking steps between 01 -> 08 anchors.
-      const yFixed = points[0]?.y ?? 0;
       const denseSteps: Array<{ x: number; y: number }> = [];
       const anchorStepIndex: number[] = [0];
-      for (let i = 0; i < points.length - 1; i++) {
-        const a = points[i];
-        const b = points[i + 1];
-        const dx = b.x - a.x;
-        const dist = Math.max(1, Math.abs(dx));
-        const n = Math.max(1, Math.ceil(dist / stridePx));
-        for (let s = 0; s < n; s++) {
-          const t0 = s / n;
-          denseSteps.push({ x: clampX(a.x + dx * t0), y: yFixed });
+      if (isMobile) {
+        // Mobile: walk top -> bottom on a central line.
+        const xFixed = clampX(timelineEl.clientWidth / 2);
+        for (let i = 0; i < points.length - 1; i++) {
+          const a = points[i];
+          const b = points[i + 1];
+          const dy = b.y - a.y;
+          const dist = Math.max(1, Math.abs(dy));
+          const n = Math.max(1, Math.ceil(dist / stridePx));
+          for (let s = 0; s < n; s++) {
+            const t0 = s / n;
+            denseSteps.push({ x: xFixed, y: a.y + dy * t0 });
+          }
+          denseSteps.push({ x: xFixed, y: b.y });
+          anchorStepIndex.push(denseSteps.length - 1);
         }
-        // Always include the anchor endpoint so we reach 02..08 exactly.
-        denseSteps.push({ x: clampX(b.x), y: yFixed });
-        anchorStepIndex.push(denseSteps.length - 1);
+      } else {
+        // Desktop: walk left -> right on a straight line.
+        const yFixed = points[0]?.y ?? 0;
+        for (let i = 0; i < points.length - 1; i++) {
+          const a = points[i];
+          const b = points[i + 1];
+          const dx = b.x - a.x;
+          const dist = Math.max(1, Math.abs(dx));
+          const n = Math.max(1, Math.ceil(dist / stridePx));
+          for (let s = 0; s < n; s++) {
+            const t0 = s / n;
+            denseSteps.push({ x: clampX(a.x + dx * t0), y: yFixed });
+          }
+          // Always include the anchor endpoint so we reach 02..08 exactly.
+          denseSteps.push({ x: clampX(b.x), y: yFixed });
+          anchorStepIndex.push(denseSteps.length - 1);
+        }
       }
 
       const stamps = denseSteps.map(() => makeStamp());
@@ -492,9 +524,9 @@ export function AboutPageView() {
       denseSteps.forEach((p, i) => {
         const stamp = stamps[i];
         const side = i % 2 === 0 ? 1 : -1;
-        const xJitter = 0; // keep the walk on the same x line
-        const yJitter = side * 7; // alternate steps slightly above/below the line
-        const rot = i % 2 === 0 ? 10 : 14;
+        const xJitter = isMobile ? side * 7 : 0; // mobile alternates left/right
+        const yJitter = isMobile ? 0 : side * 7; // desktop alternates above/below the line
+        const rot = isMobile ? (i % 2 === 0 ? 100 : 94) : i % 2 === 0 ? 10 : 14;
         const flip = i % 2 === 0 ? 1 : -1; // mirror for left/right foot
         const at = i * stepEvery;
         const isTail = i >= stamps.length - 2; // keep only the last two steps visible at end
@@ -552,7 +584,9 @@ export function AboutPageView() {
           <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-14">
             <section
               ref={landscapeSectionRef}
-              className="relative isolate -mt-20 min-h-[100dvh] w-[100vw] ml-[calc(50%-50vw)] overflow-hidden border-y border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_70%,transparent)] md:-mt-24"
+              className={`relative isolate -mt-20 min-h-[100dvh] w-[100vw] ml-[calc(50%-50vw)] overflow-hidden border-y border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_70%,transparent)] md:-mt-24 ${
+                modalMounted || detailsOpen ? "z-[300]" : "z-0"
+              }`}
               aria-label="Village landscape"
             >
               <div
@@ -599,7 +633,10 @@ export function AboutPageView() {
 
               {/* Modal */}
               {modalMounted && (
-                <div className="absolute inset-0 z-50 pointer-events-auto" aria-hidden={activeHotspot ? undefined : true}>
+                <div
+                  className="fixed inset-0 z-[400] pointer-events-auto"
+                  aria-hidden={activeHotspot ? undefined : true}
+                >
                   <button
                     type="button"
                     className={`absolute inset-0 bg-black/20 transition-opacity duration-300 ${
@@ -613,7 +650,7 @@ export function AboutPageView() {
                     aria-modal="true"
                     aria-label="About"
                     data-state={activeHotspot ? "open" : "closed"}
-                    className="magic-modal pointer-events-none absolute inset-0 grid place-items-center px-4"
+                    className="magic-modal pointer-events-none absolute inset-0 grid place-items-center px-0 md:px-4"
                     style={
                       {
                         ["--magic-x" as any]: `${Math.round(modalOrigin.x * 100)}%`,
@@ -621,8 +658,8 @@ export function AboutPageView() {
                       } as React.CSSProperties
                     }
                   >
-                  <div className="magic-modal__card pointer-events-auto w-[min(860px,96vw)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_92%,transparent)] shadow-[0_34px_100px_-34px_color-mix(in_oklab,black_42%,transparent)] backdrop-blur-md">
-                    <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-5 py-4">
+                  <div className="magic-modal__card pointer-events-auto flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border-0 bg-[color-mix(in_oklab,var(--surface)_92%,transparent)] shadow-[0_34px_100px_-34px_color-mix(in_oklab,black_42%,transparent)] backdrop-blur-md md:h-auto md:max-h-[78dvh] md:w-[min(860px,96vw)] md:rounded-2xl md:border md:border-[var(--border)]">
+                    <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-5 py-4 pt-[max(1rem,env(safe-area-inset-top))] md:pt-4">
                       <div className="min-w-0">
                         {activeHotspot === "grove" ? (
                           <>
@@ -659,7 +696,7 @@ export function AboutPageView() {
                         </svg>
                       </button>
                     </div>
-                    <div className="max-h-[78dvh] overflow-auto px-5 py-5 text-[15px] leading-relaxed text-[var(--foreground)]">
+                    <div className="min-h-0 flex-1 overflow-auto px-5 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-[15px] leading-relaxed text-[var(--foreground)] md:pb-5">
                       {activeHotspot === "grove" && (
                         <>
                           <p className="text-pretty text-[color-mix(in_oklab,var(--foreground)_82%,var(--muted))]">
@@ -797,30 +834,22 @@ export function AboutPageView() {
                   />
                   <div className="pointer-events-none relative z-10 h-full w-full">
                     <div className="about-details-zoom pointer-events-auto flex h-full w-full flex-col overflow-hidden border-0 bg-[color-mix(in_oklab,var(--surface)_95%,var(--background))]">
-                      <div className="min-h-0 flex flex-1 items-center overflow-hidden px-6 py-4 md:px-10 md:py-5">
-                        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-6">
-                          <div className="flex items-start justify-between gap-6">
+                      <div className="min-h-0 flex flex-1 items-center overflow-hidden px-4 py-4 sm:px-6 md:px-10 md:py-5">
+                        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-4 md:gap-5">
+                          <div className="relative grid grid-cols-[1fr_auto] items-start gap-x-4 gap-y-2 sm:gap-x-6 sm:gap-y-3 md:gap-y-2">
                             <div className="min-w-0">
                               <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
                                 A walking index
                               </p>
-                              <h2 className="mt-3 font-display text-[clamp(1.8rem,3.8vw,3.25rem)] font-bold leading-[0.96] tracking-tight text-[var(--foreground)]">
-                                <span className="about-details-heading-line block whitespace-nowrap">
+                              <h2 className="mt-2 font-display text-[clamp(1.55rem,6.2vw,2.35rem)] font-bold leading-[0.98] tracking-tight text-[var(--foreground)] sm:mt-3 sm:text-[clamp(1.8rem,3.8vw,3.25rem)] sm:leading-[0.96]">
+                                <span className="about-details-heading-line block sm:whitespace-nowrap">
                                   {site.aboutFindInside.line1} {site.aboutFindInside.line2}
                                 </span>
                               </h2>
-                              <div
-                                className="mt-4 h-px w-24 bg-[color-mix(in_oklab,var(--accent)_70%,transparent)]"
-                                aria-hidden
-                              />
-                              <p className="mt-4 max-w-[60ch] text-pretty font-serif text-[15px] italic leading-relaxed text-[color-mix(in_oklab,var(--foreground)_70%,var(--muted))] md:text-base">
-                                Follow the footsteps. Each stop reveals a discipline — a small map of what
-                                lives inside the practice.
-                              </p>
                             </div>
                             <button
                               type="button"
-                              className="group relative z-20 grid h-[144px] w-[144px] shrink-0 cursor-pointer place-items-center rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_85%,transparent)] text-[var(--foreground)] shadow-[0_22px_76px_-52px_color-mix(in_oklab,black_45%,transparent)] transition hover:border-[var(--border-strong)] hover:bg-[color-mix(in_oklab,var(--surface)_92%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] md:h-[176px] md:w-[176px]"
+                              className="group relative z-20 mt-1 grid h-[72px] w-[72px] shrink-0 cursor-pointer place-items-center justify-self-end rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_85%,transparent)] text-[var(--foreground)] shadow-[0_16px_52px_-44px_color-mix(in_oklab,black_45%,transparent)] transition hover:border-[var(--border-strong)] hover:bg-[color-mix(in_oklab,var(--surface)_92%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:mt-0 sm:h-[120px] sm:w-[120px] md:absolute md:right-0 md:top-0 md:mt-0 md:h-[176px] md:w-[176px] md:-translate-y-6"
                               onPointerDown={(e) => e.stopPropagation()}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -883,20 +912,28 @@ export function AboutPageView() {
                                 </g>
                               </svg>
                             </button>
+                            <div
+                              className="col-span-2 mt-1 h-px w-20 bg-[color-mix(in_oklab,var(--accent)_70%,transparent)] sm:mt-2 sm:w-24 md:mt-1"
+                              aria-hidden
+                            />
+                            <p className="col-span-2 mt-2 w-full text-pretty font-serif text-[14px] italic leading-relaxed text-[color-mix(in_oklab,var(--foreground)_70%,var(--muted))] sm:mt-0 sm:text-[15px] md:text-base">
+                              Follow the footsteps. Each stop reveals a discipline — a small map of what lives
+                              inside the practice.
+                            </p>
                           </div>
                           <div className="min-w-0">
-                            <div ref={detailsTimelineRef} className="relative pt-4">
+                            <div ref={detailsTimelineRef} className="relative pt-2 sm:pt-4">
                               <div
                                 ref={walkerTrailRef}
                                 className="pointer-events-none absolute inset-0 z-10"
                                 aria-hidden
                               />
 
-                              <ol className="grid grid-cols-4 gap-x-6 gap-y-10 md:grid-cols-8 md:gap-x-8 md:gap-y-0">
+                              <ol className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-5 sm:grid-cols-4 sm:gap-x-10 sm:gap-y-10 md:grid-cols-8 md:justify-items-stretch md:gap-x-7 md:gap-y-0">
                                 {detailsItems.map((item, index) => (
                                   <li
                                     key={`${index}-${item.label}`}
-                                    className="about-details-item relative flex min-h-[170px] items-center justify-center px-2"
+                                    className="about-details-item relative flex min-h-[96px] items-center justify-center px-1 sm:min-h-[150px] sm:px-2 md:min-h-[138px]"
                                   >
                                     <span
                                       data-step-anchor="true"
@@ -906,16 +943,16 @@ export function AboutPageView() {
                                     <div
                                       className={`about-details-label absolute left-1/2 max-w-[10rem] -translate-x-1/2 text-center opacity-0 ${
                                         index % 2 === 0
-                                          ? "top-[calc(50%-88px)]"
+                                          ? "top-[calc(50%-64px)] sm:top-[calc(50%-78px)] md:top-[calc(50%-72px)]"
                                           : index === detailsItems.length - 1
-                                            ? "top-[calc(50%+42px)]"
-                                            : "top-[calc(50%+52px)]"
+                                            ? "top-[calc(50%+34px)] sm:top-[calc(50%+42px)] md:top-[calc(50%+32px)]"
+                                            : "top-[calc(50%+40px)] sm:top-[calc(50%+52px)] md:top-[calc(50%+38px)]"
                                       }`}
                                     >
-                                      <span className="block font-mono text-[10px] tabular-nums tracking-wide text-[var(--muted)]">
+                                      <span className="block font-mono text-[9px] tabular-nums tracking-wide text-[var(--muted)] sm:text-[10px]">
                                         {String(index + 1).padStart(2, "0")}
                                       </span>
-                                      <span className="mt-1 block font-display text-[0.98rem] font-semibold leading-tight tracking-tight text-[var(--foreground)]">
+                                      <span className="mt-1 block font-display text-[0.84rem] font-semibold leading-tight tracking-tight text-[var(--foreground)] sm:text-[0.98rem]">
                                         {item.label}
                                       </span>
                                     </div>
