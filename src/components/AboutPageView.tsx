@@ -833,15 +833,15 @@ export function AboutPageView() {
                     onClick={() => setDetailsOpen(false)}
                   />
                   <div className="pointer-events-none relative z-10 h-full w-full">
-                    <div className="about-details-zoom pointer-events-auto flex h-full w-full flex-col overflow-hidden border-0 bg-[color-mix(in_oklab,var(--surface)_95%,var(--background))]">
-                      <div className="min-h-0 flex flex-1 items-center overflow-hidden px-4 py-4 sm:px-6 md:px-10 md:py-5">
-                        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-4 md:gap-5">
-                          <div className="relative grid grid-cols-[1fr_auto] items-start gap-x-4 gap-y-2 sm:gap-x-6 sm:gap-y-3 md:gap-y-2">
+                    <div className="about-details-zoom pointer-events-auto flex h-full w-full flex-col overflow-y-auto overscroll-contain border-0 bg-[color-mix(in_oklab,var(--surface)_95%,var(--background))]">
+                      <div className="min-h-0 flex flex-1 items-center px-4 py-10 text-left sm:px-6 sm:py-12 md:px-10 md:py-14">
+                        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-6 sm:gap-8 md:gap-10">
+                          <div className="relative mb-6 grid grid-cols-1 items-start justify-items-center gap-y-3 sm:mb-8 sm:gap-y-4 md:mb-10 md:grid-cols-[1fr_auto] md:justify-items-stretch md:gap-x-6 md:gap-y-2">
                             <div className="min-w-0">
                               <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
                                 A walking index
                               </p>
-                              <h2 className="mt-2 font-display text-[clamp(1.55rem,6.2vw,2.35rem)] font-bold leading-[0.98] tracking-tight text-[var(--foreground)] sm:mt-3 sm:text-[clamp(1.8rem,3.8vw,3.25rem)] sm:leading-[0.96]">
+                              <h2 className="mt-2 font-display text-[clamp(1.35rem,5.6vw,2.05rem)] font-bold leading-[0.98] tracking-tight text-[var(--foreground)] sm:mt-3 sm:text-[clamp(1.8rem,3.8vw,3.25rem)] sm:leading-[0.96]">
                                 <span className="about-details-heading-line block sm:whitespace-nowrap">
                                   {site.aboutFindInside.line1} {site.aboutFindInside.line2}
                                 </span>
@@ -849,7 +849,7 @@ export function AboutPageView() {
                             </div>
                             <button
                               type="button"
-                              className="group relative z-20 mt-1 grid h-[72px] w-[72px] shrink-0 cursor-pointer place-items-center justify-self-end rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_85%,transparent)] text-[var(--foreground)] shadow-[0_16px_52px_-44px_color-mix(in_oklab,black_45%,transparent)] transition hover:border-[var(--border-strong)] hover:bg-[color-mix(in_oklab,var(--surface)_92%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:mt-0 sm:h-[120px] sm:w-[120px] md:absolute md:right-0 md:top-0 md:mt-0 md:h-[176px] md:w-[176px] md:-translate-y-6"
+                              className="group relative z-20 mt-2 grid h-[60px] w-[60px] shrink-0 cursor-pointer place-items-center justify-self-center rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_85%,transparent)] text-[var(--foreground)] shadow-[0_16px_52px_-44px_color-mix(in_oklab,black_45%,transparent)] transition hover:border-[var(--border-strong)] hover:bg-[color-mix(in_oklab,var(--surface)_92%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:mt-0 sm:h-[120px] sm:w-[120px] md:absolute md:right-0 md:top-0 md:mt-0 md:h-[176px] md:w-[176px] md:-translate-y-6 md:justify-self-end"
                               onPointerDown={(e) => e.stopPropagation()}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -916,24 +916,27 @@ export function AboutPageView() {
                               className="col-span-2 mt-1 h-px w-20 bg-[color-mix(in_oklab,var(--accent)_70%,transparent)] sm:mt-2 sm:w-24 md:mt-1"
                               aria-hidden
                             />
-                            <p className="col-span-2 mt-2 w-full text-pretty font-serif text-[14px] italic leading-relaxed text-[color-mix(in_oklab,var(--foreground)_70%,var(--muted))] sm:mt-0 sm:text-[15px] md:text-base">
+                            <p className="col-span-2 mt-2 w-full max-w-[38rem] text-pretty font-serif text-[14px] italic leading-relaxed text-[color-mix(in_oklab,var(--foreground)_70%,var(--muted))] sm:mt-0 sm:text-[15px] md:max-w-none md:text-base">
                               Follow the footsteps. Each stop reveals a discipline — a small map of what lives
                               inside the practice.
                             </p>
                           </div>
                           <div className="min-w-0">
-                            <div ref={detailsTimelineRef} className="relative pt-2 sm:pt-4">
+                            <div
+                              ref={detailsTimelineRef}
+                              className="relative pt-6 pb-0 sm:pt-10 sm:pb-1 md:pt-12 md:pb-2"
+                            >
                               <div
                                 ref={walkerTrailRef}
-                                className="pointer-events-none absolute inset-0 z-10"
+                                className="pointer-events-none absolute inset-0 z-0"
                                 aria-hidden
                               />
 
-                              <ol className="grid grid-cols-2 justify-items-center gap-x-6 gap-y-5 sm:grid-cols-4 sm:gap-x-10 sm:gap-y-10 md:grid-cols-8 md:justify-items-stretch md:gap-x-7 md:gap-y-0">
+                              <ol className="relative z-10 grid grid-cols-2 justify-items-center gap-x-6 gap-y-5 sm:grid-cols-4 sm:gap-x-10 sm:gap-y-10 md:grid-cols-8 md:justify-items-stretch md:gap-x-18 md:gap-y-12 lg:gap-x-20 xl:gap-x-24">
                                 {detailsItems.map((item, index) => (
                                   <li
                                     key={`${index}-${item.label}`}
-                                    className="about-details-item relative flex min-h-[96px] items-center justify-center px-1 sm:min-h-[150px] sm:px-2 md:min-h-[138px]"
+                                    className="about-details-item relative flex min-h-[78px] items-center justify-center px-1 sm:min-h-[150px] sm:px-2 md:min-h-[168px]"
                                   >
                                     <span
                                       data-step-anchor="true"
@@ -943,16 +946,16 @@ export function AboutPageView() {
                                     <div
                                       className={`about-details-label absolute left-1/2 max-w-[10rem] -translate-x-1/2 text-center opacity-0 ${
                                         index % 2 === 0
-                                          ? "top-[calc(50%-64px)] sm:top-[calc(50%-78px)] md:top-[calc(50%-72px)]"
+                                          ? "top-[calc(50%-72px)] sm:top-[calc(50%-92px)] md:top-[calc(50%-110px)]"
                                           : index === detailsItems.length - 1
-                                            ? "top-[calc(50%+34px)] sm:top-[calc(50%+42px)] md:top-[calc(50%+32px)]"
-                                            : "top-[calc(50%+40px)] sm:top-[calc(50%+52px)] md:top-[calc(50%+38px)]"
+                                            ? "top-[calc(50%+44px)] sm:top-[calc(50%+58px)] md:top-[calc(50%+66px)]"
+                                            : "top-[calc(50%+44px)] sm:top-[calc(50%+58px)] md:top-[calc(50%+66px)]"
                                       }`}
                                     >
-                                      <span className="block font-mono text-[9px] tabular-nums tracking-wide text-[var(--muted)] sm:text-[10px]">
+                                      <span className="block font-mono text-[8px] tabular-nums tracking-wide text-[var(--muted)] sm:text-[10px]">
                                         {String(index + 1).padStart(2, "0")}
                                       </span>
-                                      <span className="mt-1 block font-display text-[0.84rem] font-semibold leading-tight tracking-tight text-[var(--foreground)] sm:text-[0.98rem]">
+                                      <span className="mt-1 block font-display text-[0.78rem] font-semibold leading-tight tracking-tight text-[var(--foreground)] sm:text-[0.98rem]">
                                         {item.label}
                                       </span>
                                     </div>
