@@ -224,8 +224,8 @@ export function AboutFlashbackMemories({
       <div
         className={`relative z-10 ${
           fullWidth
-            ? "px-4 py-10 sm:px-6 md:px-10 md:py-12 lg:px-14 lg:py-14 xl:px-16"
-            : "px-4 py-10 md:px-8 md:py-12 lg:px-10 lg:py-14"
+            ? "px-4 py-6 sm:px-6 md:px-10 md:py-12 lg:px-14 lg:py-14 xl:px-16"
+            : "px-4 py-6 md:px-8 md:py-12 lg:px-10 lg:py-14"
         }`}
       >
         <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--accent)]">
@@ -247,7 +247,7 @@ export function AboutFlashbackMemories({
         </p>
 
         <div
-          className="about-flashback-carousel mt-10 md:mt-12"
+          className="about-flashback-carousel mt-5 md:mt-12"
           role="region"
           aria-roledescription="carousel"
           aria-label="Flashback memories"
@@ -270,7 +270,7 @@ export function AboutFlashbackMemories({
             {/* Viewport + track */}
             <div
               ref={viewportRef}
-              className="relative min-h-[min(52vh,420px)] w-full overflow-hidden md:min-h-[min(58vh,520px)]"
+              className="relative min-h-0 w-full overflow-hidden sm:min-h-[min(48vh,380px)] md:min-h-[min(58vh,520px)]"
             >
               {w > 0 && slideW > 0 ? (
                 <div
@@ -415,7 +415,7 @@ export function AboutFlashbackMemories({
             </div>
           </div>
 
-          <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--muted)]">
+          <p className="mt-6 hidden font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--muted)] sm:block">
             Arrow keys · Prev / Next
           </p>
         </div>
