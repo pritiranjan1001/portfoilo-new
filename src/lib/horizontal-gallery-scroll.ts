@@ -7,7 +7,9 @@ export function horizontalSlideSnap(slideCount: number) {
     snapTo: 1 / (slideCount - 1),
     duration: { min: 0.45, max: 1.05 },
     delay: 0.08,
-    inertia: true,
+    // Inertia can feel like the track "rebounds" (snaps backward) after a drag release.
+    // Keep snapping deterministic for pointer drag + wheel.
+    inertia: false,
     ease: "power3.inOut",
   } as const;
 }

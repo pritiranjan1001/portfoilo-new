@@ -463,6 +463,7 @@ export function GalleryHorizontalStory() {
       let dragOriginX = 0;
       let dragActive = false;
       let dragPointerId = 0;
+      const snapConfig = tween.scrollTrigger?.vars.snap;
 
       const blockSelect = (e: Event) => {
         e.preventDefault();
@@ -479,6 +480,9 @@ export function GalleryHorizontalStory() {
       const endDrag = () => {
         if (!dragActive) return;
         dragActive = false;
+        if (tween.scrollTrigger && snapConfig) {
+          tween.scrollTrigger.vars.snap = snapConfig;
+        }
         document.documentElement.style.removeProperty("user-select");
         document.body.style.userSelect = "";
         document.body.style.removeProperty("-webkit-user-select");
@@ -504,6 +508,38 @@ export function GalleryHorizontalStory() {
 
       function onWindowPointerUp(e: PointerEvent) {
         if (e.pointerId !== dragPointerId) return;
+        const st = tween.scrollTrigger;
+        if (st) {
+          const totalDx = e.clientX - dragOriginX;
+          const thresholdPx = 34; // small swipe threshold (prevents accidental snap-back)
+          const maxIndex = Math.max(0, slideCount - 1);
+          const span = Math.max(1, st.end - st.start);
+
+          const clampScrollToIndex = (scrollY: number) => {
+            const p = Math.min(1, Math.max(0, (scrollY - st.start) / span));
+            return Math.round(p * maxIndex);
+          };
+
+          const originIndex = clampScrollToIndex(dragOriginScroll);
+          const currentIndex = clampScrollToIndex(lenisInstance.scroll);
+
+          let targetIndex = currentIndex;
+          if (Math.abs(totalDx) >= thresholdPx) {
+            // Drag left => advance (next). Drag right => go back (prev).
+            targetIndex = totalDx < 0 ? originIndex + 1 : originIndex - 1;
+          }
+          targetIndex = Math.min(maxIndex, Math.max(0, targetIndex));
+
+          const targetY =
+            st.start + (maxIndex === 0 ? 0 : (targetIndex / maxIndex) * span);
+
+          // Jump precisely to slide anchor so snap doesn't "correct" it backward.
+          lenisInstance.scrollTo(targetY, {
+            immediate: true,
+            programmatic: true,
+          });
+          requestAnimationFrame(() => ScrollTrigger.update());
+        }
         endDrag();
       }
 
@@ -512,6 +548,11 @@ export function GalleryHorizontalStory() {
         e.preventDefault();
         dragActive = true;
         dragPointerId = e.pointerId;
+        // Prevent ScrollTrigger snap from "pulling back" mid-drag.
+        if (tween.scrollTrigger && snapConfig) {
+          tween.scrollTrigger.endAnimation();
+          tween.scrollTrigger.vars.snap = false as any;
+        }
         dragOriginScroll = lenisInstance.scroll;
         dragOriginX = e.clientX;
         clearTextSelection();
