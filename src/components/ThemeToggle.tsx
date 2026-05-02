@@ -45,7 +45,7 @@ export function ThemeToggle() {
     <div
       role="group"
       aria-label="Color theme"
-      className="relative inline-flex h-10 shrink-0 items-stretch rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_92%,transparent)] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] backdrop-blur-sm dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.04)]"
+      className="relative inline-flex h-10 shrink-0 cursor-pointer items-stretch rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_92%,transparent)] p-1 shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] backdrop-blur-sm dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.04)]"
     >
       <span
         className={`pointer-events-none absolute inset-y-1 rounded-full bg-[color-mix(in_oklab,var(--foreground)_11%,transparent)] ring-1 ring-[color-mix(in_oklab,var(--foreground)_14%,transparent)] transition-[left,right] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] ${
@@ -62,7 +62,7 @@ export function ThemeToggle() {
         aria-pressed={isDark === false}
         aria-label="Use light theme"
         title="Light"
-        className={`relative z-10 flex w-11 items-center justify-center rounded-full outline-none transition-[color,opacity] duration-300 focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] ${
+        className={`relative z-10 flex w-11 cursor-pointer items-center justify-center rounded-full outline-none transition-[color,opacity] duration-300 focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] ${
           isDark === false || isDark === null
             ? "text-[var(--foreground)]"
             : "text-[var(--muted)] opacity-50 hover:opacity-85"
@@ -77,7 +77,7 @@ export function ThemeToggle() {
         aria-pressed={isDark === true}
         aria-label="Use dark theme"
         title="Dark"
-        className={`relative z-10 flex w-11 items-center justify-center rounded-full outline-none transition-[color,opacity] duration-300 focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] ${
+        className={`relative z-10 flex w-11 cursor-pointer items-center justify-center rounded-full outline-none transition-[color,opacity] duration-300 focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] ${
           isDark === true
             ? "text-[var(--foreground)]"
             : "text-[var(--muted)] opacity-50 hover:opacity-85"

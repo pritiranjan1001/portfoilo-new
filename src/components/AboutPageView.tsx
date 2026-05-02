@@ -11,7 +11,7 @@ import { AboutFindInsidePatterns } from "@/components/AboutFindInsidePatterns";
 import { AboutFlashbackMemories } from "@/components/AboutFlashbackMemories";
 import { AboutKickerStripPatterns } from "@/components/AboutKickerStripPatterns";
 import { AboutVillageLandscape } from "@/components/AboutVillageLandscape";
-import { AboutVillageThreeScene } from "@/components/AboutVillageThreeScene";
+import { AboutVillageThreeScene, type CabinDoorHudPct } from "@/components/AboutVillageThreeScene";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -50,6 +50,7 @@ export function AboutPageView() {
   const detailsOverlayRef = useRef<HTMLDivElement>(null);
   const detailsTimelineRef = useRef<HTMLDivElement>(null);
   const walkerTrailRef = useRef<HTMLDivElement>(null);
+  const cabinDoorHotspotRef = useRef<HTMLButtonElement>(null);
   const [bioExpanded, setBioExpanded] = useState(false);
   const [activeHotspot, setActiveHotspot] = useState<null | "rocks" | "grove" | "canopy">(null);
   const [modalOrigin, setModalOrigin] = useState<{ x: number; y: number }>({ x: 0.5, y: 0.5 });
@@ -76,6 +77,25 @@ export function AboutPageView() {
       document.body.style.overflow = prevOverflow;
     };
   }, [cabinBlackoutCarousel]);
+
+  const applyCabinDoorHud = useCallback((pct: CabinDoorHudPct) => {
+    const el = cabinDoorHotspotRef.current;
+    if (!el) return;
+    if (enterCabin || cabinBlackoutCarousel) {
+      el.style.opacity = "0";
+      el.style.pointerEvents = "none";
+      return;
+    }
+    if (!pct.visible) {
+      el.style.opacity = "0";
+      el.style.pointerEvents = "none";
+      return;
+    }
+    el.style.opacity = "";
+    el.style.pointerEvents = "auto";
+    el.style.top = `${pct.top}%`;
+    el.style.left = `${pct.left}%`;
+  }, [enterCabin, cabinBlackoutCarousel]);
 
   const bioToggleClass =
     "inline cursor-pointer border-0 bg-transparent p-0 font-body text-base font-medium tracking-wide text-[var(--foreground)] underline decoration-[var(--border-strong)] decoration-2 underline-offset-[6px] transition hover:decoration-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
@@ -614,19 +634,21 @@ export function AboutPageView() {
                 className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-44 bg-gradient-to-t from-[color-mix(in_oklab,var(--surface-elevated)_88%,var(--background))] to-transparent md:h-56"
                 aria-hidden
               />
-              <AboutVillageThreeScene
-                className="h-full w-full origin-top scale-[1.04] -translate-y-1 -translate-x-1 md:-translate-y-1 md:-translate-x-2"
-                enterCabin={enterCabin}
-                onInteriorBlackout={setCabinBlackoutCarousel}
-              />
-              {/* SVG fallback/texture layer */}
-              <AboutVillageLandscape
-                variant="full"
-                className="opacity-[0.18] md:opacity-[0.12]"
-              />
+              {/* Shared transform wrapper: Canvas raster + HUD use the same % space as the SVG layer */}
+              <div className="pointer-events-none absolute inset-0 z-[1] origin-top scale-[1.04] -translate-x-1 -translate-y-1 md:-translate-x-2 md:-translate-y-1">
+                <AboutVillageThreeScene
+                  className="absolute inset-0 h-full w-full"
+                  enterCabin={enterCabin}
+                  onInteriorBlackout={setCabinBlackoutCarousel}
+                  onDoorHud={applyCabinDoorHud}
+                />
+                <AboutVillageLandscape
+                  variant="full"
+                  className="absolute inset-0 opacity-[0.18] md:opacity-[0.12]"
+                />
 
-              {/* Hotspots overlay */}
-              <div className="absolute inset-0 z-40 pointer-events-none">
+                {/* Hotspots overlay */}
+                <div className="absolute inset-0 z-40 pointer-events-none">
                 {hotspots.map((h) => (
                   <button
                     key={h.id}
@@ -655,17 +677,20 @@ export function AboutPageView() {
                   />
                 ))}
 
-                {/* Door dot: opens the door + moves camera inside */}
+                {/* Door dot: synced to 3D door via onDoorHud (see AboutVillageThreeScene) */}
                 <button
+                  ref={cabinDoorHotspotRef}
                   type="button"
                   className="hotspot"
-                  style={{ top: "63%", left: "78%", pointerEvents: "auto" }}
+                  style={{ top: "64%", left: "74%", opacity: 0, pointerEvents: "none" }}
+                  aria-hidden={enterCabin || cabinBlackoutCarousel}
                   aria-label={enterCabin ? "Exit cabin" : "Enter cabin"}
                   onClick={(e) => {
                     e.stopPropagation();
                     setEnterCabin((v) => !v);
                   }}
                 />
+                </div>
               </div>
 
               {cabinBlackoutCarousel ? (

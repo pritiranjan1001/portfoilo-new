@@ -3,20 +3,46 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Sparkles } from "@react-three/drei";
 import * as THREE from "three";
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MutableRefObject,
+  type RefObject,
+} from "react";
 import { shouldReduceMotion } from "@/lib/gsap-plugins";
+
+export type CabinDoorHudPct = {
+  top: number;
+  left: number;
+  visible: boolean;
+};
+
+/**
+ * Door knob in portal group's local space: leaf origin [-0.17, 0, 0.055] + knob [0.29, -0.02, 0.03].
+ * (Previously y≈−0.35 sat on the slab bottom and read as ground — align with modeled handle.)
+ */
+const DOOR_HANDLE_PORTAL_LOCAL = new THREE.Vector3(0.32, -0.02, 0.088);
 
 type AboutVillageThreeSceneProps = {
   className?: string;
   enterCabin?: boolean;
   /** Mirrors `Scene` blackout (full dark cabin) — use to overlay HTML UI. */
   onInteriorBlackout?: (active: boolean) => void;
+  /**
+   * Fired ~every frame while the hut is visible. Drive an HTML hotspot with `%` positions
+   * so it stays glued to the 3D door (CSS transforms on the canvas stack no longer mismatch).
+   */
+  onDoorHud?: (pct: CabinDoorHudPct) => void;
 };
 
 export function AboutVillageThreeScene({
   className,
   enterCabin = false,
   onInteriorBlackout,
+  onDoorHud,
 }: AboutVillageThreeSceneProps) {
   const reduce = shouldReduceMotion();
   const isDark = useIsDarkMode();
@@ -40,6 +66,7 @@ export function AboutVillageThreeScene({
           isDark={isDark}
           enterCabin={enterCabin}
           onInteriorBlackout={onInteriorBlackout}
+          onDoorHud={onDoorHud}
         />
       </Canvas>
     </div>
@@ -152,15 +179,19 @@ function Scene({
   isDark,
   enterCabin,
   onInteriorBlackout,
+  onDoorHud,
 }: {
   reduceMotion: boolean;
   isDark: boolean;
   enterCabin: boolean;
   onInteriorBlackout?: (active: boolean) => void;
+  onDoorHud?: (pct: CabinDoorHudPct) => void;
 }) {
   const { viewport, gl, invalidate } = useThree();
   const doorPortalRef = useRef<THREE.Group>(null);
   const doorLeafRef = useRef<THREE.Group>(null);
+  const doorHudCbRef = useRef<((pct: CabinDoorHudPct) => void) | undefined>(undefined);
+  doorHudCbRef.current = onDoorHud;
   const [interiorBlackout, setInteriorBlackoutInner] = useState(false);
 
   const setInteriorBlackout = useCallback(
@@ -339,8 +370,54 @@ function Scene({
         doorLeaf={doorLeafRef}
         setInteriorBlackout={setInteriorBlackout}
       />
+
+      <DoorHudProjector
+        portalRef={doorPortalRef}
+        doorHudCbRef={doorHudCbRef}
+        active={Boolean(onDoorHud) && !enterCabin && !interiorBlackout}
+      />
     </>
   );
+}
+
+function DoorHudProjector({
+  portalRef,
+  doorHudCbRef,
+  active,
+}: {
+  portalRef: RefObject<THREE.Group | null>;
+  doorHudCbRef: MutableRefObject<((pct: CabinDoorHudPct) => void) | undefined>;
+  active: boolean;
+}) {
+  const cam = useThree((s) => s.camera);
+  const vScratch = useMemo(() => new THREE.Vector3(), []);
+
+  useFrame(() => {
+    const cb = doorHudCbRef.current;
+    if (!active || !cb) return;
+
+    const portal = portalRef.current;
+    if (!portal) return;
+
+    vScratch.copy(DOOR_HANDLE_PORTAL_LOCAL);
+    portal.localToWorld(vScratch);
+
+    const persp = cam instanceof THREE.PerspectiveCamera ? cam : null;
+    if (!persp) return;
+
+    vScratch.project(persp);
+    const inFrustum =
+      Number.isFinite(vScratch.z) &&
+      Math.abs(vScratch.z) <= 1.015 &&
+      Math.abs(vScratch.x) <= 1.015 &&
+      Math.abs(vScratch.y) <= 1.015;
+
+    const leftPct = THREE.MathUtils.clamp(((vScratch.x + 1) / 2) * 100, -6, 106);
+    const topPct = THREE.MathUtils.clamp(((1 - vScratch.y) / 2) * 100, -6, 106);
+    cb({ top: topPct, left: leftPct, visible: inFrustum });
+  });
+
+  return null;
 }
 
 function InteriorBlackSphere() {
