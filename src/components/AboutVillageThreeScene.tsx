@@ -116,10 +116,7 @@ function Scene({ reduceMotion, isDark }: { reduceMotion: boolean; isDark: boolea
       <directionalLight position={[0, 3, -18]} intensity={isDark ? 0.75 : 0.55} color={palette.horizonGlow} />
 
       {/* Ground */}
-      <LowPolyVillage
-        palette={palette}
-        reduceMotion={reduceMotion}
-      />
+      <LowPolyVillage palette={palette} reduceMotion={reduceMotion} isDark={isDark} />
 
       <Birds
         enabled={!reduceMotion}
@@ -217,6 +214,7 @@ function Birds({ enabled, color }: { enabled: boolean; color: string }) {
 function LowPolyVillage({
   palette,
   reduceMotion,
+  isDark,
 }: {
   palette: {
     ground: string;
@@ -231,6 +229,7 @@ function LowPolyVillage({
     horizonGlow: string;
   };
   reduceMotion: boolean;
+  isDark: boolean;
 }) {
   const group = useRef<THREE.Group>(null);
   const rocks = useRef<THREE.InstancedMesh>(null);
@@ -327,6 +326,7 @@ function LowPolyVillage({
         rocksRef={rocks}
         data={rocksData}
         terrain={terrainMain}
+        excludeNear={ROCKS_EXCLUDE_NEAR_CABIN}
       />
 
       {/* Grass tufts (instanced) */}
@@ -346,6 +346,9 @@ function LowPolyVillage({
         roof={palette.roof}
         wood={palette.wood}
         position={[3.4, terrainMain.posY + terrainHeightAt(terrainMain, 3.4, 2.0) + 0.06, 2.0]}
+        smokeEnabled={!reduceMotion}
+        smokeColor={isDark ? "rgba(255,255,255,0.38)" : "rgba(255,255,255,0.26)"}
+        windowGlow={isDark ? 1.15 : 0.35}
       />
 
       {/* Trees (foreground) */}
@@ -494,14 +497,23 @@ function terrainHeightAt(
   return y * terrain.height;
 }
 
+/** Local `LowPolyVillage` xz space (instances share the group's rotation). */
+const ROCKS_EXCLUDE_NEAR_CABIN = { x: 3.4, z: 2.0, rx: 1.55, rz: 1.25, pad: 0.55 } as const;
+
 function RocksSeed({
   rocksRef,
   data,
   terrain,
+  excludeNear,
 }: {
   rocksRef: React.RefObject<THREE.InstancedMesh | null>;
   data: Array<{ x: number; y: number; z: number; s: number; rx: number; ry: number; rz: number }>;
   terrain: { w: number; d: number; height: number; posX: number; posZ: number; posY: number };
+  /**
+   * `LowPolyVillage` rotates its whole subtree; instanced placements share that transform.
+   * Use this to gently push rocks away from the cabin footprint in *local* village space.
+   */
+  excludeNear?: { x: number; z: number; rx: number; rz: number; pad: number };
 }) {
   const o = useMemo(() => new THREE.Object3D(), []);
   useEffect(() => {
@@ -509,8 +521,22 @@ function RocksSeed({
     if (!inst) return;
     for (let i = 0; i < data.length; i++) {
       const d = data[i]!;
-      const y = terrain.posY + terrainHeightAt(terrain, d.x, d.z) + 0.04;
-      o.position.set(d.x, y, d.z);
+      let px = d.x;
+      let pz = d.z;
+      if (excludeNear) {
+        const dx = (px - excludeNear.x) / excludeNear.rx;
+        const dz = (pz - excludeNear.z) / excludeNear.rz;
+        const e2 = dx * dx + dz * dz;
+        if (e2 < 1) {
+          const len = Math.sqrt(Math.max(e2, 1e-6));
+          const push = (1 - len) * excludeNear.pad;
+          px += (dx / len) * push;
+          pz += (dz / len) * push;
+        }
+      }
+
+      const y = terrain.posY + terrainHeightAt(terrain, px, pz) + 0.04;
+      o.position.set(px, y, pz);
       o.scale.setScalar(d.s * 1.08);
       o.rotation.set(d.rx, d.ry, d.rz);
       o.updateMatrix();
@@ -528,6 +554,11 @@ function RocksSeed({
     terrain.posX,
     terrain.posY,
     terrain.posZ,
+    excludeNear?.x,
+    excludeNear?.z,
+    excludeNear?.rx,
+    excludeNear?.rz,
+    excludeNear?.pad,
   ]);
   return null;
 }
@@ -640,18 +671,24 @@ function Cabin({
   roof,
   wood,
   position,
+  smokeEnabled,
+  smokeColor,
+  windowGlow,
 }: {
   hut: string;
   roof: string;
   wood: string;
   position: [number, number, number];
+  smokeEnabled: boolean;
+  smokeColor: string;
+  windowGlow: number;
 }) {
   return (
-    <group position={position} rotation={[0, -0.35, 0]}>
+    <group position={position} rotation={[0, 0.18, 0]}>
       {/* base deck */}
       <mesh position={[0, -0.06, 0]}>
         <boxGeometry args={[2.0, 0.12, 1.4]} />
-        <meshStandardMaterial color={wood} roughness={1} opacity={0.55} transparent />
+        <meshStandardMaterial color={wood} roughness={1} />
       </mesh>
       <mesh position={[0, 0.25, 0]}>
         <boxGeometry args={[1.7, 0.9, 1.15]} />
@@ -661,7 +698,7 @@ function Cabin({
       {new Array(6).fill(0).map((_, i) => (
         <mesh key={i} position={[0, 0.02 + i * 0.12, 0.58]}>
           <boxGeometry args={[1.72, 0.05, 0.06]} />
-          <meshStandardMaterial color={wood} roughness={1} opacity={0.5} transparent />
+          <meshStandardMaterial color={wood} roughness={1} />
         </mesh>
       ))}
       <mesh position={[0, 0.82, 0]} rotation={[0, Math.PI / 4, 0]}>
@@ -672,19 +709,192 @@ function Cabin({
       {new Array(5).fill(0).map((_, i) => (
         <mesh key={`plank-${i}`} position={[0, 0.92 - i * 0.12, 0]} rotation={[0, Math.PI / 4, 0]}>
           <boxGeometry args={[1.55, 0.03, 0.03]} />
-          <meshStandardMaterial color={wood} roughness={1} opacity={0.45} transparent />
+          <meshStandardMaterial color={wood} roughness={1} />
         </mesh>
       ))}
-      {/* door notch */}
-      <mesh position={[0.55, 0.14, 0.58]}>
-        <boxGeometry args={[0.28, 0.5, 0.05]} />
-        <meshStandardMaterial color={wood} roughness={1} />
-      </mesh>
+      {/* Door + window on the camera-facing wall (the one you actually see) */}
+      <group position={[0, 0, 0.605]}>
+        {/* WINDOW (left): frame + glass + interior glow — not a solid wall patch */}
+        <group position={[0.14, 0.32, 0.055]}>
+          {/* Warm interior (recessed “room”) */}
+          <mesh position={[0, 0, -0.045]}>
+            <planeGeometry args={[0.36, 0.22]} />
+            <meshStandardMaterial
+              color={"#1a140f"}
+              roughness={1}
+              metalness={0}
+              emissive={"#ffd7a6"}
+              emissiveIntensity={windowGlow * 0.22}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+
+          {/* Wood frame (opening, not a filled rectangle) */}
+          <mesh position={[0, 0.2, 0]}>
+            <boxGeometry args={[0.52, 0.045, 0.075]} />
+            <meshStandardMaterial color={wood} roughness={0.92} metalness={0} />
+          </mesh>
+          <mesh position={[0, -0.2, 0.012]}>
+            <boxGeometry args={[0.54, 0.055, 0.09]} />
+            <meshStandardMaterial color={wood} roughness={0.92} metalness={0} />
+          </mesh>
+          <mesh position={[-0.242, 0, 0]}>
+            <boxGeometry args={[0.046, 0.36, 0.075]} />
+            <meshStandardMaterial color={wood} roughness={0.92} metalness={0} />
+          </mesh>
+          <mesh position={[0.242, 0, 0]}>
+            <boxGeometry args={[0.046, 0.36, 0.075]} />
+            <meshStandardMaterial color={wood} roughness={0.92} metalness={0} />
+          </mesh>
+
+          {/* Glass pane */}
+          <mesh position={[0, 0, 0.036]}>
+            <boxGeometry args={[0.39, 0.25, 0.012]} />
+            <meshPhysicalMaterial
+              color={"#d6e8ff"}
+              roughness={0.12}
+              metalness={0}
+              transmission={0.88}
+              thickness={0.08}
+              transparent
+              toneMapped={false}
+            />
+          </mesh>
+
+          {/* Simple cottage muntins */}
+          <mesh position={[0, 0, 0.044]}>
+            <boxGeometry args={[0.41, 0.016, 0.014]} />
+            <meshStandardMaterial color={wood} roughness={0.95} metalness={0} />
+          </mesh>
+          <mesh position={[0, 0, 0.044]}>
+            <boxGeometry args={[0.016, 0.29, 0.014]} />
+            <meshStandardMaterial color={wood} roughness={0.95} metalness={0} />
+          </mesh>
+
+          {/* Open shutters (hinged outward) */}
+          <group position={[-0.28, 0, 0.06]} rotation={[0, 1.35, 0]}>
+            <mesh position={[0.1, 0, 0]}>
+              <boxGeometry args={[0.16, 0.24, 0.04]} />
+              <meshStandardMaterial color={wood} roughness={0.95} metalness={0} />
+            </mesh>
+          </group>
+          <group position={[0.28, 0, 0.06]} rotation={[0, -1.35, 0]}>
+            <mesh position={[-0.1, 0, 0]}>
+              <boxGeometry args={[0.16, 0.24, 0.04]} />
+              <meshStandardMaterial color={wood} roughness={0.95} metalness={0} />
+            </mesh>
+          </group>
+        </group>
+
+        {/* DOOR (right) */}
+        <group position={[0.62, 0.1, 0.03]}>
+          <mesh>
+            <boxGeometry args={[0.46, 0.86, 0.09]} />
+            <meshStandardMaterial color={wood} roughness={0.92} metalness={0} />
+          </mesh>
+          {/* open door leaf (hinged on left) */}
+          <group position={[-0.17, 0, 0.055]} rotation={[0, -1.08, 0]}>
+            <mesh position={[0.17, 0, 0]}>
+              <boxGeometry args={[0.34, 0.74, 0.04]} />
+              <meshStandardMaterial color={hut} roughness={0.98} metalness={0} />
+            </mesh>
+            {new Array(6).fill(0).map((_, i) => (
+              <mesh key={`door-rib-front-${i}`} position={[0.17, -0.33 + i * 0.12, 0.02]}>
+                <boxGeometry args={[0.345, 0.02, 0.012]} />
+                <meshStandardMaterial color={wood} roughness={0.95} />
+              </mesh>
+            ))}
+            <mesh position={[0.29, -0.02, 0.03]}>
+              <sphereGeometry args={[0.022, 10, 10]} />
+              <meshStandardMaterial color={"#2a2017"} roughness={0.4} metalness={0.05} />
+            </mesh>
+          </group>
+        </group>
+      </group>
+
       {/* chimney */}
       <mesh position={[-0.35, 1.05, -0.1]}>
         <boxGeometry args={[0.14, 0.35, 0.14]} />
-        <meshStandardMaterial color={wood} roughness={1} opacity={0.6} transparent />
+        <meshStandardMaterial color={wood} roughness={1} />
       </mesh>
+      <ChimneySmoke enabled={smokeEnabled} color={smokeColor} />
+    </group>
+  );
+}
+
+function ChimneySmoke({ enabled, color }: { enabled: boolean; color: string }) {
+  const group = useRef<THREE.Group>(null);
+
+  const tex = useMemo(() => {
+    const size = 128;
+    const c = document.createElement("canvas");
+    c.width = size;
+    c.height = size;
+    const ctx = c.getContext("2d");
+    if (!ctx) return null;
+    const g = ctx.createRadialGradient(size * 0.4, size * 0.38, 6, size * 0.5, size * 0.5, size * 0.52);
+    g.addColorStop(0, "rgba(255,255,255,0.95)");
+    g.addColorStop(0.35, "rgba(255,255,255,0.55)");
+    g.addColorStop(0.7, "rgba(255,255,255,0.18)");
+    g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.minFilter = THREE.LinearFilter;
+    t.magFilter = THREE.LinearFilter;
+    return t;
+  }, []);
+
+  const seeds = useMemo(
+    () =>
+      new Array(6).fill(0).map((_, i) => ({
+        phase: i * 0.72,
+        speed: 0.18 + i * 0.015,
+        drift: 0.05 + i * 0.01,
+        scale: 0.22 + i * 0.035,
+      })),
+    [],
+  );
+
+  useFrame(({ clock }) => {
+    if (!enabled) return;
+    const g = group.current;
+    if (!g) return;
+    const t = clock.getElapsedTime();
+    for (let i = 0; i < g.children.length; i++) {
+      const s = seeds[i]!;
+      const p = (t * s.speed + s.phase) % 1;
+      // Start slightly *inside* the chimney, then rise.
+      const y = 1.12 + p * 0.95;
+      const x = -0.35 + Math.sin((t + s.phase) * 1.7) * s.drift;
+      const z = -0.12 + Math.cos((t + s.phase) * 1.3) * s.drift * 0.8;
+      const sc = s.scale * (0.65 + p * 1.35);
+      const alpha = Math.sin(Math.PI * p) ** 1.25;
+      const child = g.children[i] as THREE.Sprite;
+      child.position.set(x, y, z);
+      child.scale.setScalar(sc);
+      const mat = child.material as THREE.SpriteMaterial;
+      mat.opacity = 0.55 * alpha;
+    }
+  });
+
+  if (!enabled || !tex) return null;
+
+  return (
+    <group ref={group}>
+      {seeds.map((_, i) => (
+        <sprite key={i} position={[-0.35, 1.12, -0.12]}>
+          <spriteMaterial
+            map={tex}
+            color={new THREE.Color(color)}
+            transparent
+            opacity={0}
+            depthTest
+            depthWrite={false}
+          />
+        </sprite>
+      ))}
     </group>
   );
 }

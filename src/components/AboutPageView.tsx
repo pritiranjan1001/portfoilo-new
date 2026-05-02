@@ -114,9 +114,15 @@ export function AboutPageView() {
 
   const openHotspot = (id: "rocks" | "grove" | "cabin", el: HTMLElement) => {
     if (id === "cabin") {
-      setActiveHotspot(null);
+      const rect = el.getBoundingClientRect();
+      const cx = (rect.left + rect.right) / 2;
+      const cy = (rect.top + rect.bottom) / 2;
+      setModalOrigin({
+        x: window.innerWidth > 0 ? cx / window.innerWidth : 0.5,
+        y: window.innerHeight > 0 ? cy / window.innerHeight : 0.5,
+      });
       setDetailsOpen(false);
-      revealFlashbackAndScroll();
+      setActiveHotspot("cabin");
       return;
     }
     const rect = el.getBoundingClientRect();
@@ -164,8 +170,8 @@ export function AboutPageView() {
     },
     {
       id: "cabin" as const,
-      title: "Flashback memory",
-      body: "Photographs and short clips from the archive — studio days, openings, and quiet moments.",
+      title: "Experience",
+      body: "A quick look at roles and years — the work timeline.",
       top: "50%",
       left: "77%",
     },
@@ -672,7 +678,11 @@ export function AboutPageView() {
                     type="button"
                     className="hotspot"
                     style={{ top: h.top, left: h.left, pointerEvents: "auto" }}
-                    aria-label={`${h.title}. Open details`}
+                    aria-label={
+                      h.id === "cabin"
+                        ? `${h.title}. Opens a short intro, then you can jump to the Flashback section.`
+                        : `${h.title}. Open details`
+                    }
                     aria-haspopup="dialog"
                     aria-expanded={h.id === "rocks" ? detailsOpen : activeHotspot === h.id}
                     onPointerDown={(e) => {
@@ -744,7 +754,13 @@ export function AboutPageView() {
                   <div
                     role="dialog"
                     aria-modal="true"
-                    aria-label="About"
+                    aria-label={
+                      activeHotspot === "cabin"
+                        ? "Experience"
+                        : activeHotspot === "grove"
+                          ? "About"
+                          : "Details"
+                    }
                     data-state={activeHotspot ? "open" : "closed"}
                     className="magic-modal pointer-events-none absolute inset-0 grid place-items-center px-0 md:px-4"
                     style={
@@ -767,10 +783,10 @@ export function AboutPageView() {
                         ) : (
                           <>
                             <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
-                              {activeHotspot === "cabin" ? "Archive" : "Gallery"}
+                              {activeHotspot === "cabin" ? "Experience" : "Gallery"}
                             </p>
                             <p className="mt-1 font-display text-xl font-semibold text-[var(--foreground)]">
-                              {activeHotspot === "cabin" ? "Flashback memory" : "Gallery"}
+                              {activeHotspot === "cabin" ? "Where I’ve worked" : "Gallery"}
                             </p>
                           </>
                         )}

@@ -218,6 +218,38 @@ body.work-hide-doc-scrollbar::-webkit-scrollbar {
   }
 }
 
+@keyframes aboutChimneySmoke {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.75);
+    opacity: 0;
+    filter: blur(2px);
+  }
+  15% {
+    opacity: 0.55;
+  }
+  60% {
+    opacity: 0.24;
+  }
+  100% {
+    transform: translate3d(-14px, -68px, 0) scale(1.55);
+    opacity: 0;
+    filter: blur(10px);
+  }
+}
+
+@keyframes aboutChimneySmokeWobble {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  30% {
+    transform: translate3d(2px, -1px, 0) rotate(-1deg);
+  }
+  65% {
+    transform: translate3d(-2px, 1px, 0) rotate(1.25deg);
+  }
+}
+
 @keyframes hotspot-pulse {
   0% {
     transform: translate(-50%, -50%) scale(0.92);
