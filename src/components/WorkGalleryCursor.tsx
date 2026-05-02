@@ -22,6 +22,45 @@ export function WorkGalleryScrollHint() {
   );
 }
 
+export function WorkGalleryScrollIndicator({
+  progress,
+  hidden,
+  className,
+}: {
+  progress: number;
+  hidden?: boolean;
+  className?: string;
+}) {
+  const p = Number.isFinite(progress) ? Math.min(1, Math.max(0, progress)) : 0;
+  return (
+    <div
+      className={`pointer-events-none z-[90] hidden md:block ${
+        hidden ? "opacity-0" : "opacity-100"
+      } transition-opacity duration-300 ${className ?? ""}`}
+      aria-hidden
+    >
+      <div className="flex flex-col items-center gap-2">
+        <div className="grid h-10 w-10 place-items-center rounded-full border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_82%,transparent)] shadow-[0_18px_60px_-40px_color-mix(in_oklab,black_55%,transparent)] backdrop-blur-md">
+          <span className="text-[12px] leading-none text-[var(--foreground)]/80 motion-safe:animate-[workScrollNudge_1.15s_ease-in-out_infinite]">
+            ↓
+          </span>
+        </div>
+
+        <div className="relative h-20 w-[3px] overflow-hidden rounded-full bg-[color-mix(in_oklab,var(--foreground)_20%,transparent)]">
+          <div
+            className="absolute bottom-0 left-0 right-0 rounded-full bg-[color-mix(in_oklab,var(--accent)_70%,var(--foreground))]"
+            style={{ height: `${Math.round(p * 100)}%` }}
+          />
+        </div>
+
+        <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-[var(--muted)]">
+          Scroll
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function WorkGalleryCursor({ zoneRef, enabled, dragging }: Props) {
   const [visible, setVisible] = useState(false);
   const target = useRef({ x: 0, y: 0 });

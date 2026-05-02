@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
@@ -8,6 +8,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   useWorkGalleryChrome,
   WorkGalleryCursor,
+  WorkGalleryScrollIndicator,
   WorkGalleryScrollHint,
 } from "@/components/WorkGalleryCursor";
 import {
@@ -307,11 +308,18 @@ function WorkSlide({
 export function WorkHorizontalGallery() {
   const outerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+  const mobileStripRef = useRef<HTMLDivElement>(null);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const chrome = useWorkGalleryChrome();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const lenis = useLenisInstance();
+
+  const indicatorHidden = useMemo(
+    () => scrollProgress > 0.02 || reduceMotion,
+    [scrollProgress, reduceMotion],
+  );
 
   useEffect(() => {
     setReduceMotion(shouldReduceMotion());
@@ -435,6 +443,9 @@ export function WorkHorizontalGallery() {
           fastScrollEnd: false,
           anticipatePin: 0,
           invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            setScrollProgress(self.progress || 0);
+          },
         },
       });
 
@@ -564,6 +575,7 @@ export function WorkHorizontalGallery() {
         ro.disconnect();
         outer.removeEventListener("pointerdown", onPointerDown);
         outer.removeEventListener("wheel", onWheelGallery);
+        setScrollProgress(0);
         tween.scrollTrigger?.kill();
         tween.kill();
       };
@@ -571,9 +583,26 @@ export function WorkHorizontalGallery() {
     { scope: outerRef, dependencies: [reduceMotion, isDesktop, lenis] },
   );
 
+  useEffect(() => {
+    if (isDesktop) return;
+    const el = mobileStripRef.current;
+    if (!el) return;
+    const update = () => {
+      const denom = Math.max(1, el.scrollWidth - el.clientWidth);
+      setScrollProgress(denom > 0 ? el.scrollLeft / denom : 0);
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      el.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [isDesktop]);
+
   return (
     <section id="work">
-      <div className="mx-auto hidden max-w-6xl px-6 pt-16 md:block md:px-14 md:pt-20">
+      <div className="relative mx-auto hidden max-w-6xl px-6 pt-16 md:block md:px-14 md:pt-20">
         <p className="font-mono text-xs uppercase tracking-[0.28em] text-[var(--accent)]">
           Work
         </p>
@@ -584,6 +613,12 @@ export function WorkHorizontalGallery() {
           Use the mouse wheel, drag sideways on desktop, or arrow keys / Page Up · Page Down to move
           through the gallery. Long captions scroll inside the text column (no visible scrollbar).
         </p>
+
+        <WorkGalleryScrollIndicator
+          progress={scrollProgress}
+          hidden={indicatorHidden}
+          className="absolute right-6 top-16"
+        />
       </div>
 
       {reduceMotion ? (
@@ -606,6 +641,7 @@ export function WorkHorizontalGallery() {
           <div
             id="work-gallery-pin"
             data-lenis-prevent
+            ref={mobileStripRef}
             className="flex h-[100dvh] w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {site.works.map((work, wi) => (

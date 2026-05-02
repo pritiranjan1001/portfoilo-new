@@ -1,11 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Link from "next/link";
+import Image from "next/image";
 import { AboutExperiencePatterns } from "@/components/AboutBackgroundPatterns";
 import { AboutFindInsidePatterns } from "@/components/AboutFindInsidePatterns";
 import { AboutFlashbackMemories } from "@/components/AboutFlashbackMemories";
@@ -17,6 +18,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useLenisInstance } from "@/components/lenis-context";
 import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
+import { getAnchorAlignFromTarget, getAnchorScrollTopPx } from "@/lib/scroll-anchors";
 import { site } from "@/lib/site";
 import {
   getNativeScrollScroller,
@@ -59,12 +61,50 @@ export function AboutPageView() {
   });
   const [modalMounted, setModalMounted] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [flashbackVisible, setFlashbackVisible] = useState(false);
+  const [flashbackScrollPending, setFlashbackScrollPending] = useState(false);
   const lenis = useLenisInstance();
   const stamped = formatAboutDate(new Date());
   const bioParas = site.aboutBioParagraphs;
   const bioFirst = bioParas[0];
   const bioRest = bioParas.slice(1);
   const detailsItems = site.aboutFindInside.items;
+
+  const scrollToFlashbackMemory = useCallback(() => {
+    const target = document.getElementById("about-flashback-memory");
+    if (!target) return;
+    if (lenis) {
+      const align = getAnchorAlignFromTarget(target);
+      lenis.scrollTo(getAnchorScrollTopPx(target, align), {
+        duration: 1.05,
+        onComplete: () => refreshLenisAndScrollTrigger(lenis),
+      });
+    } else {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [lenis]);
+
+  const revealFlashbackAndScroll = useCallback(() => {
+    setFlashbackVisible(true);
+    setFlashbackScrollPending(true);
+  }, []);
+
+  useEffect(() => {
+    if (!flashbackVisible || !flashbackScrollPending) return;
+
+    const attempts = [0, 16, 48, 96, 200, 400].map((ms) =>
+      window.setTimeout(() => {
+        const target = document.getElementById("about-flashback-memory");
+        if (!target) return;
+        setFlashbackScrollPending(false);
+        scrollToFlashbackMemory();
+      }, ms),
+    );
+
+    return () => {
+      attempts.forEach((t) => window.clearTimeout(t));
+    };
+  }, [flashbackVisible, flashbackScrollPending, scrollToFlashbackMemory]);
 
   const bioToggleClass =
     "inline cursor-pointer border-0 bg-transparent p-0 font-body text-base font-medium tracking-wide text-[var(--foreground)] underline decoration-[var(--border-strong)] decoration-2 underline-offset-[6px] transition hover:decoration-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
@@ -73,6 +113,12 @@ export function AboutPageView() {
     "mt-12 border-0 border-t border-[var(--border-strong)] md:mt-14";
 
   const openHotspot = (id: "rocks" | "grove" | "cabin", el: HTMLElement) => {
+    if (id === "cabin") {
+      setActiveHotspot(null);
+      setDetailsOpen(false);
+      revealFlashbackAndScroll();
+      return;
+    }
     const rect = el.getBoundingClientRect();
     const cx = (rect.left + rect.right) / 2;
     const cy = (rect.top + rect.bottom) / 2;
@@ -154,6 +200,22 @@ export function AboutPageView() {
       document.documentElement.removeAttribute("data-about-overlay-open");
     };
   }, [detailsOpen, modalMounted]);
+
+  useEffect(() => {
+    // Hide the initial scrollbar: the landscape section uses `100dvh` + header padding,
+    // which can create a tiny overflow and show a scrollbar even when nothing is scrollable.
+    if (flashbackVisible) {
+      document.documentElement.style.overflowY = "";
+      document.body.style.overflowY = "";
+      return;
+    }
+    document.documentElement.style.overflowY = "hidden";
+    document.body.style.overflowY = "hidden";
+    return () => {
+      document.documentElement.style.overflowY = "";
+      document.body.style.overflowY = "";
+    };
+  }, [flashbackVisible]);
 
   useEffect(() => {
     if (activeHotspot != null) {
@@ -578,7 +640,9 @@ export function AboutPageView() {
       <SiteHeader />
       <main
         ref={root}
-        className="relative min-h-[100dvh] overflow-x-hidden bg-[var(--background)] pb-0 pt-20 md:pt-24"
+        className={`relative min-h-[100dvh] overflow-x-hidden bg-[var(--background)] pb-0 pt-20 md:pt-24 ${
+          flashbackVisible ? "" : "overflow-y-hidden"
+        }`}
       >
         <div className="relative">
           <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-14">
@@ -630,6 +694,36 @@ export function AboutPageView() {
                   />
                 ))}
               </div>
+
+              {/* Memory Lane shortcut */}
+              <button
+                type="button"
+                className="group absolute bottom-6 right-6 z-[60] flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_88%,transparent)] p-2 pr-3 shadow-[0_26px_70px_-46px_color-mix(in_oklab,black_46%,transparent)] backdrop-blur-md transition hover:border-[var(--border-strong)] hover:bg-[color-mix(in_oklab,var(--surface)_94%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] md:bottom-8 md:right-8"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  revealFlashbackAndScroll();
+                }}
+              >
+                <span className="sr-only">Go to Flashback memory</span>
+                <span className="relative block h-[56px] w-[78px] overflow-hidden rounded-xl border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_90%,transparent)]">
+                  <Image
+                    src="/memory-lane.svg"
+                    alt="Memory Lane"
+                    fill
+                    className="object-cover opacity-90 transition group-hover:opacity-100"
+                    sizes="(min-width: 768px) 78px, 78px"
+                    priority={false}
+                  />
+                </span>
+                <span className="min-w-0 text-left">
+                  <span className="block font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--muted)]">
+                    Memory lane
+                  </span>
+                  <span className="mt-0.5 block font-display text-sm font-semibold leading-none tracking-tight text-[var(--foreground)]">
+                    Flashback
+                  </span>
+                </span>
+              </button>
 
               {/* Modal */}
               {modalMounted && (
@@ -1156,9 +1250,12 @@ export function AboutPageView() {
         </section>
         */}
 
-        <AboutFlashbackMemories fullWidth className="mt-0" />
+        {flashbackVisible && (
+          <div id="about-flashback-memory" data-anchor-align="top">
+            <AboutFlashbackMemories fullWidth className="mt-0" />
+          </div>
+        )}
       </main>
-      <SiteFooter />
     </>
   );
 }

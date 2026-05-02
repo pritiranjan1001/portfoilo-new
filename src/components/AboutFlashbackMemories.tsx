@@ -235,11 +235,9 @@ export function AboutFlashbackMemories({
           id="about-flashback-heading"
           className="mt-3 font-display text-[clamp(1.75rem,4vw,2.65rem)] font-bold leading-[0.98] tracking-tight"
         >
-          <span className="about-flashback-head block text-[var(--foreground)]">
-            {aboutFlashback.titleLine1}
-          </span>
-          <span className="about-flashback-head mt-1 block text-[var(--muted)] md:mt-1.5">
-            {aboutFlashback.titleLine2}
+          <span className="about-flashback-head whitespace-nowrap text-[var(--foreground)]">
+            {aboutFlashback.titleLine1}{" "}
+            <span className="text-[var(--muted)]">{aboutFlashback.titleLine2}</span>
           </span>
         </h2>
         <p className="about-flashback-intro mt-4 max-w-2xl text-pretty text-sm leading-relaxed text-[var(--muted)] md:text-base">
