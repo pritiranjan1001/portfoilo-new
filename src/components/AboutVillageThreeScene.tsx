@@ -3,14 +3,21 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Sparkles } from "@react-three/drei";
 import * as THREE from "three";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { shouldReduceMotion } from "@/lib/gsap-plugins";
 
 type AboutVillageThreeSceneProps = {
   className?: string;
+  enterCabin?: boolean;
+  /** Mirrors `Scene` blackout (full dark cabin) — use to overlay HTML UI. */
+  onInteriorBlackout?: (active: boolean) => void;
 };
 
-export function AboutVillageThreeScene({ className }: AboutVillageThreeSceneProps) {
+export function AboutVillageThreeScene({
+  className,
+  enterCabin = false,
+  onInteriorBlackout,
+}: AboutVillageThreeSceneProps) {
   const reduce = shouldReduceMotion();
   const isDark = useIsDarkMode();
 
@@ -20,7 +27,7 @@ export function AboutVillageThreeScene({ className }: AboutVillageThreeSceneProp
         dpr={[1, 1.5]}
         gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}
         camera={{ position: [0, 2.15, 10.5], fov: 38, near: 0.1, far: 120 }}
-        frameloop={reduce ? "demand" : "always"}
+        frameloop="always"
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
         onCreated={({ gl }) => {
           // Lift the scene without making it "flat".
@@ -28,19 +35,158 @@ export function AboutVillageThreeScene({ className }: AboutVillageThreeSceneProp
           gl.outputColorSpace = THREE.SRGBColorSpace;
         }}
       >
-        <Scene reduceMotion={reduce} isDark={isDark} />
+        <Scene
+          reduceMotion={reduce}
+          isDark={isDark}
+          enterCabin={enterCabin}
+          onInteriorBlackout={onInteriorBlackout}
+        />
       </Canvas>
     </div>
   );
 }
 
-function Scene({ reduceMotion, isDark }: { reduceMotion: boolean; isDark: boolean }) {
-  const { viewport, gl } = useThree();
+function makeCabinSmokeVignetteTexture() {
+  const size = 512;
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d");
+  if (!ctx) return null;
+
+  const cx = size * 0.5;
+  const cy = size * 0.52;
+  const g = ctx.createRadialGradient(cx, cy, size * 0.07, cx, cy, size * 0.64);
+  g.addColorStop(0, "rgba(22,17,14,0)");
+  g.addColorStop(0.32, "rgba(14,11,9,0.1)");
+  g.addColorStop(0.58, "rgba(9,7,6,0.38)");
+  g.addColorStop(0.82, "rgba(5,4,3,0.62)");
+  g.addColorStop(1, "rgba(3,2,2,0.78)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+
+  const img = ctx.getImageData(0, 0, size, size);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (Math.random() - 0.5) * 18;
+    d[i] = Math.max(0, Math.min(255, d[i] + n));
+    d[i + 1] = Math.max(0, Math.min(255, d[i + 1] + n));
+    d[i + 2] = Math.max(0, Math.min(255, d[i + 2] + n));
+  }
+  ctx.putImageData(img, 0, 0);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+function CabinApproachSmoke({ active, durationMs }: { active: boolean; durationMs: number }) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const matRef = useRef<THREE.MeshBasicMaterial>(null);
+  const startedAt = useRef<number | null>(null);
 
   useEffect(() => {
-    // Theme-aware exposure.
-    gl.toneMappingExposure = isDark ? 1.05 : 1.55;
-  }, [gl, isDark]);
+    if (active) startedAt.current = performance.now();
+    else startedAt.current = null;
+  }, [active]);
+
+  const map = useMemo(() => makeCabinSmokeVignetteTexture(), []);
+  useEffect(() => () => map?.dispose(), [map]);
+
+  const { camera } = useThree();
+
+  useFrame(() => {
+    const mesh = meshRef.current;
+    const mat = matRef.current;
+    if (!mesh || !mat || !map) return;
+
+    if (!active || startedAt.current === null) {
+      mesh.visible = false;
+      mat.opacity = 0;
+      return;
+    }
+
+    const persp = camera as THREE.PerspectiveCamera;
+    if (!persp.isPerspectiveCamera) return;
+
+    const elapsed = performance.now() - startedAt.current;
+    const t = THREE.MathUtils.clamp(elapsed / durationMs, 0, 1);
+    const ramp = THREE.MathUtils.smoothstep(t, 0.04, 0.93);
+    const hazePulse = Math.sin(t * Math.PI) * 0.07;
+    mat.opacity = THREE.MathUtils.clamp(ramp * 0.64 + hazePulse, 0, 0.92);
+
+    mesh.visible = true;
+    const dist = persp.near + 0.34;
+    mesh.position.copy(camera.position);
+    mesh.quaternion.copy(camera.quaternion);
+    mesh.translateZ(-dist);
+
+    const vFov = THREE.MathUtils.degToRad(persp.fov);
+    const hh = Math.tan(vFov / 2) * dist * 2.06;
+    const ww = hh * persp.aspect;
+    mesh.scale.set(Math.max(ww, 1e-4), Math.max(hh, 1e-4), 1);
+  });
+
+  return (
+    <mesh ref={meshRef} frustumCulled={false} renderOrder={998}>
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial
+        ref={matRef}
+        map={map}
+        transparent
+        opacity={0}
+        depthWrite={false}
+        depthTest={false}
+        toneMapped={false}
+        blending={THREE.NormalBlending}
+      />
+    </mesh>
+  );
+}
+
+function Scene({
+  reduceMotion,
+  isDark,
+  enterCabin,
+  onInteriorBlackout,
+}: {
+  reduceMotion: boolean;
+  isDark: boolean;
+  enterCabin: boolean;
+  onInteriorBlackout?: (active: boolean) => void;
+}) {
+  const { viewport, gl, invalidate } = useThree();
+  const doorPortalRef = useRef<THREE.Group>(null);
+  const doorLeafRef = useRef<THREE.Group>(null);
+  const [interiorBlackout, setInteriorBlackoutInner] = useState(false);
+
+  const setInteriorBlackout = useCallback(
+    (next: boolean) => {
+      setInteriorBlackoutInner(next);
+      onInteriorBlackout?.(next);
+    },
+    [onInteriorBlackout],
+  );
+
+  useEffect(() => {
+    invalidate();
+  }, [enterCabin, interiorBlackout, invalidate]);
+
+  useEffect(() => {
+    const base = isDark ? 1.05 : 1.55;
+    if (interiorBlackout) {
+      gl.toneMappingExposure = isDark ? 0.17 : 0.22;
+      return;
+    }
+    if (enterCabin) {
+      gl.toneMappingExposure = base * (isDark ? 0.52 : 0.6);
+      return;
+    }
+    gl.toneMappingExposure = base;
+  }, [gl, isDark, enterCabin, interiorBlackout]);
 
   const palette = useMemo(() => {
     if (isDark) {
@@ -88,54 +234,268 @@ function Scene({ reduceMotion, isDark }: { reduceMotion: boolean; isDark: boolea
     };
   }, [isDark]);
 
+  const approachAtmosphere = enterCabin && !interiorBlackout;
+
+  const sceneBackground = useMemo(() => {
+    if (interiorBlackout) return new THREE.Color("#030201");
+    if (approachAtmosphere) {
+      const c = palette.bg.clone();
+      c.lerp(new THREE.Color(isDark ? "#060403" : "#100d0a"), 0.62);
+      return c;
+    }
+    return palette.bg;
+  }, [interiorBlackout, approachAtmosphere, palette.bg, isDark]);
+
+  const fogParams = useMemo(() => {
+    if (interiorBlackout) return null;
+    if (approachAtmosphere) {
+      const c = palette.fog.clone();
+      c.lerp(new THREE.Color(isDark ? "#0a0806" : "#16120f"), 0.78);
+      return { color: c, density: isDark ? 0.125 : 0.092 } as const;
+    }
+    return { color: palette.fog, density: isDark ? 0.06 : 0.03 } as const;
+  }, [interiorBlackout, approachAtmosphere, palette.fog, isDark]);
+
+  const lightScale = approachAtmosphere ? 0.38 : 1;
+
   return (
     <>
-      <color attach="background" args={[palette.bg]} />
-      <fogExp2 attach="fog" args={[palette.fog, isDark ? 0.06 : 0.03]} />
+      <color attach="background" args={[sceneBackground]} />
+      {!interiorBlackout && fogParams ? (
+        <fogExp2 attach="fog" args={[fogParams.color, fogParams.density]} />
+      ) : null}
 
-      <SkyGradient
-        top={palette.skyTop}
-        bottom={palette.skyBottom}
-        glow={palette.horizonGlow}
-        isDark={isDark}
-      />
+      {!interiorBlackout && (
+        <SkyGradient
+          top={palette.skyTop}
+          bottom={palette.skyBottom}
+          glow={palette.horizonGlow}
+          isDark={isDark}
+        />
+      )}
 
-      {/* Lights: dusk horizon */}
-      <hemisphereLight args={[palette.hemiSky, palette.hemiGround, isDark ? 0.95 : 1.1]} />
-      <directionalLight
-        position={[7, 9, 6]}
-        intensity={isDark ? 1.05 : 1.25}
-        color={palette.sun}
-      />
-      <directionalLight
-        position={[-10, 6, -8]}
-        intensity={isDark ? 0.55 : 0.6}
-        color={palette.moon}
-      />
-      {/* Back light (behind horizon) */}
-      <directionalLight position={[0, 3, -18]} intensity={isDark ? 0.75 : 0.55} color={palette.horizonGlow} />
+      {!interiorBlackout && (
+        <>
+          {/* Lights: dusk horizon */}
+          <hemisphereLight
+            args={[palette.hemiSky, palette.hemiGround, (isDark ? 0.95 : 1.1) * lightScale]}
+          />
+          <directionalLight
+            position={[7, 9, 6]}
+            intensity={(isDark ? 1.05 : 1.25) * lightScale}
+            color={palette.sun}
+          />
+          <directionalLight
+            position={[-10, 6, -8]}
+            intensity={(isDark ? 0.55 : 0.6) * lightScale}
+            color={palette.moon}
+          />
+          <directionalLight
+            position={[0, 3, -18]}
+            intensity={(isDark ? 0.75 : 0.55) * lightScale}
+            color={palette.horizonGlow}
+          />
+        </>
+      )}
 
-      {/* Ground */}
-      <LowPolyVillage palette={palette} reduceMotion={reduceMotion} isDark={isDark} />
+      <group visible={!interiorBlackout}>
+        <LowPolyVillage
+          palette={palette}
+          reduceMotion={reduceMotion}
+          isDark={isDark}
+          enterCabin={enterCabin}
+          doorPortalRef={doorPortalRef}
+          doorLeafRef={doorLeafRef}
+        />
 
-      <Birds
-        enabled={!reduceMotion}
-        color={isDark ? "rgba(255,255,255,0.55)" : "rgba(20,17,13,0.55)"}
-      />
+        <Birds
+          enabled={!reduceMotion && !enterCabin}
+          color={isDark ? "rgba(255,255,255,0.55)" : "rgba(20,17,13,0.55)"}
+        />
 
-      {/* Atmospheric dust */}
-      <Sparkles
-        count={48}
-        speed={0}
-        size={1.8}
-        opacity={isDark ? 0.18 : 0.12}
-        color={palette.sun}
-        scale={[Math.max(18, viewport.width * 1.8), 6, 14]}
-        position={[0, 1.0, -4]}
-        noise={0.8}
+        {!enterCabin ? (
+        <Sparkles
+          count={48}
+          speed={0}
+          size={1.8}
+          opacity={isDark ? 0.18 : 0.12}
+          color={palette.sun}
+          scale={[Math.max(18, viewport.width * 1.8), 6, 14]}
+          position={[0, 1.0, -4]}
+          noise={0.8}
+        />
+        ) : null}
+      </group>
+
+      {interiorBlackout && <InteriorBlackSphere />}
+      {!interiorBlackout && approachAtmosphere ? (
+        <CabinApproachSmoke active={!reduceMotion} durationMs={520} />
+      ) : null}
+
+      <CabinCameraRig
+        reduceMotion={reduceMotion}
+        enterCabin={enterCabin}
+        doorPortal={doorPortalRef}
+        doorLeaf={doorLeafRef}
+        setInteriorBlackout={setInteriorBlackout}
       />
     </>
   );
+}
+
+function InteriorBlackSphere() {
+  const meshRef = useRef<THREE.Mesh>(null);
+  useFrame(({ camera }) => {
+    meshRef.current?.position.copy(camera.position);
+  });
+  return (
+    <mesh ref={meshRef} frustumCulled={false} renderOrder={1000}>
+      <sphereGeometry args={[240, 32, 24]} />
+      <meshBasicMaterial
+        color="#050403"
+        side={THREE.BackSide}
+        depthWrite={false}
+        depthTest={false}
+        toneMapped={false}
+      />
+    </mesh>
+  );
+}
+
+function CabinCameraRig({
+  reduceMotion,
+  enterCabin,
+  doorPortal,
+  doorLeaf,
+  setInteriorBlackout,
+}: {
+  reduceMotion: boolean;
+  enterCabin: boolean;
+  doorPortal: RefObject<THREE.Group | null>;
+  doorLeaf: RefObject<THREE.Group | null>;
+  setInteriorBlackout: (next: boolean) => void;
+}) {
+  const { camera } = useThree();
+  const perspectiveCamera =
+    (camera as THREE.PerspectiveCamera | undefined)?.isPerspectiveCamera ? (camera as THREE.PerspectiveCamera) : null;
+  const camLook = useRef(new THREE.Vector3(0, 0.9, 0));
+  const enteredAtMs = useRef<number | null>(null);
+  const blackoutLatched = useRef(false);
+  const enterFromPos = useRef(new THREE.Vector3());
+  const enterFromLook = useRef(new THREE.Vector3(0, 0.9, 0));
+  const enterFromFov = useRef<number>(perspectiveCamera?.fov ?? 38);
+
+  const vDoor = useMemo(() => new THREE.Vector3(), []);
+  const qDoor = useMemo(() => new THREE.Quaternion(), []);
+  const vDir = useMemo(() => new THREE.Vector3(), []);
+  const vUp = useMemo(() => new THREE.Vector3(0, 1, 0), []);
+  const vTargetPos = useMemo(() => new THREE.Vector3(), []);
+  const vTargetLook = useMemo(() => new THREE.Vector3(), []);
+  const vBasePos = useMemo(() => new THREE.Vector3(0, 2.15, 10.5), []);
+  const vBaseLook = useMemo(() => new THREE.Vector3(0, 0.9, 0), []);
+
+  useEffect(() => {
+    if (enterCabin) {
+      enteredAtMs.current = performance.now();
+      blackoutLatched.current = false;
+      enterFromPos.current.copy(camera.position);
+      enterFromLook.current.copy(camLook.current);
+      enterFromFov.current = perspectiveCamera?.fov ?? 38;
+      setInteriorBlackout(false);
+      return;
+    }
+  }, [enterCabin, setInteriorBlackout]);
+
+  useFrame((_, delta) => {
+    const leaf = doorLeaf.current;
+    if (leaf) {
+      const target = enterCabin ? -1.08 : 0;
+      if (reduceMotion) leaf.rotation.y = target;
+      else {
+        const doorK = enterCabin ? Math.min(1, delta * 20) : 1 - Math.pow(0.001, delta);
+        leaf.rotation.y = THREE.MathUtils.lerp(leaf.rotation.y, target, doorK);
+      }
+    }
+
+    const portal = doorPortal.current;
+    if (!portal) return;
+
+    portal.getWorldPosition(vDoor);
+    portal.getWorldQuaternion(qDoor);
+    vDir.set(0, 0, -1).applyQuaternion(qDoor).normalize();
+
+    if (enterCabin) {
+      // Push *through* the doorway so it reads like entering the room.
+      vTargetPos.copy(vDoor).addScaledVector(vDir, 2.85).addScaledVector(vUp, -0.06);
+      vTargetLook.copy(vDoor).addScaledVector(vDir, 3.45).addScaledVector(vUp, -0.02);
+    } else {
+      vTargetPos.copy(vBasePos);
+      vTargetLook.copy(vBaseLook);
+    }
+
+    if (reduceMotion) {
+      camera.position.copy(vTargetPos);
+      camLook.current.copy(vTargetLook);
+      camera.lookAt(camLook.current);
+      if (perspectiveCamera) {
+        perspectiveCamera.fov = enterCabin ? 28 : 38;
+        perspectiveCamera.updateProjectionMatrix();
+      }
+
+      if (enterCabin) {
+        if (!blackoutLatched.current) {
+          blackoutLatched.current = true;
+          setInteriorBlackout(true);
+        }
+      } else if (blackoutLatched.current && camera.position.distanceTo(vBasePos) < 0.36) {
+        blackoutLatched.current = false;
+        setInteriorBlackout(false);
+      }
+      return;
+    }
+
+    if (enterCabin) {
+      const t0 = enteredAtMs.current ?? performance.now();
+      const elapsed = performance.now() - t0;
+      const t = THREE.MathUtils.clamp(elapsed / 520, 0, 1);
+      const ease = t * t * (3 - 2 * t); // smoothstep
+
+      camera.position.lerpVectors(enterFromPos.current, vTargetPos, ease);
+      camLook.current.lerpVectors(enterFromLook.current, vTargetLook, ease);
+      camera.lookAt(camLook.current);
+      if (perspectiveCamera) {
+        perspectiveCamera.fov = THREE.MathUtils.lerp(enterFromFov.current, 28, ease);
+        perspectiveCamera.updateProjectionMatrix();
+      }
+
+      const dSeat = camera.position.distanceTo(vTargetPos);
+      const nearSeat = dSeat < 0.12;
+      // Let the user perceive the "enter" motion, then black out at the end.
+      const blackoutSoon = t > 0.72 || nearSeat;
+      if (!blackoutLatched.current && blackoutSoon) {
+        blackoutLatched.current = true;
+        setInteriorBlackout(true);
+      }
+      return;
+    }
+
+    /** Smooth return outward. */
+    const kOutside = 1 - Math.pow(0.0008, delta);
+    camera.position.lerp(vTargetPos, kOutside);
+    camLook.current.lerp(vTargetLook, kOutside);
+    camera.lookAt(camLook.current);
+    if (perspectiveCamera) {
+      perspectiveCamera.fov = THREE.MathUtils.lerp(perspectiveCamera.fov, 38, kOutside);
+      perspectiveCamera.updateProjectionMatrix();
+    }
+
+    if (blackoutLatched.current && camera.position.distanceTo(vBasePos) < 0.36) {
+      blackoutLatched.current = false;
+      setInteriorBlackout(false);
+    }
+  });
+
+  return null;
 }
 
 type BirdSeed = {
@@ -215,6 +575,9 @@ function LowPolyVillage({
   palette,
   reduceMotion,
   isDark,
+  enterCabin,
+  doorPortalRef,
+  doorLeafRef,
 }: {
   palette: {
     ground: string;
@@ -230,6 +593,9 @@ function LowPolyVillage({
   };
   reduceMotion: boolean;
   isDark: boolean;
+  enterCabin: boolean;
+  doorPortalRef: RefObject<THREE.Group | null>;
+  doorLeafRef: RefObject<THREE.Group | null>;
 }) {
   const group = useRef<THREE.Group>(null);
   const rocks = useRef<THREE.InstancedMesh>(null);
@@ -278,14 +644,16 @@ function LowPolyVillage({
 
   return (
     <group ref={group} position={[0, -0.75, 0]}>
-      {/* Soft horizon band */}
-      <mesh position={[0, 1.75, -18]}>
-        <planeGeometry args={[60, 20]} />
-        <meshBasicMaterial transparent opacity={0.16} color={palette.horizonGlow} />
-      </mesh>
-
-      {/* Distant mountains */}
-      <Mountains color={palette.rock} />
+      {/* Hidden while dipping into cabin — translucent meshes + fog read as crawling “ghost” shapes. */}
+      {!enterCabin ? (
+        <>
+          <mesh position={[0, 1.75, -18]}>
+            <planeGeometry args={[60, 20]} />
+            <meshBasicMaterial transparent opacity={0.16} color={palette.horizonGlow} />
+          </mesh>
+          <Mountains color={palette.rock} />
+        </>
+      ) : null}
 
       {/* Terrain (filled, organic mound) */}
       <Terrain
@@ -349,6 +717,9 @@ function LowPolyVillage({
         smokeEnabled={!reduceMotion}
         smokeColor={isDark ? "rgba(255,255,255,0.38)" : "rgba(255,255,255,0.26)"}
         windowGlow={isDark ? 1.15 : 0.35}
+        doorPortalRef={doorPortalRef}
+        doorLeafRef={doorLeafRef}
+        enterCabin={enterCabin}
       />
 
       {/* Trees (foreground) */}
@@ -674,6 +1045,9 @@ function Cabin({
   smokeEnabled,
   smokeColor,
   windowGlow,
+  doorPortalRef,
+  doorLeafRef,
+  enterCabin,
 }: {
   hut: string;
   roof: string;
@@ -682,6 +1056,9 @@ function Cabin({
   smokeEnabled: boolean;
   smokeColor: string;
   windowGlow: number;
+  doorPortalRef?: RefObject<THREE.Group | null>;
+  doorLeafRef?: RefObject<THREE.Group | null>;
+  enterCabin: boolean;
 }) {
   return (
     <group position={position} rotation={[0, 0.18, 0]}>
@@ -787,13 +1164,13 @@ function Cabin({
         </group>
 
         {/* DOOR (right) */}
-        <group position={[0.62, 0.1, 0.03]}>
+        <group ref={doorPortalRef as any} position={[0.62, 0.1, 0.03]}>
           <mesh>
             <boxGeometry args={[0.46, 0.86, 0.09]} />
             <meshStandardMaterial color={wood} roughness={0.92} metalness={0} />
           </mesh>
-          {/* open door leaf (hinged on left) */}
-          <group position={[-0.17, 0, 0.055]} rotation={[0, -1.08, 0]}>
+          {/* door leaf (hinged on left) — starts closed; animates in `LowPolyVillage` */}
+          <group ref={doorLeafRef as any} position={[-0.17, 0, 0.055]} rotation={[0, 0, 0]}>
             <mesh position={[0.17, 0, 0]}>
               <boxGeometry args={[0.34, 0.74, 0.04]} />
               <meshStandardMaterial color={hut} roughness={0.98} metalness={0} />
@@ -810,6 +1187,17 @@ function Cabin({
             </mesh>
           </group>
         </group>
+      </group>
+
+      {/* dark interior volume + faint light when camera is inside */}
+      <group position={[0, 0.22, 0.06]}>
+        <mesh position={[0, 0.05, -0.25]}>
+          <boxGeometry args={[1.56, 0.78, 1.02]} />
+          <meshStandardMaterial color={"#120d09"} roughness={1} metalness={0} />
+        </mesh>
+        {enterCabin && (
+          <pointLight position={[0.25, 0.15, -0.18]} intensity={0.35} distance={3.2} color={"#ffcf9d"} />
+        )}
       </group>
 
       {/* chimney */}

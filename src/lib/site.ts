@@ -202,6 +202,18 @@ export const site = {
     },
     { range: "2017 / 2019", title: "Senior Illustrator", company: "Akwan" },
   ],
+  /** Tree hotspot on /about village — headline + credential + résumé list (see experience). */
+  aboutLandscapeCredential: {
+    eyebrow: "Practice",
+    year: "1992",
+    designation: "Founder — Third Eye Communications, Bhubaneswar",
+  },
+  /** Copy for the canopy modal header (experience grid follows in the same dialog). */
+  aboutExperienceLead: {
+    eyebrow: "Experience",
+    title: "Where I've worked",
+  },
+
   /** Numbered list block on /about (“What you will find inside?”) */
   aboutFindInside: {
     line1: "What you will",

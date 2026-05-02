@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
@@ -62,11 +63,20 @@ type AboutFlashbackMemoriesProps = {
   className?: string;
   /** Edge-to-edge under `main` (no side border radius / vertical borders). */
   fullWidth?: boolean;
+  /**
+   * Full-screen overlay (e.g. cabin blackout): reveal chrome immediately, skip ScrollTrigger,
+   * use keyboard on the focused section instead of duplicate global listeners.
+   */
+  overlayMode?: boolean;
+  /** With `overlayMode`: hide eyebrow/title/intro and fit carousel to one viewport (no page scroll). */
+  overlayMinimal?: boolean;
 };
 
 export function AboutFlashbackMemories({
   className,
   fullWidth = false,
+  overlayMode = false,
+  overlayMinimal = false,
 }: AboutFlashbackMemoriesProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -131,6 +141,8 @@ export function AboutFlashbackMemories({
     }
   }, [index]);
 
+  const headingId = overlayMode ? "about-flashback-heading-cabin-overlay" : "about-flashback-heading";
+
   useGSAP(
     () => {
       registerGsapPlugins();
@@ -140,6 +152,14 @@ export function AboutFlashbackMemories({
       const head = root.querySelectorAll(".about-flashback-head");
       const intro = root.querySelector(".about-flashback-intro");
       const chrome = root.querySelector(".about-flashback-carousel");
+
+      if (overlayMode) {
+        const els = [chrome, ...head, intro].filter(
+          (n): n is Element => Boolean(n),
+        );
+        gsap.set(els, { opacity: 1, y: 0 });
+        return;
+      }
 
       if (shouldReduceMotion()) {
         gsap.set([...head, intro, chrome], { opacity: 1, y: 0 });
@@ -186,17 +206,27 @@ export function AboutFlashbackMemories({
         tl.kill();
       };
     },
-    { scope: sectionRef, dependencies: [lenis] },
+    { scope: sectionRef, dependencies: [overlayMinimal, overlayMode, lenis] },
   );
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+    if (!overlayMode) return;
+    const root = sectionRef.current;
+    if (!root) return;
+    queueMicrotask(() => {
+      root.focus();
+    });
+  }, [overlayMode]);
+
+  useEffect(() => {
+    if (overlayMode) return;
+    const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === "ArrowLeft") go(-1);
       if (e.key === "ArrowRight") go(1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go]);
+  }, [go, overlayMode]);
 
   const startVideo = () => {
     setVideoReady(true);
@@ -211,69 +241,114 @@ export function AboutFlashbackMemories({
   return (
     <section
       ref={sectionRef}
+      tabIndex={overlayMode ? -1 : undefined}
+      onKeyDown={
+        overlayMode
+          ? (e: ReactKeyboardEvent<HTMLElement>) => {
+              if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                go(-1);
+              }
+              if (e.key === "ArrowRight") {
+                e.preventDefault();
+                go(1);
+              }
+            }
+          : undefined
+      }
       className={`about-flashback-block relative isolate overflow-hidden border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 ${
         fullWidth
           ? "w-full max-w-none rounded-none border-x-0 border-b-0 border-t"
           : "mt-10 rounded-sm border md:mt-12"
+      } ${overlayMode ? "border-0 bg-transparent outline-none focus:outline-none" : ""} ${
+        overlayMinimal ? "flex min-h-0 flex-1 flex-col" : ""
       } ${className ?? ""}`}
-      aria-labelledby="about-flashback-heading"
+      aria-labelledby={headingId}
     >
-      <AboutFlashbackPatterns />
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-[var(--accent)]/40 to-transparent" />
+      {!overlayMinimal && <AboutFlashbackPatterns />}
+      {!overlayMinimal ? (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-[var(--accent)]/40 to-transparent" />
+      ) : null}
 
       <div
         className={`relative z-10 ${
-          fullWidth
-            ? "px-4 py-6 sm:px-6 md:px-10 md:py-12 lg:px-14 lg:py-14 xl:px-16"
-            : "px-4 py-6 md:px-8 md:py-12 lg:px-10 lg:py-14"
+          overlayMinimal
+            ? "flex min-h-0 flex-1 flex-col px-3 py-2 sm:px-4 sm:py-3"
+            : fullWidth
+              ? "px-4 py-6 sm:px-6 md:px-10 md:py-12 lg:px-14 lg:py-14 xl:px-16"
+              : "px-4 py-6 md:px-8 md:py-12 lg:px-10 lg:py-14"
         }`}
       >
-        <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--accent)]">
-          {aboutFlashback.eyebrow}
-        </p>
-        <h2
-          id="about-flashback-heading"
-          className="mt-3 font-display text-[clamp(1.75rem,4vw,2.65rem)] font-bold leading-[0.98] tracking-tight"
-        >
-          <span className="about-flashback-head whitespace-nowrap text-[var(--foreground)]">
-            {aboutFlashback.titleLine1}{" "}
-            <span className="text-[var(--muted)]">{aboutFlashback.titleLine2}</span>
+        {!overlayMinimal ? (
+          <>
+            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--accent)]">
+              {aboutFlashback.eyebrow}
+            </p>
+            <h2
+              id={headingId}
+              className="mt-3 font-display text-[clamp(1.75rem,4vw,2.65rem)] font-bold leading-[0.98] tracking-tight"
+            >
+              <span className="about-flashback-head whitespace-nowrap text-[var(--foreground)]">
+                {aboutFlashback.titleLine1}{" "}
+                <span className="text-[var(--muted)]">{aboutFlashback.titleLine2}</span>
+              </span>
+            </h2>
+            <p className="about-flashback-intro mt-4 max-w-2xl text-pretty text-sm leading-relaxed text-[var(--muted)] md:text-base">
+              {aboutFlashback.intro}
+            </p>
+          </>
+        ) : (
+          <span id={headingId} className="sr-only">
+            Flashback memories
           </span>
-        </h2>
-        <p className="about-flashback-intro mt-4 max-w-2xl text-pretty text-sm leading-relaxed text-[var(--muted)] md:text-base">
-          {aboutFlashback.intro}
-        </p>
+        )}
 
         <div
-          className="about-flashback-carousel mt-5 md:mt-12"
+          className={`about-flashback-carousel ${overlayMinimal ? "mt-0 flex min-h-0 flex-1 flex-col justify-center md:justify-center" : "mt-5 md:mt-12"}`}
           role="region"
           aria-roledescription="carousel"
           aria-label="Flashback memories"
         >
-          <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,3.5rem)_1fr_minmax(0,2.75rem)] lg:items-stretch lg:gap-6 xl:gap-8">
-            {/* Slide counter — reference: large current / muted total */}
-            <div
-              className="flex flex-row items-end gap-4 lg:flex-col lg:items-start lg:justify-center lg:gap-0"
-              aria-hidden={false}
-            >
-              <span className="font-display text-4xl tabular-nums leading-none text-[var(--foreground)] md:text-5xl">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <div className="hidden h-px w-10 bg-[var(--border-strong)] lg:block dark:bg-white/25" />
-              <span className="font-mono text-xs tabular-nums text-[var(--muted)] md:text-sm">
-                {String(count).padStart(2, "0")}
-              </span>
-            </div>
+          <div
+            className={
+              overlayMinimal
+                ? "flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-[1fr_minmax(0,2.75rem)] lg:items-center lg:gap-5 xl:gap-6"
+                : "flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,3.5rem)_1fr_minmax(0,2.75rem)] lg:items-stretch lg:gap-6 xl:gap-8"
+            }
+          >
+            {/* Slide counter — hidden in cabin overlay (single-screen gallery) */}
+            {!overlayMinimal ? (
+              <div
+                className="flex flex-row items-end gap-4 lg:flex-col lg:items-start lg:justify-center lg:gap-0"
+                aria-hidden={false}
+              >
+                <span className="font-display text-4xl tabular-nums leading-none text-[var(--foreground)] md:text-5xl">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <div className="hidden h-px w-10 bg-[var(--border-strong)] lg:block dark:bg-white/25" />
+                <span className="font-mono text-xs tabular-nums text-[var(--muted)] md:text-sm">
+                  {String(count).padStart(2, "0")}
+                </span>
+              </div>
+            ) : (
+              <p className="sr-only" aria-live="polite">
+                Slide {index + 1} of {count}
+              </p>
+            )}
 
             {/* Viewport + track */}
             <div
               ref={viewportRef}
-              className="relative min-h-0 w-full overflow-hidden sm:min-h-[min(48vh,380px)] md:min-h-[min(58vh,520px)]"
+              className={`relative min-h-0 w-full overflow-hidden ${
+                overlayMinimal
+                  ? "h-[min(58dvh,calc(100dvh-7.25rem))] max-h-[calc(100dvh-7.25rem)] sm:h-[min(60dvh,calc(100dvh-7.5rem))]"
+                  : "sm:min-h-[min(48vh,380px)] md:min-h-[min(58vh,520px)]"
+              }`}
             >
               {w > 0 && slideW > 0 ? (
                 <div
                   ref={trackRef}
-                  className="flex will-change-transform"
+                  className={`flex will-change-transform ${overlayMinimal ? "h-full items-stretch" : ""}`}
                   style={{
                     transform: `translate3d(${tx}px,0,0)`,
                     transition: reduce ? "none" : "transform 0.65s cubic-bezier(0.22, 1, 0.36, 1)",
@@ -288,7 +363,7 @@ export function AboutFlashbackMemories({
                         key={`slide-${i}-${slide.src}`}
                         className={`relative shrink-0 overflow-hidden rounded-sm bg-[var(--surface-elevated)] dark:bg-neutral-900 ${
                           dim ? "opacity-[0.38]" : "opacity-100"
-                        }`}
+                        } ${overlayMinimal ? "flex h-full min-h-0 flex-col" : ""}`}
                         style={{
                           width: slideW,
                           transition: reduce ? "none" : "opacity 0.45s ease",
@@ -296,7 +371,13 @@ export function AboutFlashbackMemories({
                         aria-hidden={!isActive}
                         aria-current={isActive ? "true" : undefined}
                       >
-                        <div className="relative aspect-[16/10] w-full md:aspect-[16/9]">
+                        <div
+                          className={
+                            overlayMinimal
+                              ? "relative min-h-0 w-full flex-1"
+                              : "relative aspect-[16/10] w-full md:aspect-[16/9]"
+                          }
+                        >
                           {slide.kind === "image" ? (
                             <Image
                               src={slide.src}
@@ -366,7 +447,13 @@ export function AboutFlashbackMemories({
 
                           {/* Bottom-left copy block — reference style */}
                           {isActive ? (
-                            <div className="absolute bottom-0 left-0 z-[2] m-3 max-w-[min(100%,20rem)] border border-[var(--border)]/60 bg-white/92 p-4 shadow-2xl backdrop-blur-md dark:border-transparent dark:bg-zinc-900/88 sm:m-4 md:max-w-sm md:p-5">
+                            <div
+                              className={`absolute bottom-0 left-0 z-[2] border border-[var(--border)]/60 bg-white/92 shadow-2xl backdrop-blur-md dark:border-transparent dark:bg-zinc-900/88 ${
+                                overlayMinimal
+                                  ? "m-2 max-w-[min(100%,17rem)] p-3 sm:m-3 sm:p-4"
+                                  : "m-3 max-w-[min(100%,20rem)] p-4 sm:m-4 md:max-w-sm md:p-5"
+                              }`}
+                            >
                               <p className="font-display text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--foreground)] md:text-xs dark:text-white">
                                 {slide.title}
                               </p>
@@ -386,7 +473,11 @@ export function AboutFlashbackMemories({
                   })}
                 </div>
               ) : (
-                <div className="flex h-[min(52vh,420px)] items-center justify-center bg-[var(--surface-elevated)] text-sm text-[var(--muted)] dark:bg-neutral-900/80 dark:text-neutral-500">
+                <div
+                  className={`flex items-center justify-center bg-[var(--surface-elevated)] text-sm text-[var(--muted)] dark:bg-neutral-900/80 dark:text-neutral-500 ${
+                    overlayMinimal ? "h-[min(240px,calc(100dvh-10rem))]" : "h-[min(52vh,420px)]"
+                  }`}
+                >
                   Loading…
                 </div>
               )}
@@ -413,9 +504,11 @@ export function AboutFlashbackMemories({
             </div>
           </div>
 
-          <p className="mt-6 hidden font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--muted)] sm:block">
-            Arrow keys · Prev / Next
-          </p>
+          {!overlayMinimal ? (
+            <p className="mt-6 hidden font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--muted)] sm:block">
+              Arrow keys · Prev / Next
+            </p>
+          ) : null}
         </div>
       </div>
     </section>

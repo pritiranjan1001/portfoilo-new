@@ -6,7 +6,6 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Link from "next/link";
-import Image from "next/image";
 import { AboutExperiencePatterns } from "@/components/AboutBackgroundPatterns";
 import { AboutFindInsidePatterns } from "@/components/AboutFindInsidePatterns";
 import { AboutFlashbackMemories } from "@/components/AboutFlashbackMemories";
@@ -18,7 +17,6 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useLenisInstance } from "@/components/lenis-context";
 import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
-import { getAnchorAlignFromTarget, getAnchorScrollTopPx } from "@/lib/scroll-anchors";
 import { site } from "@/lib/site";
 import {
   getNativeScrollScroller,
@@ -53,7 +51,7 @@ export function AboutPageView() {
   const detailsTimelineRef = useRef<HTMLDivElement>(null);
   const walkerTrailRef = useRef<HTMLDivElement>(null);
   const [bioExpanded, setBioExpanded] = useState(false);
-  const [activeHotspot, setActiveHotspot] = useState<null | "rocks" | "grove" | "cabin">(null);
+  const [activeHotspot, setActiveHotspot] = useState<null | "rocks" | "grove" | "canopy">(null);
   const [modalOrigin, setModalOrigin] = useState<{ x: number; y: number }>({ x: 0.5, y: 0.5 });
   const [detailsZoomOrigin, setDetailsZoomOrigin] = useState<{ x: number; y: number }>({
     x: 0.5,
@@ -61,8 +59,8 @@ export function AboutPageView() {
   });
   const [modalMounted, setModalMounted] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [flashbackVisible, setFlashbackVisible] = useState(false);
-  const [flashbackScrollPending, setFlashbackScrollPending] = useState(false);
+  const [enterCabin, setEnterCabin] = useState(false);
+  const [cabinBlackoutCarousel, setCabinBlackoutCarousel] = useState(false);
   const lenis = useLenisInstance();
   const stamped = formatAboutDate(new Date());
   const bioParas = site.aboutBioParagraphs;
@@ -70,41 +68,14 @@ export function AboutPageView() {
   const bioRest = bioParas.slice(1);
   const detailsItems = site.aboutFindInside.items;
 
-  const scrollToFlashbackMemory = useCallback(() => {
-    const target = document.getElementById("about-flashback-memory");
-    if (!target) return;
-    if (lenis) {
-      const align = getAnchorAlignFromTarget(target);
-      lenis.scrollTo(getAnchorScrollTopPx(target, align), {
-        duration: 1.05,
-        onComplete: () => refreshLenisAndScrollTrigger(lenis),
-      });
-    } else {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [lenis]);
-
-  const revealFlashbackAndScroll = useCallback(() => {
-    setFlashbackVisible(true);
-    setFlashbackScrollPending(true);
-  }, []);
-
   useEffect(() => {
-    if (!flashbackVisible || !flashbackScrollPending) return;
-
-    const attempts = [0, 16, 48, 96, 200, 400].map((ms) =>
-      window.setTimeout(() => {
-        const target = document.getElementById("about-flashback-memory");
-        if (!target) return;
-        setFlashbackScrollPending(false);
-        scrollToFlashbackMemory();
-      }, ms),
-    );
-
+    if (!cabinBlackoutCarousel) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      attempts.forEach((t) => window.clearTimeout(t));
+      document.body.style.overflow = prevOverflow;
     };
-  }, [flashbackVisible, flashbackScrollPending, scrollToFlashbackMemory]);
+  }, [cabinBlackoutCarousel]);
 
   const bioToggleClass =
     "inline cursor-pointer border-0 bg-transparent p-0 font-body text-base font-medium tracking-wide text-[var(--foreground)] underline decoration-[var(--border-strong)] decoration-2 underline-offset-[6px] transition hover:decoration-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
@@ -112,19 +83,7 @@ export function AboutPageView() {
   const sectionEndRule =
     "mt-12 border-0 border-t border-[var(--border-strong)] md:mt-14";
 
-  const openHotspot = (id: "rocks" | "grove" | "cabin", el: HTMLElement) => {
-    if (id === "cabin") {
-      const rect = el.getBoundingClientRect();
-      const cx = (rect.left + rect.right) / 2;
-      const cy = (rect.top + rect.bottom) / 2;
-      setModalOrigin({
-        x: window.innerWidth > 0 ? cx / window.innerWidth : 0.5,
-        y: window.innerHeight > 0 ? cy / window.innerHeight : 0.5,
-      });
-      setDetailsOpen(false);
-      setActiveHotspot("cabin");
-      return;
-    }
+  const openHotspot = (id: "rocks" | "grove" | "canopy", el: HTMLElement) => {
     const rect = el.getBoundingClientRect();
     const cx = (rect.left + rect.right) / 2;
     const cy = (rect.top + rect.bottom) / 2;
@@ -169,13 +128,23 @@ export function AboutPageView() {
       left: "36%",
     },
     {
-      id: "cabin" as const,
-      title: "Experience",
-      body: "A quick look at roles and years — the work timeline.",
-      top: "50%",
-      left: "77%",
+      id: "canopy" as const,
+      title: "Practice",
+      body: "Year and designation.",
+      /** Mid-canopy toward the cabin — aligns with foliage between grove and hut. */
+      top: "36%",
+      left: "56%",
     },
   ];
+
+  useEffect(() => {
+    if (!enterCabin) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setEnterCabin(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [enterCabin]);
 
   useEffect(() => {
     if (activeHotspot == null) return;
@@ -206,22 +175,6 @@ export function AboutPageView() {
       document.documentElement.removeAttribute("data-about-overlay-open");
     };
   }, [detailsOpen, modalMounted]);
-
-  useEffect(() => {
-    // Hide the initial scrollbar: the landscape section uses `100dvh` + header padding,
-    // which can create a tiny overflow and show a scrollbar even when nothing is scrollable.
-    if (flashbackVisible) {
-      document.documentElement.style.overflowY = "";
-      document.body.style.overflowY = "";
-      return;
-    }
-    document.documentElement.style.overflowY = "hidden";
-    document.body.style.overflowY = "hidden";
-    return () => {
-      document.documentElement.style.overflowY = "";
-      document.body.style.overflowY = "";
-    };
-  }, [flashbackVisible]);
 
   useEffect(() => {
     if (activeHotspot != null) {
@@ -642,13 +595,11 @@ export function AboutPageView() {
 
   return (
     <>
-      <ScrollProgress />
-      <SiteHeader />
+      {!cabinBlackoutCarousel ? <ScrollProgress /> : null}
+      {!cabinBlackoutCarousel ? <SiteHeader /> : null}
       <main
         ref={root}
-        className={`relative min-h-[100dvh] overflow-x-hidden bg-[var(--background)] pb-0 pt-20 md:pt-24 ${
-          flashbackVisible ? "" : "overflow-y-hidden"
-        }`}
+        className="relative min-h-[100dvh] max-h-[100dvh] overflow-hidden bg-[var(--background)] pb-0 pt-20 md:pt-24"
       >
         <div className="relative">
           <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-14">
@@ -663,7 +614,11 @@ export function AboutPageView() {
                 className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-44 bg-gradient-to-t from-[color-mix(in_oklab,var(--surface-elevated)_88%,var(--background))] to-transparent md:h-56"
                 aria-hidden
               />
-              <AboutVillageThreeScene className="h-full w-full origin-top scale-[1.04] -translate-y-1 -translate-x-1 md:-translate-y-1 md:-translate-x-2" />
+              <AboutVillageThreeScene
+                className="h-full w-full origin-top scale-[1.04] -translate-y-1 -translate-x-1 md:-translate-y-1 md:-translate-x-2"
+                enterCabin={enterCabin}
+                onInteriorBlackout={setCabinBlackoutCarousel}
+              />
               {/* SVG fallback/texture layer */}
               <AboutVillageLandscape
                 variant="full"
@@ -678,11 +633,7 @@ export function AboutPageView() {
                     type="button"
                     className="hotspot"
                     style={{ top: h.top, left: h.left, pointerEvents: "auto" }}
-                    aria-label={
-                      h.id === "cabin"
-                        ? `${h.title}. Opens a short intro, then you can jump to the Flashback section.`
-                        : `${h.title}. Open details`
-                    }
+                    aria-label={`${h.title}. Open details`}
                     aria-haspopup="dialog"
                     aria-expanded={h.id === "rocks" ? detailsOpen : activeHotspot === h.id}
                     onPointerDown={(e) => {
@@ -703,39 +654,48 @@ export function AboutPageView() {
                     }}
                   />
                 ))}
-              </div>
 
-              {/* Memory Lane shortcut (hide while "A walking index" overlay is open) */}
-              {!detailsOpen && (
+                {/* Door dot: opens the door + moves camera inside */}
                 <button
                   type="button"
-                  className="group absolute bottom-6 right-6 z-[60] flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_88%,transparent)] p-2 pr-3 shadow-[0_26px_70px_-46px_color-mix(in_oklab,black_46%,transparent)] backdrop-blur-md transition hover:border-[var(--border-strong)] hover:bg-[color-mix(in_oklab,var(--surface)_94%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] md:bottom-8 md:right-8"
+                  className="hotspot"
+                  style={{ top: "63%", left: "78%", pointerEvents: "auto" }}
+                  aria-label={enterCabin ? "Exit cabin" : "Enter cabin"}
                   onClick={(e) => {
                     e.stopPropagation();
-                    revealFlashbackAndScroll();
+                    setEnterCabin((v) => !v);
                   }}
+                />
+              </div>
+
+              {cabinBlackoutCarousel ? (
+                <div
+                  className="dark pointer-events-auto fixed inset-0 z-[105] flex max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#050403] outline-none"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Flashback memories"
                 >
-                  <span className="sr-only">Go to Flashback memory</span>
-                  <span className="relative block h-[56px] w-[78px] overflow-hidden rounded-xl border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_90%,transparent)]">
-                    <Image
-                      src="/memory-lane.svg"
-                      alt="Memory Lane"
-                      fill
-                      className="object-cover opacity-90 transition group-hover:opacity-100"
-                      sizes="(min-width: 768px) 78px, 78px"
-                      priority={false}
+                  <div className="shrink-0 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2 md:px-10">
+                    <div className="mx-auto flex max-w-6xl justify-end">
+                      <button
+                        type="button"
+                        className="rounded-full border border-white/25 bg-black/35 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-white/85 backdrop-blur-sm transition hover:border-white/45 hover:bg-black/55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                        onClick={() => setEnterCabin(false)}
+                      >
+                        Step outside
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-8">
+                    <AboutFlashbackMemories
+                      overlayMode
+                      overlayMinimal
+                      fullWidth
+                      className="!mt-0 min-h-0 flex-1 rounded-none border-0 bg-transparent"
                     />
-                  </span>
-                  <span className="min-w-0 text-left">
-                    <span className="block font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--muted)]">
-                      Memory lane
-                    </span>
-                    <span className="mt-0.5 block font-display text-sm font-semibold leading-none tracking-tight text-[var(--foreground)]">
-                      Flashback
-                    </span>
-                  </span>
-                </button>
-              )}
+                  </div>
+                </div>
+              ) : null}
 
               {/* Modal */}
               {modalMounted && (
@@ -755,10 +715,10 @@ export function AboutPageView() {
                     role="dialog"
                     aria-modal="true"
                     aria-label={
-                      activeHotspot === "cabin"
-                        ? "Experience"
-                        : activeHotspot === "grove"
-                          ? "About"
+                      activeHotspot === "grove"
+                        ? "About"
+                        : activeHotspot === "canopy"
+                          ? `${site.aboutExperienceLead.eyebrow} — ${site.aboutExperienceLead.title}`
                           : "Details"
                     }
                     data-state={activeHotspot ? "open" : "closed"}
@@ -770,7 +730,13 @@ export function AboutPageView() {
                       } as React.CSSProperties
                     }
                   >
-                  <div className="magic-modal__card pointer-events-auto flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border-0 bg-[color-mix(in_oklab,var(--surface)_92%,transparent)] shadow-[0_34px_100px_-34px_color-mix(in_oklab,black_42%,transparent)] backdrop-blur-md md:h-auto md:max-h-[78dvh] md:w-[min(860px,96vw)] md:rounded-2xl md:border md:border-[var(--border)]">
+                  <div
+                    className={`magic-modal__card pointer-events-auto flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border-0 bg-[color-mix(in_oklab,var(--surface)_92%,transparent)] shadow-[0_34px_100px_-34px_color-mix(in_oklab,black_42%,transparent)] backdrop-blur-md md:h-auto md:rounded-2xl md:border md:border-[var(--border)] ${
+                      activeHotspot === "canopy"
+                        ? "md:max-h-[88dvh] md:w-[min(940px,96vw)]"
+                        : "md:max-h-[78dvh] md:w-[min(860px,96vw)]"
+                    }`}
+                  >
                     <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-5 py-4 pt-[max(1rem,env(safe-area-inset-top))] md:pt-4">
                       <div className="min-w-0">
                         {activeHotspot === "grove" ? (
@@ -780,13 +746,22 @@ export function AboutPageView() {
                               <time dateTime={new Date().toISOString().slice(0, 10)}>{stamped}</time>
                             </div>
                           </>
+                        ) : activeHotspot === "canopy" ? (
+                          <>
+                            <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
+                              {site.aboutExperienceLead.eyebrow}
+                            </p>
+                            <p className="mt-1.5 font-display text-lg font-semibold leading-snug tracking-tight text-[var(--foreground)] md:text-xl">
+                              {site.aboutExperienceLead.title}
+                            </p>
+                          </>
                         ) : (
                           <>
                             <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
-                              {activeHotspot === "cabin" ? "Experience" : "Gallery"}
+                              Gallery
                             </p>
                             <p className="mt-1 font-display text-xl font-semibold text-[var(--foreground)]">
-                              {activeHotspot === "cabin" ? "Where I’ve worked" : "Gallery"}
+                              Gallery
                             </p>
                           </>
                         )}
@@ -809,6 +784,62 @@ export function AboutPageView() {
                       </button>
                     </div>
                     <div className="min-h-0 flex-1 overflow-auto px-5 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-[15px] leading-relaxed text-[var(--foreground)] md:pb-5">
+                      {activeHotspot === "canopy" && (
+                        <div className="relative isolate space-y-6">
+                          <p className="max-w-xl text-[15px] leading-relaxed text-[color-mix(in_oklab,var(--foreground)_86%,var(--muted))]">
+                            <span className="font-display text-lg font-semibold tabular-nums text-[var(--foreground)] md:text-xl">
+                              {site.aboutLandscapeCredential.year}
+                            </span>
+                            <span className="mx-2 text-[var(--muted)]" aria-hidden>
+                              ·
+                            </span>
+                            {site.aboutLandscapeCredential.designation}
+                          </p>
+
+                          <div
+                            id="about-modal-experience-block"
+                            className="relative isolate overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[color-mix(in_oklab,var(--surface-elevated)_72%,var(--surface))] p-6 shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_06%,transparent)] md:p-8 dark:bg-[color-mix(in_oklab,var(--surface)_82%,neutral-950)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                          >
+                            <AboutExperiencePatterns />
+
+                            <div className="relative z-10 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-x-14 lg:gap-y-8">
+                              <h2
+                                id="about-modal-experience-heading"
+                                className="font-display text-[clamp(1.85rem,4.5vw,3rem)] font-bold leading-[0.98] tracking-tight text-[var(--foreground)]"
+                              >
+                                <span className="block whitespace-nowrap sm:whitespace-normal">
+                                  Where I&apos;ve
+                                </span>
+                                <span className="mt-1 block whitespace-nowrap sm:whitespace-normal md:mt-2">
+                                  worked.
+                                </span>
+                              </h2>
+
+                              <ul className="space-y-8 md:space-y-10">
+                                {site.experience.map((job, index) => (
+                                  <li
+                                    key={`${job.range}-${job.company}-${index}`}
+                                    className="grid grid-cols-[minmax(0,6.75rem)_1fr] gap-x-5 gap-y-1 sm:grid-cols-[minmax(0,8rem)_1fr] sm:gap-x-8"
+                                  >
+                                    <p className="whitespace-pre-wrap pt-0.5 font-mono text-[10px] tabular-nums leading-snug tracking-wide text-[var(--muted)] sm:text-[11px]">
+                                      {job.range}
+                                    </p>
+                                    <div className="min-w-0">
+                                      <p className="font-display text-[15px] font-semibold leading-snug tracking-tight text-[var(--foreground)] sm:text-base md:text-[17px]">
+                                        {job.title}
+                                      </p>
+                                      <p className="mt-1 text-sm text-[color-mix(in_oklab,var(--foreground)_82%,var(--muted))]">
+                                        {job.company}
+                                      </p>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {activeHotspot === "grove" && (
                         <>
                           <p className="text-pretty text-[color-mix(in_oklab,var(--foreground)_82%,var(--muted))]">
@@ -875,54 +906,7 @@ export function AboutPageView() {
                         </div>
                       )}
 
-                      {activeHotspot === "cabin" && (
-                        <div
-                          className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_55%,transparent)] p-6 md:p-8"
-                          style={{
-                            backgroundImage:
-                              "linear-gradient(0deg, color-mix(in oklab, var(--foreground) 6%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklab, var(--foreground) 6%, transparent) 1px, transparent 1px)",
-                            backgroundSize: "44px 44px",
-                          }}
-                        >
-                          <div className="relative z-10 grid grid-cols-1 gap-8 md:grid-cols-[1.05fr_1.25fr] md:gap-10">
-                            <div className="min-w-0">
-                              <p className="font-display text-[clamp(2.4rem,5.2vw,3.4rem)] font-bold leading-[0.96] tracking-tight text-[var(--foreground)]">
-                                <span className="block">Where I&apos;ve</span>
-                                <span className="mt-1 block">worked.</span>
-                              </p>
-                            </div>
-
-                            <ol className="space-y-6">
-                              {site.experience.map((job) => (
-                                <li key={`${job.range}-${job.company}`}>
-                                  <div className="grid grid-cols-[92px_1fr] gap-6 md:grid-cols-[110px_1fr]">
-                                    <span className="pt-1 font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]">
-                                      {job.range}
-                                    </span>
-                                    <div className="min-w-0">
-                                      <p className="font-display text-base font-semibold leading-snug text-[var(--foreground)] md:text-lg">
-                                        {job.title}
-                                      </p>
-                                      <p className="mt-1 text-sm text-[var(--muted)]">
-                                        {job.company}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </li>
-                              ))}
-                            </ol>
-                          </div>
-
-                          <div
-                            className="pointer-events-none absolute inset-0 opacity-[0.35] dark:opacity-[0.25]"
-                            style={{
-                              background:
-                                "radial-gradient(ellipse 70% 55% at 20% 18%, color-mix(in oklab, var(--accent) 10%, transparent) 0%, transparent 60%), radial-gradient(ellipse 60% 45% at 82% 74%, color-mix(in oklab, var(--accent) 7%, transparent) 0%, transparent 62%)",
-                            }}
-                            aria-hidden
-                          />
-                        </div>
-                      )}
+                      {/* Cabin interaction moved to the door dot (no modal). */}
                     </div>
                   </div>
                 </div>
@@ -1083,10 +1067,9 @@ export function AboutPageView() {
                 </div>
               )}
 
-              {/* Content stays aligned to the main grid width */}
-              <div className="relative z-10 mx-auto flex h-full min-h-[100dvh] max-w-6xl flex-col justify-between gap-10 px-6 pt-[max(4rem,calc(var(--site-header-height)+0.75rem))] pb-10 md:px-14 md:pt-[max(5rem,calc(var(--site-header-height)+1rem))] md:pb-12">
-                <div className="flex-1" aria-hidden />
-                <div className="flex flex-col gap-3 md:max-w-md">
+              {/* Anchored caption — avoids a second effective 100dvh stack that nudges document scroll. */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 mx-auto max-w-6xl px-6 pb-10 pt-0 md:px-14 md:pb-12">
+                <div className="pointer-events-auto flex max-w-[min(100%,28rem)] flex-col gap-3">
                   <p className="text-pretty font-serif text-[15px] italic leading-relaxed text-[var(--muted)] md:text-base">
                     A village horizon — quiet movement, everyday rhythm.
                   </p>
@@ -1268,11 +1251,6 @@ export function AboutPageView() {
         </section>
         */}
 
-        {flashbackVisible && (
-          <div id="about-flashback-memory" data-anchor-align="top">
-            <AboutFlashbackMemories fullWidth className="mt-0" />
-          </div>
-        )}
       </main>
     </>
   );
