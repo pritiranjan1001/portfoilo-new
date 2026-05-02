@@ -6,10 +6,12 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
+import { createPortal } from "react-dom";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -82,6 +84,8 @@ export function AboutFlashbackMemories({
   const viewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const flashWalkerTrailRef = useRef<HTMLDivElement>(null);
+  const walkerExitStripRef = useRef<HTMLDivElement>(null);
   const lenis = useLenisInstance();
   const { aboutFlashback } = site;
 
@@ -96,6 +100,22 @@ export function AboutFlashbackMemories({
 
   const count = slides.length;
   const reduce = shouldReduceMotion();
+  const [portalReady, setPortalReady] = useState(false);
+  const [walkerStripTick, bumpWalkerStrip] = useReducer((c: number) => c + 1, 0);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!overlayMinimal) return;
+    const el = walkerExitStripRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => bumpWalkerStrip());
+    ro.observe(el);
+    bumpWalkerStrip();
+    return () => ro.disconnect();
+  }, [overlayMinimal]);
 
   const measure = useCallback(() => {
     const el = viewportRef.current;
@@ -142,6 +162,217 @@ export function AboutFlashbackMemories({
   }, [index]);
 
   const headingId = overlayMode ? "about-flashback-heading-cabin-overlay" : "about-flashback-heading";
+
+  useGSAP(
+    () => {
+      registerGsapPlugins();
+      if (reduce || !overlayMinimal) return;
+
+      const strip = walkerExitStripRef.current;
+      if (!strip) return;
+
+      const stampMarkup = `
+<svg viewBox="0 0 28 14" width="38" height="19" style="display:block">
+  <ellipse cx="6.2" cy="8.0" rx="4.3" ry="3.2" fill="currentColor"></ellipse>
+  <ellipse cx="19.8" cy="6.3" rx="7.1" ry="4.6" fill="currentColor"></ellipse>
+  <rect x="12.6" y="2.9" width="2.4" height="8.1" rx="1.1" fill="rgba(209,218,229,0.14)"></rect>
+</svg>
+`;
+
+      const makeStampAt = (
+        trailLayer: HTMLDivElement,
+        stampClassName: string,
+      ) => {
+        const el = document.createElement("span");
+        el.setAttribute("aria-hidden", "true");
+        el.className = stampClassName;
+        el.style.filter = "drop-shadow(0 1px 4px rgb(0 0 0 / 0.28))";
+        el.innerHTML = stampMarkup;
+        trailLayer.appendChild(el);
+        return el;
+      };
+
+      const stampClassPeripheral =
+        "absolute left-0 top-0 block -translate-x-1/2 -translate-y-1/2 text-slate-300/47 md:text-slate-300/52";
+
+      const buildExitWalkStrip = (trailLayer: HTMLDivElement, phaseAt: number) => {
+        const pw = trailLayer.clientWidth;
+        const ph = trailLayer.clientHeight;
+        if (pw < 120 || ph < 16) return null;
+
+        gsap.killTweensOf(trailLayer);
+        trailLayer.replaceChildren();
+
+        const isMobileView = window.matchMedia?.("(max-width: 639px)")?.matches ?? false;
+        const startX = pw * (isMobileView ? 0.34 : 0.38);
+        const overshoot = Math.min(240, Math.max(120, pw * 0.18));
+        const endX = pw + overshoot;
+        const pathLen = Math.max(1, endX - startX);
+        const stridePx = isMobileView ? 48 : 58;
+        const n = Math.max(8, Math.ceil(pathLen / stridePx));
+
+        const yBase = ph * 0.48;
+        const denseSteps = Array.from({ length: n }, (_, i) => {
+          const t = n === 1 ? 0 : i / (n - 1);
+          const x = startX + pathLen * t;
+          const side = i % 2 === 0 ? 1 : -1;
+          const yJit = side * Math.min(7, ph * 0.28);
+          const driftDown = t * Math.min(18, ph * 0.35);
+          const s = 0.78 + (1 - t) * 0.18;
+          const rot = i % 2 === 0 ? 10 : 14;
+          return { x, y: yBase + yJit + driftDown, s, rot };
+        });
+
+        const stamps = denseSteps.map(() => makeStampAt(trailLayer, stampClassPeripheral));
+        stamps.forEach((stamp, i) => {
+          gsap.set(stamp, { opacity: 0, scale: denseSteps[i]!.s * 0.9 });
+        });
+
+        const stepEvery = 0.27;
+        const fadeAfter = stepEvery * 2.65;
+
+        const tl = gsap.timeline({
+          defaults: { ease: "power2.out" },
+          repeat: -1,
+          repeatDelay: 4.15,
+          delay: phaseAt,
+        });
+
+        denseSteps.forEach((p, i) => {
+          const stamp = stamps[i];
+          const flip = i % 2 === 0 ? 1 : -1;
+          const at = i * stepEvery;
+          const isTail = i >= stamps.length - 2;
+
+          tl.set(
+            stamp,
+            {
+              x: p.x,
+              y: p.y,
+              rotate: p.rot,
+              scaleX: flip,
+              opacity: 0,
+              scale: p.s * 0.88,
+            },
+            at,
+          );
+          tl.to(stamp, { opacity: 0.56, scale: p.s, duration: 0.17 }, at);
+          tl.to(stamp, { scale: p.s * 0.94, duration: 0.22 }, at + 0.17);
+          if (!isTail) {
+            tl.to(stamp, { opacity: 0, duration: 0.25, ease: "power2.in" }, at + fadeAfter);
+          }
+        });
+
+        return tl;
+      };
+
+      const tStrip = buildExitWalkStrip(strip, 0);
+
+      return () => {
+        tStrip?.kill();
+      };
+    },
+    { dependencies: [overlayMinimal, walkerStripTick, portalReady, reduce] },
+  );
+
+  useGSAP(
+    () => {
+      registerGsapPlugins();
+      if (reduce || overlayMinimal) return;
+      const trailLayer = flashWalkerTrailRef.current;
+      if (!trailLayer) return;
+
+      const pw = trailLayer.clientWidth;
+      const ph = trailLayer.clientHeight;
+      if (pw < 48 || ph < 48) return;
+
+      gsap.killTweensOf(trailLayer);
+      trailLayer.replaceChildren();
+
+      const makeStamp = () => {
+        const el = document.createElement("span");
+        el.setAttribute("aria-hidden", "true");
+        el.className =
+          "absolute left-0 top-0 block -translate-x-1/2 -translate-y-1/2 text-[color-mix(in_oklab,var(--foreground)_88%,transparent)] dark:text-white/[0.8]";
+        el.style.filter =
+          "drop-shadow(0 1px 2px rgb(0 0 0 / 0.5)) drop-shadow(0 0 1px rgb(0 0 0 / 0.35))";
+        el.innerHTML = `
+<svg viewBox="0 0 28 14" width="26" height="13" style="display:block">
+  <ellipse cx="6.2" cy="8.0" rx="4.3" ry="3.2" fill="currentColor"></ellipse>
+  <ellipse cx="19.8" cy="6.3" rx="7.1" ry="4.6" fill="currentColor"></ellipse>
+  <rect x="12.6" y="2.9" width="2.4" height="8.1" rx="1.1" fill="rgba(255,255,255,0.22)"></rect>
+</svg>
+`;
+        trailLayer.appendChild(el);
+        return el;
+      };
+
+      const isMobileView = window.matchMedia?.("(max-width: 639px)")?.matches ?? false;
+      const yNear = ph * 0.88;
+      const yFar = ph * 0.36;
+      const stridePx = isMobileView ? Math.max(26, Math.round(ph / 36)) : Math.max(30, Math.round(ph / 32));
+
+      const dy = Math.abs(yNear - yFar);
+      const n = Math.max(12, Math.ceil(dy / stridePx));
+      const denseSteps: Array<{ x: number; y: number; s: number; rot: number }> = [];
+      const cxMid = pw * 0.5;
+
+      for (let i = 0; i < n; i++) {
+        const t = n === 1 ? 0 : i / (n - 1);
+        const y = yNear + (yFar - yNear) * t;
+        const side = i % 2 === 0 ? 1 : -1;
+        const spread = pw * (isMobileView ? 0.055 : 0.048) * (1 - t * 0.82);
+        const x = cxMid + side * spread;
+        const s = 0.38 + (1 - t) * 0.62;
+        const rot = -88 + side * (i % 4 === 0 ? 10 : -8) + (1 - t) * 6;
+        denseSteps.push({ x, y, s, rot });
+      }
+
+      const stamps = denseSteps.map(() => makeStamp());
+      stamps.forEach((stamp, i) => {
+        gsap.set(stamp, { opacity: 0, scale: denseSteps[i]!.s * 0.9 });
+      });
+
+      const stepEvery = 0.29;
+      const fadeAfter = stepEvery * 3.2;
+
+      const t = gsap.timeline({
+        defaults: { ease: "power2.out" },
+        repeat: -1,
+        repeatDelay: 2.85,
+      });
+
+      denseSteps.forEach((p, i) => {
+        const stamp = stamps[i];
+        const flip = i % 2 === 0 ? 1 : -1;
+        const at = i * stepEvery;
+        const isTail = i >= stamps.length - 2;
+
+        t.set(
+          stamp,
+          {
+            x: p.x,
+            y: p.y,
+            rotate: p.rot,
+            scaleX: flip,
+            opacity: 0,
+            scale: p.s * 0.88,
+          },
+          at,
+        );
+        t.to(stamp, { opacity: 0.9, scale: p.s, duration: 0.18 }, at);
+        t.to(stamp, { scale: p.s * 0.94, duration: 0.24 }, at + 0.18);
+        if (!isTail) {
+          t.to(stamp, { opacity: 0, duration: 0.26, ease: "power2.in" }, at + fadeAfter);
+        }
+      });
+
+      return () => t.kill();
+    },
+    {
+      dependencies: [index, w, overlayMinimal, reduce],
+    },
+  );
 
   useGSAP(
     () => {
@@ -265,6 +496,16 @@ export function AboutFlashbackMemories({
       } ${className ?? ""}`}
       aria-labelledby={headingId}
     >
+      {overlayMinimal && portalReady
+        ? createPortal(
+            <div
+              ref={walkerExitStripRef}
+              className="pointer-events-none fixed inset-x-0 z-[118] h-[4.85rem] overflow-visible overscroll-none sm:h-[5.15rem] md:h-[5.35rem] bottom-[max(0.65rem,env(safe-area-inset-bottom))]"
+              aria-hidden
+            />,
+            document.body,
+          )
+        : null}
       {!overlayMinimal && <AboutFlashbackPatterns />}
       {!overlayMinimal ? (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-[var(--accent)]/40 to-transparent" />
@@ -433,7 +674,7 @@ export function AboutFlashbackMemories({
                                 </button>
                               ) : null}
                             </>
-                          ) : (
+                              ) : (
                             <video
                               ref={isActive ? videoRef : undefined}
                               className="h-full w-full object-cover"
@@ -444,6 +685,14 @@ export function AboutFlashbackMemories({
                               <source src={slide.src} type="video/mp4" />
                             </video>
                           )}
+
+                          {isActive && !overlayMinimal ? (
+                            <div
+                              ref={flashWalkerTrailRef}
+                              className="pointer-events-none absolute inset-0 z-[1]"
+                              aria-hidden
+                            />
+                          ) : null}
 
                           {/* Bottom-left copy block — reference style */}
                           {isActive ? (

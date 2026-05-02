@@ -679,7 +679,7 @@ export function AboutPageView() {
                     <div className="mx-auto flex max-w-6xl justify-end">
                       <button
                         type="button"
-                        className="rounded-full border border-white/25 bg-black/35 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-white/85 backdrop-blur-sm transition hover:border-white/45 hover:bg-black/55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                        className="cursor-pointer rounded-full border border-white/25 bg-black/35 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-white/85 backdrop-blur-sm transition hover:border-white/45 hover:bg-black/55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                         onClick={() => setEnterCabin(false)}
                       >
                         Step outside
