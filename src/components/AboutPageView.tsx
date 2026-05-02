@@ -695,35 +695,37 @@ export function AboutPageView() {
                 ))}
               </div>
 
-              {/* Memory Lane shortcut */}
-              <button
-                type="button"
-                className="group absolute bottom-6 right-6 z-[60] flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_88%,transparent)] p-2 pr-3 shadow-[0_26px_70px_-46px_color-mix(in_oklab,black_46%,transparent)] backdrop-blur-md transition hover:border-[var(--border-strong)] hover:bg-[color-mix(in_oklab,var(--surface)_94%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] md:bottom-8 md:right-8"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  revealFlashbackAndScroll();
-                }}
-              >
-                <span className="sr-only">Go to Flashback memory</span>
-                <span className="relative block h-[56px] w-[78px] overflow-hidden rounded-xl border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_90%,transparent)]">
-                  <Image
-                    src="/memory-lane.svg"
-                    alt="Memory Lane"
-                    fill
-                    className="object-cover opacity-90 transition group-hover:opacity-100"
-                    sizes="(min-width: 768px) 78px, 78px"
-                    priority={false}
-                  />
-                </span>
-                <span className="min-w-0 text-left">
-                  <span className="block font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--muted)]">
-                    Memory lane
+              {/* Memory Lane shortcut (hide while "A walking index" overlay is open) */}
+              {!detailsOpen && (
+                <button
+                  type="button"
+                  className="group absolute bottom-6 right-6 z-[60] flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_88%,transparent)] p-2 pr-3 shadow-[0_26px_70px_-46px_color-mix(in_oklab,black_46%,transparent)] backdrop-blur-md transition hover:border-[var(--border-strong)] hover:bg-[color-mix(in_oklab,var(--surface)_94%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] md:bottom-8 md:right-8"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    revealFlashbackAndScroll();
+                  }}
+                >
+                  <span className="sr-only">Go to Flashback memory</span>
+                  <span className="relative block h-[56px] w-[78px] overflow-hidden rounded-xl border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_90%,transparent)]">
+                    <Image
+                      src="/memory-lane.svg"
+                      alt="Memory Lane"
+                      fill
+                      className="object-cover opacity-90 transition group-hover:opacity-100"
+                      sizes="(min-width: 768px) 78px, 78px"
+                      priority={false}
+                    />
                   </span>
-                  <span className="mt-0.5 block font-display text-sm font-semibold leading-none tracking-tight text-[var(--foreground)]">
-                    Flashback
+                  <span className="min-w-0 text-left">
+                    <span className="block font-mono text-[10px] uppercase tracking-[0.24em] text-[var(--muted)]">
+                      Memory lane
+                    </span>
+                    <span className="mt-0.5 block font-display text-sm font-semibold leading-none tracking-tight text-[var(--foreground)]">
+                      Flashback
+                    </span>
                   </span>
-                </span>
-              </button>
+                </button>
+              )}
 
               {/* Modal */}
               {modalMounted && (
