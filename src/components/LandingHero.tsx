@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { useLenisInstance } from "@/components/lenis-context";
@@ -19,6 +19,35 @@ import {
 export function LandingHero() {
   const root = useRef<HTMLElement>(null);
   const lenis = useLenisInstance();
+
+  /**
+   * iOS Chrome (and similar) overlay a bottom toolbar that is *not* reflected in
+   * `env(safe-area-inset-bottom)` or in `100dvh` while the URL bar state changes.
+   * Measure layout vs visual viewport and add the gap as extra bottom padding.
+   */
+  useLayoutEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    const key = "--hero-vv-bottom";
+    const vv = window.visualViewport;
+    if (!vv) {
+      el.style.setProperty(key, "0px");
+      return;
+    }
+    const sync = () => {
+      const inner = window.innerHeight;
+      const obscured = Math.max(0, inner - vv.offsetTop - vv.height);
+      el.style.setProperty(key, `${Math.min(180, Math.round(obscured))}px`);
+    };
+    sync();
+    vv.addEventListener("resize", sync);
+    vv.addEventListener("scroll", sync);
+    return () => {
+      vv.removeEventListener("resize", sync);
+      vv.removeEventListener("scroll", sync);
+      el.style.removeProperty(key);
+    };
+  }, []);
 
   const scrollToPrelude = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -218,9 +247,9 @@ export function LandingHero() {
       ref={root}
       id="top"
       data-home-section="hero"
-      className="relative flex min-h-[100dvh] w-full max-w-[100vw] flex-col overflow-x-clip bg-[var(--background)] text-[var(--foreground)] dark:bg-black dark:text-[color-mix(in_oklab,var(--foreground)_92%,white)]"
+      className="relative flex min-h-[100svh] w-full max-w-[100vw] flex-col overflow-x-clip bg-[var(--background)] text-[var(--foreground)] dark:bg-black dark:text-[color-mix(in_oklab,var(--foreground)_92%,white)] md:min-h-[100dvh]"
     >
-      <div className="mx-auto grid min-h-0 w-full max-w-5xl flex-1 grid-cols-1 content-center items-center gap-6 px-[max(1rem,env(safe-area-inset-left))] pb-[max(2.75rem,calc(env(safe-area-inset-bottom)+3.75rem))] pt-[max(7rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] md:gap-16 md:px-14 md:pb-12 md:pt-32 lg:grid-cols-2 lg:gap-2 xl:gap-10">
+      <div className="mx-auto grid min-h-0 w-full max-w-5xl flex-1 grid-cols-1 content-center items-center gap-6 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(max(2.75rem,calc(env(safe-area-inset-bottom)+2.5rem))+var(--hero-vv-bottom,0px))] pt-[max(7rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] md:gap-16 md:px-14 md:pb-12 md:pt-32 lg:grid-cols-2 lg:gap-2 xl:gap-10">
         <div className="landing-hero-copy flex min-w-0 flex-col justify-center text-center md:text-left [contain:layout_style]">
           <p className="landing-hero-tagline font-serif text-lg italic leading-relaxed text-[var(--muted)] md:text-xl">
             {site.tagline}
@@ -254,7 +283,7 @@ export function LandingHero() {
           </div>
         </div>
 
-        <div className="landing-hero-portrait relative mx-auto aspect-[1211/816] w-full min-w-0 max-w-[min(100%,48rem)] sm:max-w-[min(100%,56rem)] lg:mx-0 lg:max-w-none lg:origin-bottom lg:justify-self-end lg:scale-[1.12] xl:scale-[1.18] 2xl:scale-[1.24]">
+        <div className="landing-hero-portrait relative mx-auto aspect-[1211/816] w-full min-w-0 max-w-[min(100%,48rem)] max-md:max-h-[min(46svh,28rem)] max-md:min-h-0 sm:max-w-[min(100%,56rem)] lg:mx-0 lg:max-h-none lg:max-w-none lg:origin-bottom lg:justify-self-end lg:scale-[1.12] xl:scale-[1.18] 2xl:scale-[1.24]">
           {/*
             Entrance motion lives on an inner wrapper so GSAP never overwrites the outer
             responsive scale (lg/xl/2xl) — that scale is what reads as the “full” portrait size.
@@ -287,7 +316,7 @@ export function LandingHero() {
       <Link
         href="#prelude"
         onClick={scrollToPrelude}
-        className="landing-hero-scroll pointer-events-auto absolute bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)+3.75rem))] left-1/2 right-auto top-auto z-10 -translate-x-1/2 md:bottom-8"
+        className="landing-hero-scroll pointer-events-auto absolute bottom-[calc(max(1.25rem,calc(env(safe-area-inset-bottom)+2.5rem))+var(--hero-vv-bottom,0px))] left-1/2 right-auto top-auto z-10 -translate-x-1/2 md:bottom-8"
         aria-label="Scroll to next section"
       >
         <div
