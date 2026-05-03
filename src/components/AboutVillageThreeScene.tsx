@@ -452,7 +452,7 @@ function CabinCameraRig({
   doorLeaf: RefObject<THREE.Group | null>;
   setInteriorBlackout: (next: boolean) => void;
 }) {
-  const { camera } = useThree();
+  const { camera, size } = useThree();
   const perspectiveCamera =
     (camera as THREE.PerspectiveCamera | undefined)?.isPerspectiveCamera ? (camera as THREE.PerspectiveCamera) : null;
   const camLook = useRef(new THREE.Vector3(0, 0.9, 0));
@@ -470,6 +470,8 @@ function CabinCameraRig({
   const vTargetLook = useMemo(() => new THREE.Vector3(), []);
   const vBasePos = useMemo(() => new THREE.Vector3(0, 2.15, 10.5), []);
   const vBaseLook = useMemo(() => new THREE.Vector3(0, 0.9, 0), []);
+  /** Portrait framing: look slightly above the door so the hut reads centered, not bottom-clipped. */
+  const vCabinAim = useMemo(() => new THREE.Vector3(), []);
 
   useEffect(() => {
     if (enterCabin) {
@@ -484,6 +486,25 @@ function CabinCameraRig({
   }, [enterCabin, setInteriorBlackout]);
 
   useFrame((_, delta) => {
+    /** Portrait: narrow horizontal FOV + cabin on +x — pan camera and aim at the door anchor so the hut sits mid-frame. */
+    const aspect = size.width / Math.max(1, size.height);
+    const portraitK = THREE.MathUtils.smoothstep(
+      THREE.MathUtils.clamp((1 - aspect) / 0.52, 0, 1),
+      0,
+      1,
+    );
+    vBasePos.set(
+      THREE.MathUtils.lerp(0, 2.55, portraitK),
+      THREE.MathUtils.lerp(2.15, 1.94, portraitK),
+      THREE.MathUtils.lerp(10.5, 9.35, portraitK),
+    );
+    vBaseLook.set(
+      THREE.MathUtils.lerp(0, 1.35, portraitK),
+      THREE.MathUtils.lerp(0.9, 0.74, portraitK),
+      THREE.MathUtils.lerp(0, 0.95, portraitK),
+    );
+    const outsideFov = THREE.MathUtils.lerp(38, 42, portraitK);
+
     const leaf = doorLeaf.current;
     if (leaf) {
       const target = enterCabin ? -1.08 : 0;
@@ -508,6 +529,11 @@ function CabinCameraRig({
     } else {
       vTargetPos.copy(vBasePos);
       vTargetLook.copy(vBaseLook);
+      if (portraitK > 1e-3) {
+        vCabinAim.copy(vDoor).addScaledVector(vUp, 0.52);
+        const aimBlend = THREE.MathUtils.smoothstep(portraitK, 0.12, 1) * 0.92;
+        vTargetLook.lerp(vCabinAim, aimBlend);
+      }
     }
 
     if (reduceMotion) {
@@ -515,7 +541,7 @@ function CabinCameraRig({
       camLook.current.copy(vTargetLook);
       camera.lookAt(camLook.current);
       if (perspectiveCamera) {
-        perspectiveCamera.fov = enterCabin ? 28 : 38;
+        perspectiveCamera.fov = enterCabin ? 28 : outsideFov;
         perspectiveCamera.updateProjectionMatrix();
       }
 
@@ -562,7 +588,7 @@ function CabinCameraRig({
     camLook.current.lerp(vTargetLook, kOutside);
     camera.lookAt(camLook.current);
     if (perspectiveCamera) {
-      perspectiveCamera.fov = THREE.MathUtils.lerp(perspectiveCamera.fov, 38, kOutside);
+      perspectiveCamera.fov = THREE.MathUtils.lerp(perspectiveCamera.fov, outsideFov, kOutside);
       perspectiveCamera.updateProjectionMatrix();
     }
 

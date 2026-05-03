@@ -153,6 +153,109 @@ export function AboutFlashbackMemories({
     [count],
   );
 
+  /** Horizontal drag / swipe on the viewport (next / prev), same as arrow buttons. */
+  const dragRef = useRef<{
+    pointerId: number;
+    originX: number;
+    originY: number;
+    mode: "idle" | "undecided" | "horizontal";
+  }>({ pointerId: -1, originX: 0, originY: 0, mode: "idle" });
+  const dragOffsetRef = useRef(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [draggingTrack, setDraggingTrack] = useState(false);
+
+  const resetCarouselDrag = useCallback((el: HTMLDivElement | null, pointerId: number) => {
+    if (el && pointerId >= 0) {
+      try {
+        if (el.hasPointerCapture(pointerId)) el.releasePointerCapture(pointerId);
+      } catch {
+        /* already released */
+      }
+    }
+    dragRef.current = { pointerId: -1, originX: 0, originY: 0, mode: "idle" };
+    dragOffsetRef.current = 0;
+    setDragOffset(0);
+    setDraggingTrack(false);
+  }, []);
+
+  const onCarouselPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (w <= 0 || slideW <= 0) return;
+      if (e.button !== 0) return;
+      const t = e.target as HTMLElement | null;
+      if (t?.closest("button, a, video")) return;
+      dragRef.current = {
+        pointerId: e.pointerId,
+        originX: e.clientX,
+        originY: e.clientY,
+        mode: "undecided",
+      };
+      dragOffsetRef.current = 0;
+      setDragOffset(0);
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    [w, slideW],
+  );
+
+  const onCarouselPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      const d = dragRef.current;
+      if (d.mode === "idle" || e.pointerId !== d.pointerId) return;
+      const dx = e.clientX - d.originX;
+      const dy = e.clientY - d.originY;
+      if (d.mode === "undecided") {
+        const adx = Math.abs(dx);
+        const ady = Math.abs(dy);
+        if (adx < 10 && ady < 10) return;
+        if (ady >= adx) {
+          resetCarouselDrag(e.currentTarget, e.pointerId);
+          return;
+        }
+        dragRef.current = { ...d, mode: "horizontal" };
+        setDraggingTrack(true);
+      }
+      if (dragRef.current.mode !== "horizontal") return;
+      e.preventDefault();
+      const lim = Math.max(80, slideW * 0.42);
+      const ox =
+        dx > lim ? lim + (dx - lim) * 0.22 : dx < -lim ? -lim + (dx + lim) * 0.22 : dx;
+      dragOffsetRef.current = ox;
+      setDragOffset(ox);
+    },
+    [resetCarouselDrag, slideW],
+  );
+
+  const finishCarouselPointer = useCallback(
+    (el: HTMLDivElement, pointerId: number) => {
+      const d = dragRef.current;
+      const was = d.mode;
+      const ox = dragOffsetRef.current;
+      if (was === "horizontal") {
+        const threshold = Math.min(56, Math.max(36, slideW * 0.11));
+        if (ox < -threshold) go(1);
+        else if (ox > threshold) go(-1);
+      }
+      resetCarouselDrag(el, pointerId);
+    },
+    [go, resetCarouselDrag, slideW],
+  );
+
+  const onCarouselPointerUp = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (dragRef.current.pointerId !== e.pointerId) return;
+      finishCarouselPointer(e.currentTarget, e.pointerId);
+    },
+    [finishCarouselPointer],
+  );
+
+  const onCarouselLostPointerCapture = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (dragRef.current.pointerId !== e.pointerId) return;
+      finishCarouselPointer(e.currentTarget, e.pointerId);
+    },
+    [finishCarouselPointer],
+  );
+
   useEffect(() => {
     const v = videoRef.current;
     if (v) {
@@ -553,7 +656,7 @@ export function AboutFlashbackMemories({
           <div
             className={
               overlayMinimal
-                ? "flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-[1fr_minmax(0,2.75rem)] lg:items-center lg:gap-5 xl:gap-6"
+                ? "flex min-h-0 flex-1 flex-col max-lg:justify-center gap-4 lg:grid lg:grid-cols-[1fr_minmax(0,2.75rem)] lg:items-center lg:gap-5 xl:gap-6"
                 : "flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,3.5rem)_1fr_minmax(0,2.75rem)] lg:items-stretch lg:gap-6 xl:gap-8"
             }
           >
@@ -580,7 +683,15 @@ export function AboutFlashbackMemories({
             {/* Viewport + track */}
             <div
               ref={viewportRef}
-              className={`relative min-h-0 w-full overflow-hidden ${
+              onPointerDown={onCarouselPointerDown}
+              onPointerMove={onCarouselPointerMove}
+              onPointerUp={onCarouselPointerUp}
+              onPointerCancel={onCarouselPointerUp}
+              onLostPointerCapture={onCarouselLostPointerCapture}
+              onDragStart={(e) => e.preventDefault()}
+              className={`relative min-h-0 w-full touch-pan-y select-none overflow-hidden ${
+                draggingTrack ? "cursor-grabbing" : "cursor-grab"
+              } ${
                 overlayMinimal
                   ? "h-[min(58dvh,calc(100dvh-7.25rem))] max-h-[calc(100dvh-7.25rem)] sm:h-[min(60dvh,calc(100dvh-7.5rem))]"
                   : "sm:min-h-[min(48vh,380px)] md:min-h-[min(58vh,520px)]"
@@ -591,8 +702,11 @@ export function AboutFlashbackMemories({
                   ref={trackRef}
                   className={`flex will-change-transform ${overlayMinimal ? "h-full items-stretch" : ""}`}
                   style={{
-                    transform: `translate3d(${tx}px,0,0)`,
-                    transition: reduce ? "none" : "transform 0.65s cubic-bezier(0.22, 1, 0.36, 1)",
+                    transform: `translate3d(${tx + dragOffset}px,0,0)`,
+                    transition:
+                      reduce || draggingTrack
+                        ? "none"
+                        : "transform 0.65s cubic-bezier(0.22, 1, 0.36, 1)",
                     gap: `${gap}px`,
                   }}
                 >
@@ -624,6 +738,7 @@ export function AboutFlashbackMemories({
                               src={slide.src}
                               alt={slide.alt}
                               fill
+                              draggable={false}
                               className="object-cover"
                               sizes="(max-width: 1024px) 76vw, 58vw"
                               priority={i === 0}
@@ -638,6 +753,7 @@ export function AboutFlashbackMemories({
                                   controls
                                   preload="metadata"
                                   poster={slide.poster}
+                                  draggable={false}
                                 >
                                   <source src={slide.src} type="video/mp4" />
                                 </video>
@@ -646,6 +762,7 @@ export function AboutFlashbackMemories({
                                   src={slide.poster}
                                   alt=""
                                   fill
+                                  draggable={false}
                                   className={`object-cover ${isActive ? "" : "opacity-85"}`}
                                   sizes="(max-width: 1024px) 76vw, 58vw"
                                 />
@@ -681,6 +798,7 @@ export function AboutFlashbackMemories({
                               playsInline
                               controls={isActive}
                               preload="metadata"
+                              draggable={false}
                             >
                               <source src={slide.src} type="video/mp4" />
                             </video>
@@ -755,7 +873,7 @@ export function AboutFlashbackMemories({
 
           {!overlayMinimal ? (
             <p className="mt-6 hidden font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--muted)] sm:block">
-              Arrow keys · Prev / Next
+              Arrow keys · Drag · Prev / Next
             </p>
           ) : null}
         </div>
