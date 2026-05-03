@@ -667,6 +667,7 @@ function LowPolyVillage({
     roof: string;
     walker: string;
     horizonGlow: string;
+    skyBottom: string;
   };
   reduceMotion: boolean;
   isDark: boolean;
@@ -728,7 +729,7 @@ function LowPolyVillage({
             <planeGeometry args={[60, 20]} />
             <meshBasicMaterial transparent opacity={0.16} color={palette.horizonGlow} />
           </mesh>
-          <Mountains color={palette.rock} />
+          <Mountains rock={palette.rock} skyBottom={palette.skyBottom} isDark={isDark} />
         </>
       ) : null}
 
@@ -840,21 +841,67 @@ function LowPolyVillage({
   );
 }
 
-function Mountains({ color }: { color: string }) {
+function Mountains({
+  rock,
+  skyBottom,
+  isDark,
+}: {
+  rock: string;
+  skyBottom: string;
+  isDark: boolean;
+}) {
+  const { fill, rim } = useMemo(() => {
+    const rCol = new THREE.Color(rock);
+    const sky = new THREE.Color(skyBottom);
+    if (isDark) {
+      const fill = rCol.clone().lerp(new THREE.Color("#1e2835"), 0.72).lerp(sky, 0.14);
+      const rim = fill.clone().offsetHSL(0.03, 0.06, 0.1);
+      return { fill: `#${fill.getHexString()}`, rim: `#${rim.getHexString()}` };
+    }
+    const fill = rCol.clone().lerp(new THREE.Color("#6f6a7c"), 0.42).lerp(sky, 0.45);
+    const rim = fill.clone().offsetHSL(0.02, -0.04, 0.07);
+    return { fill: `#${fill.getHexString()}`, rim: `#${rim.getHexString()}` };
+  }, [rock, skyBottom, isDark]);
+
+  const foothills = useMemo(
+    () => [
+      { x: -8.2, z: -3.6, r: 5.0, h: 1.05, ry: 0.28 },
+      { x: 0.4, z: -4.0, r: 5.8, h: 1.15, ry: -0.18 },
+      { x: 9.0, z: -3.5, r: 5.2, h: 1.0, ry: 0.12 },
+    ],
+    [],
+  );
+
+  const peaks = useMemo(
+    () => [
+      { x: -13.0, z: -5.4, r: 2.35, h: 3.5, ry: 0.42, segs: 4 as const },
+      { x: -9.5, z: -6.0, r: 3.15, h: 5.1, ry: -0.22, segs: 5 as const },
+      { x: -6.0, z: -5.6, r: 2.75, h: 4.2, ry: 0.14, segs: 4 as const },
+      { x: -2.2, z: -6.4, r: 3.65, h: 5.85, ry: -0.08, segs: 5 as const },
+      { x: 2.4, z: -6.2, r: 4.05, h: 6.6, ry: 0.06, segs: 5 as const },
+      { x: 6.8, z: -5.9, r: 3.25, h: 5.35, ry: -0.16, segs: 4 as const },
+      { x: 10.8, z: -5.5, r: 2.85, h: 4.6, ry: 0.2, segs: 5 as const },
+      { x: 14.2, z: -5.7, r: 2.2, h: 3.25, ry: -0.1, segs: 4 as const },
+    ],
+    [],
+  );
+
+  const baseY = 0.32;
+
   return (
-    <group position={[0, -0.2, -16]}>
-      <mesh position={[-4.8, 1.25, -5]} rotation={[0.12, -0.5, 0]}>
-        <icosahedronGeometry args={[3.6, 0]} />
-        <meshStandardMaterial color={color} roughness={1} opacity={0.14} transparent />
-      </mesh>
-      <mesh position={[1.2, 1.05, -5.8]} rotation={[-0.08, 0.65, 0]}>
-        <icosahedronGeometry args={[4.2, 0]} />
-        <meshStandardMaterial color={color} roughness={1} opacity={0.12} transparent />
-      </mesh>
-      <mesh position={[6.2, 1.2, -5.2]} rotation={[0.06, 0.15, 0]}>
-        <icosahedronGeometry args={[3.2, 0]} />
-        <meshStandardMaterial color={color} roughness={1} opacity={0.1} transparent />
-      </mesh>
+    <group position={[0, -0.08, -16]}>
+      {foothills.map((p, i) => (
+        <mesh key={`fh-${i}`} position={[p.x, p.h * 0.5 + baseY - 0.12, p.z]} rotation={[0, p.ry, 0]}>
+          <coneGeometry args={[p.r, p.h, 6, 1, false]} />
+          <meshStandardMaterial color={fill} roughness={1} metalness={0} />
+        </mesh>
+      ))}
+      {peaks.map((p, i) => (
+        <mesh key={`pk-${i}`} position={[p.x, p.h * 0.5 + baseY, p.z]} rotation={[0, p.ry, 0]}>
+          <coneGeometry args={[p.r, p.h, p.segs, 1, false]} />
+          <meshStandardMaterial color={i % 3 === 1 ? rim : fill} roughness={1} metalness={0} />
+        </mesh>
+      ))}
     </group>
   );
 }
