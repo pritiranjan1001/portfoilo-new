@@ -265,6 +265,27 @@ body.work-hide-doc-scrollbar::-webkit-scrollbar {
   }
 }
 
+/** Site header — active nav “ink” underline drifts slightly (disabled when reduced motion). */
+@keyframes site-nav-active-scribble {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-0.6deg);
+  }
+  50% {
+    transform: translate3d(1px, -0.5px, 0) rotate(0.55deg);
+  }
+}
+
+.site-nav-active-scribble {
+  animation: site-nav-active-scribble 3.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-nav-active-scribble {
+    animation: none;
+  }
+}
+
 .hotspot {
   position: absolute;
   /* Big hit target, small visible dot */

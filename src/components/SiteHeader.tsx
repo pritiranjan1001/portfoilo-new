@@ -20,11 +20,47 @@ const navItems = [
   { href: "/#contact", label: "Contact" },
 ] as const;
 
+function isActiveNavItem(pathname: string, hash: string, href: string) {
+  if (href.startsWith("/#")) {
+    return pathname === "/" && hash === href.slice(1);
+  }
+  return pathname === href;
+}
+
+type NavMarkerTone = "default" | "workLight" | "immersive";
+
+function NavActiveMarker({ tone }: { tone: NavMarkerTone }) {
+  const color =
+    tone === "workLight"
+      ? "text-[#ffc8a8]"
+      : tone === "immersive"
+        ? "text-neutral-800 dark:text-neutral-100"
+        : "text-[var(--accent)]";
+  return (
+    <svg
+      width="52"
+      height="10"
+      viewBox="0 0 52 10"
+      className={`site-nav-active-scribble w-[52px] shrink-0 ${color}`}
+      aria-hidden
+    >
+      <path
+        d="M2.5 7.8 Q26 0.6 49.5 7.8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.25"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 /** First home visit per tab: CSS + GSAP entrance; later returns to `/` stay visible (no flicker). */
 const HEADER_HOME_ENTRANCE_KEY = "pf-header-home-in";
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const [hash, setHash] = useState("");
   const home = pathname === "/";
   const immersive = pathname === "/gallery";
   const workRoute = pathname === "/work";
@@ -92,6 +128,13 @@ export function SiteHeader() {
     killMobileMenuTweens();
     setMenuOpen(false);
   }, [pathname, killMobileMenuTweens]);
+
+  useEffect(() => {
+    const read = () => setHash(typeof window !== "undefined" ? window.location.hash : "");
+    read();
+    window.addEventListener("hashchange", read);
+    return () => window.removeEventListener("hashchange", read);
+  }, [pathname]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -435,6 +478,8 @@ export function SiteHeader() {
 
   const workLightNav = workRoute && workGalleryUnderHeader;
 
+  const navMarkerTone: NavMarkerTone = workLightNav ? "workLight" : immersive ? "immersive" : "default";
+
   const navTone = immersive
     ? "text-neutral-600 [&_a]:transition-colors [&_a]:duration-300 [&_a:hover]:text-neutral-900 dark:text-neutral-400 dark:[&_a:hover]:text-neutral-100"
     : workLightNav
@@ -507,15 +552,35 @@ export function SiteHeader() {
             aria-label="Primary"
             className={`site-nav hidden items-center gap-3 text-sm font-medium sm:gap-5 md:flex md:gap-6 ${navTone}`}
           >
-            {navItems.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                scroll={href.includes("#") ? false : undefined}
-              >
-                {label}
-              </Link>
-            ))}
+            {navItems.map(({ href, label }) => {
+              const active = isActiveNavItem(pathname, hash, href);
+              return (
+                <span key={href} className="relative inline-flex min-h-[2.25rem] flex-col items-center justify-end gap-0.5">
+                  <Link
+                    href={href}
+                    scroll={href.includes("#") ? false : undefined}
+                    aria-current={active ? "page" : undefined}
+                    className={`relative z-[1] leading-none transition-[color,font-weight,text-shadow] duration-300 ${
+                      active
+                        ? workLightNav
+                          ? "font-semibold text-white [text-shadow:0_0_20px_rgba(0,0,0,0.45)]"
+                          : immersive
+                            ? "font-semibold text-neutral-900 dark:text-neutral-100"
+                            : "font-semibold text-[var(--foreground)]"
+                        : ""
+                    }`}
+                  >
+                    {label}
+                  </Link>
+                  <span
+                    className="flex min-h-[10px] w-full items-end justify-center"
+                    aria-hidden
+                  >
+                    {active ? <NavActiveMarker tone={navMarkerTone} /> : null}
+                  </span>
+                </span>
+              );
+            })}
             <span
               className={
                 workLightNav
@@ -562,17 +627,41 @@ export function SiteHeader() {
             className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1 overflow-y-auto overscroll-y-contain py-8"
             aria-label="Primary mobile"
           >
-            {navItems.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                scroll={href.includes("#") ? false : undefined}
-                className="site-mobile-nav__link font-display text-[clamp(1.85rem,7.5vw,3.15rem)] font-medium leading-tight tracking-tight text-[var(--foreground)] transition-colors duration-300 hover:text-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)] py-2"
-                onClick={() => closeMenu(true)}
-              >
-                {label}
-              </Link>
-            ))}
+            {navItems.map(({ href, label }) => {
+              const active = isActiveNavItem(pathname, hash, href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  scroll={href.includes("#") ? false : undefined}
+                  aria-current={active ? "page" : undefined}
+                  className={`site-mobile-nav__link relative flex w-full max-w-[min(92vw,20rem)] flex-col items-center py-2 font-display text-[clamp(1.85rem,7.5vw,3.15rem)] leading-tight tracking-tight transition-colors duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)] ${
+                    active
+                      ? "font-semibold text-[var(--accent)] [text-shadow:0_0_36px_color-mix(in_oklab,var(--accent)_42%,transparent)]"
+                      : "font-medium text-[var(--foreground)] hover:text-[var(--accent)]"
+                  }`}
+                  onClick={() => closeMenu(true)}
+                >
+                  <span className="relative inline-flex items-center gap-3">
+                    {active ? (
+                      <span
+                        className="font-mono text-[0.35em] font-medium uppercase tracking-[0.2em] text-[var(--accent)] opacity-90"
+                        aria-hidden
+                      >
+                        ◆
+                      </span>
+                    ) : null}
+                    {label}
+                  </span>
+                  {active ? (
+                    <span
+                      className="mt-2 h-0.5 w-[min(42vw,11rem)] rounded-full bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-90"
+                      aria-hidden
+                    />
+                  ) : null}
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="site-mobile-nav__footer flex shrink-0 justify-center border-t border-[var(--border)] pt-6">
