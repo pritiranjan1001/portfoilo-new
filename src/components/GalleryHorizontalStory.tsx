@@ -99,8 +99,11 @@ function EditorialImage({
         height={img.frameH}
         draggable={false}
         className="h-full w-full object-cover"
-        sizes="(max-width: 768px) 45vw, 28vw"
+        sizes="(max-width: 768px) 55vw, min(42vw, 520px)"
+        quality={75}
         priority={priority}
+        loading="eager"
+        decoding="async"
       />
     </div>
   );
@@ -159,7 +162,10 @@ function GallerySectionBackdrop({
               : "(max-width: 768px) 100vw, 45vw"
           }
           className={imgTone}
+          quality={75}
           priority={priority}
+          loading="eager"
+          decoding="async"
         />
         <div className={`absolute inset-0 ${veil}`} />
       </div>
@@ -302,7 +308,7 @@ function StorySlide({
         <>
           <EditorialImage
             img={main}
-            priority={index === 0}
+            priority={index < 2}
             className="absolute bottom-0 left-0 max-h-[96%] w-[min(48%,302px)] shadow-sm md:w-[44%]"
           />
           <EditorialImage
@@ -327,7 +333,7 @@ function StorySlide({
           />
           <EditorialImage
             img={main}
-            priority={index === 0}
+            priority={index < 2}
             className="absolute left-[22%] top-0 max-h-[86%] w-[min(54%,344px)] shadow-sm md:left-[26%]"
           />
           <EditorialImage
@@ -342,7 +348,7 @@ function StorySlide({
         <>
           <EditorialImage
             img={main}
-            priority={index === 0}
+            priority={index < 2}
             className="absolute right-0 top-0 max-h-[82%] w-[min(50%,322px)] shadow-sm md:w-[47%]"
           />
           <EditorialImage
@@ -380,7 +386,7 @@ function StorySlide({
       {sectionBg ? (
         <GallerySectionBackdrop
           {...sectionBg}
-          priority={index === 0}
+          priority={index < 3}
         />
       ) : null}
       <div className="gallery-reveal-panel relative z-[1] mx-auto flex min-h-0 h-full w-full max-w-[1400px] flex-col overflow-hidden">

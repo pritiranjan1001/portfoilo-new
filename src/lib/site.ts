@@ -236,7 +236,7 @@ export const site = {
   },
   /**
    * About page — “Flashback memory” gallery (photos + optional video clips).
-   * Replace `src` / `poster` with files under `public/about-memories/` or any HTTPS URL.
+   * Stills and video poster live under `public/about-gallery/`.
    */
   aboutFlashback: {
     eyebrow: "Archive",
@@ -248,37 +248,43 @@ export const site = {
       {
         kind: "video" as const,
         src: "https://www.w3schools.com/html/mov_bbb.mp4",
-        poster:
-          "https://picsum.photos/seed/flashback-video-poster/960/540",
-        caption: "Behind the scenes — replace with your clip",
+        poster: "/about-gallery/3.jpg",
+        caption: "Behind the scenes — sample clip",
         year: "Sample",
       },
       {
         kind: "image" as const,
-        src: "https://picsum.photos/seed/flashback-a/900/650",
-        alt: "Memory still — replace with your photograph",
+        src: "/about-gallery/4.jpg",
+        alt: "Archive photograph from the about gallery",
         caption: "Studio note",
         year: "—",
       },
       {
         kind: "image" as const,
-        src: "https://picsum.photos/seed/flashback-b/700/900",
-        alt: "Memory still — replace with your photograph",
+        src: "/about-gallery/11.jpg",
+        alt: "Archive photograph from the about gallery",
         caption: "Travel / landscape",
         year: "—",
       },
       {
         kind: "image" as const,
-        src: "https://picsum.photos/seed/flashback-c/800/800",
-        alt: "Memory still — replace with your photograph",
+        src: "/about-gallery/20.jpg",
+        alt: "Archive photograph from the about gallery",
         caption: "Opening evening",
         year: "—",
       },
       {
         kind: "image" as const,
-        src: "https://picsum.photos/seed/flashback-d/880/600",
-        alt: "Memory still — replace with your photograph",
+        src: "/about-gallery/23.jpg",
+        alt: "Archive photograph from the about gallery",
         caption: "Archive shelf",
+        year: "—",
+      },
+      {
+        kind: "image" as const,
+        src: "/about-gallery/27.jpg",
+        alt: "Archive photograph from the about gallery",
+        caption: "From the archive",
         year: "—",
       },
     ],
@@ -404,13 +410,14 @@ export const site = {
         image: "/gallery/section-6/1.jpg",
         frameW: 1160,
         frameH: 600,
+        /** Larger tile uses the lighter JPEG; wide banner still uses scaled art below + backdrop. */
         foregroundCollage: [
+          { image: "/gallery/section-6/1.jpg", frameW: 1160, frameH: 600 },
           {
             image: "/gallery/section-6/Ama-samayara-Manisha-Book-Launch-1-scaled.jpg",
             frameW: 2560,
             frameH: 1570,
           },
-          { image: "/gallery/section-6/1.jpg", frameW: 1160, frameH: 600 },
           { image: "/gallery/section-6/1.jpg", frameW: 1160, frameH: 600 },
         ],
         sectionBackground: {
