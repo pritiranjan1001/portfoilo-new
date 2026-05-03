@@ -54,8 +54,8 @@ function SlideHeadline({ title, compact }: { title: string; compact?: boolean })
     <h2
       className={`relative inline-block font-display font-semibold tracking-tight text-neutral-950 dark:text-neutral-50 text-balance ${
         compact
-          ? "max-w-[min(92vw,34rem)] text-[clamp(1.05rem,2.9vw,1.45rem)] leading-snug md:max-w-[36rem] md:text-[clamp(1.1rem,2.2vw,1.5rem)]"
-          : "text-[clamp(2rem,9vw,5rem)] leading-[0.92]"
+          ? "max-w-[min(94vw,38rem)] text-[clamp(1rem,2.6vw,1.35rem)] leading-snug md:max-w-[42rem] md:text-[clamp(1.05rem,2vw,1.42rem)]"
+          : "max-w-[min(94vw,48rem)] text-[clamp(1.45rem,5.2vw,3.25rem)] leading-[0.98] md:max-w-[52rem]"
       }`}
     >
       <span className="relative z-[1]">{title}</span>
@@ -239,19 +239,37 @@ function StorySlide({
     : slideToImg(slide);
   const variant = index % 3;
 
+  const longKicker = slide.kicker.length > 44;
+  const longDek = slide.dek.length > 52;
+  const longTitle = slide.title.length > 34;
+  const useCompactHeadline =
+    ("compactHeadline" in slide && !!slide.compactHeadline) || longTitle;
+
   const body = (
     <div
       data-lenis-prevent
-      className="gallery-reveal w-full max-w-md"
+      className={`gallery-reveal w-full ${longDek ? "max-w-xl md:max-w-2xl" : "max-w-md"}`}
     >
-      <p className="gallery-reveal-inner text-[11px] leading-relaxed text-neutral-500 dark:text-neutral-400 md:text-[12px] md:leading-relaxed">
+      <p
+        className={`gallery-reveal-inner text-neutral-500 dark:text-neutral-400 ${
+          longDek
+            ? "text-[clamp(10px,2.35vw,12px)] leading-relaxed md:text-[clamp(11px,1.35vw,13px)] md:leading-relaxed"
+            : "text-[11px] leading-relaxed md:text-[12px] md:leading-relaxed"
+        }`}
+      >
         {slide.dek}
       </p>
     </div>
   );
 
   const kickerBlock = (
-    <p className="max-w-[28ch] font-mono text-[9px] uppercase leading-snug tracking-[0.32em] text-neutral-400 dark:text-neutral-500">
+    <p
+      className={`font-mono leading-snug text-neutral-500 dark:text-neutral-400 ${
+        longKicker
+          ? "max-w-[min(94vw,42rem)] text-[clamp(8.5px,2.1vw,10.5px)] tracking-[0.06em] normal-case sm:text-[10px] md:max-w-[46rem] md:leading-relaxed"
+          : "max-w-[28ch] text-[9px] uppercase tracking-[0.32em] text-neutral-400 dark:text-neutral-500"
+      }`}
+    >
       {slide.kicker}
     </p>
   );
@@ -366,12 +384,9 @@ function StorySlide({
         />
       ) : null}
       <div className="gallery-reveal-panel relative z-[1] mx-auto flex min-h-0 h-full w-full max-w-[1400px] flex-col overflow-hidden">
-        <div className="gallery-reveal-head relative z-10 flex shrink-0 flex-col gap-1 md:max-w-[90%]">
+        <div className="gallery-reveal-head relative z-10 flex shrink-0 flex-col gap-1.5 md:max-w-[min(94%,52rem)]">
           {kickerBlock}
-          <SlideHeadline
-            title={slide.title}
-            compact={"compactHeadline" in slide && !!slide.compactHeadline}
-          />
+          <SlideHeadline title={slide.title} compact={useCompactHeadline} />
         </div>
 
         {collage}
