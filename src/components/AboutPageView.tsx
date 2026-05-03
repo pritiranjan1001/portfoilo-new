@@ -205,6 +205,10 @@ export function AboutPageView() {
     setModalMounted(false);
   }, [activeHotspot]);
 
+  useEffect(() => {
+    if (activeHotspot !== "grove") setBioExpanded(false);
+  }, [activeHotspot]);
+
   /** Lenis routes clear `ScrollTrigger` defaults on unmount — refresh so /about reveals run. */
   useLayoutEffect(() => {
     registerGsapPlugins();
@@ -756,13 +760,13 @@ export function AboutPageView() {
                     }
                   >
                   <div
-                    className={`magic-modal__card pointer-events-auto flex h-[100dvh] w-full flex-col overflow-hidden rounded-none border-0 bg-[color-mix(in_oklab,var(--surface)_92%,transparent)] shadow-[0_34px_100px_-34px_color-mix(in_oklab,black_42%,transparent)] backdrop-blur-md md:h-auto md:rounded-2xl md:border md:border-[var(--border)] ${
+                    className={`magic-modal__card pointer-events-auto flex h-[100dvh] min-h-0 w-full max-h-[100dvh] flex-col overflow-hidden rounded-none border-0 bg-[color-mix(in_oklab,var(--surface)_92%,transparent)] shadow-[0_34px_100px_-34px_color-mix(in_oklab,black_42%,transparent)] backdrop-blur-md md:h-auto md:rounded-2xl md:border md:border-[var(--border)] ${
                       activeHotspot === "canopy"
                         ? "md:max-h-[88dvh] md:w-[min(940px,96vw)]"
                         : "md:max-h-[78dvh] md:w-[min(860px,96vw)]"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-5 py-4 pt-[max(1rem,env(safe-area-inset-top))] md:pt-4">
+                    <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--border)] px-5 py-4 pt-[max(1rem,env(safe-area-inset-top))] md:pt-4">
                       <div className="min-w-0">
                         {activeHotspot === "grove" ? (
                           <>
@@ -808,7 +812,10 @@ export function AboutPageView() {
                         </svg>
                       </button>
                     </div>
-                    <div className="min-h-0 flex-1 overflow-auto px-5 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-[15px] leading-relaxed text-[var(--foreground)] md:pb-5">
+                    <div
+                      data-lenis-prevent
+                      className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-y-contain px-5 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-[15px] leading-relaxed text-[var(--foreground)] [-webkit-overflow-scrolling:touch] md:pb-5"
+                    >
                       {activeHotspot === "canopy" && (
                         <div className="relative isolate space-y-6">
                           <p className="max-w-xl text-[15px] leading-relaxed text-[color-mix(in_oklab,var(--foreground)_86%,var(--muted))]">
@@ -867,28 +874,55 @@ export function AboutPageView() {
 
                       {activeHotspot === "grove" && (
                         <>
-                          <p className="text-pretty text-[color-mix(in_oklab,var(--foreground)_82%,var(--muted))]">
-                            Jyotiranjan Swain (b. 1970) is a visual artist and graphic designer with
-                            a background in applied arts from the Sir J.J. Institute of Applied Art,
-                            Mumbai. In the early 1990s, he founded Third Eye Communications in
-                            Bhubaneswar, significantly transforming the design and print production
-                            landscape in Odisha. His portfolio spans a diverse array of publications
-                            and products across various formats and media, marked by innovative design,
-                            a commitment to quality, meticulous attention to detail, and factual
-                            accuracy. His work reflects a transformative design vocabulary that has
-                            redefined standards in the field.
-                          </p>
+                          {bioFirst != null ? (
+                            <p className="text-pretty text-[color-mix(in_oklab,var(--foreground)_82%,var(--muted))]">
+                              {bioFirst}
+                            </p>
+                          ) : null}
                           <div
                             className="mt-5 h-px w-16 bg-[color-mix(in_oklab,var(--accent)_65%,transparent)]"
                             aria-hidden
                           />
-                          <button
-                            type="button"
-                            className="mt-4 inline cursor-pointer border-0 bg-transparent p-0 font-body text-base font-medium tracking-wide text-[var(--foreground)] underline decoration-[var(--border-strong)] decoration-2 underline-offset-[6px] transition hover:decoration-[var(--accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
-                            onClick={() => setBioExpanded(true)}
-                          >
-                            See more
-                          </button>
+                          {bioRest.length > 0 && !bioExpanded ? (
+                            <button
+                              type="button"
+                              className={`mt-4 ${bioToggleClass}`}
+                              aria-expanded={false}
+                              aria-controls="about-grove-bio-more"
+                              onClick={() => setBioExpanded(true)}
+                            >
+                              See more
+                            </button>
+                          ) : null}
+                          {bioExpanded && bioRest.length > 0 ? (
+                            <div className="mt-6 space-y-5">
+                              <div
+                                id="about-grove-bio-more"
+                                ref={bioExtraRef}
+                                className="space-y-5"
+                                role="region"
+                                aria-label="Extended biography"
+                              >
+                                {bioRest.map((paragraph, index) => (
+                                  <p
+                                    key={index}
+                                    className="about-bio-p-extra text-pretty text-[color-mix(in_oklab,var(--foreground)_82%,var(--muted))]"
+                                  >
+                                    {paragraph}
+                                  </p>
+                                ))}
+                              </div>
+                              <button
+                                type="button"
+                                className={bioToggleClass}
+                                aria-expanded
+                                aria-controls="about-grove-bio-more"
+                                onClick={() => setBioExpanded(false)}
+                              >
+                                See less
+                              </button>
+                            </div>
+                          ) : null}
                         </>
                       )}
 
