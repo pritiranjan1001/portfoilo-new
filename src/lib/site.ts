@@ -289,18 +289,24 @@ export const site = {
   galleryStory: {
     slides: [
       {
-        kicker: "Prologue",
-        title: "The life & work",
-        dek: "Design, publishing, and painting—one thread.",
-        image: "/artworks/Painting-1-min-1024x796.webp",
-        frameW: 1024,
-        frameH: 796,
-        /** Optional: soft zone behind part of the slide only (see GalleryHorizontalStory). */
+        kicker: "22 October 2023",
+        title: "In Memorium; Jayanta Mahapatra",
+        compactHeadline: true,
+        dek: "Odisha State Museum, Bhubaneswar",
+        image: "/gallery/memorial-c1.jpg",
+        frameW: 864,
+        frameH: 576,
+        /** Event photography — left / top / right tiles (poster wash uses `sectionBackground`). */
+        foregroundCollage: [
+          { image: "/gallery/memorial-c1.jpg", frameW: 864, frameH: 576 },
+          { image: "/gallery/memorial-c2.jpg", frameW: 864, frameH: 576 },
+          { image: "/gallery/memorial-c3.jpg", frameW: 864, frameH: 576 },
+        ],
         sectionBackground: {
-          src: "/artworks/Painting-17-min-1536x1194.webp",
-          frameW: 1536,
-          frameH: 1194,
-          placement: "right" as const,
+          src: "/gallery/in-memorium-jayanta-mahapatra.jpg",
+          frameW: 1280,
+          frameH: 721,
+          placement: "full" as const,
         },
       },
       {

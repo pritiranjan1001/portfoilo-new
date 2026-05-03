@@ -49,9 +49,15 @@ function slideToImg(slide: (typeof story.slides)[number]): ImgRef {
 }
 
 /** Hero title + light graphic ring — matches Korr’s single bold word-mark feel. */
-function SlideHeadline({ title }: { title: string }) {
+function SlideHeadline({ title, compact }: { title: string; compact?: boolean }) {
   return (
-    <h2 className="relative inline-block font-display text-[clamp(2rem,9vw,5rem)] font-semibold leading-[0.92] tracking-tight text-neutral-950 dark:text-neutral-50">
+    <h2
+      className={`relative inline-block font-display font-semibold tracking-tight text-neutral-950 dark:text-neutral-50 text-balance ${
+        compact
+          ? "max-w-[min(92vw,34rem)] text-[clamp(1.05rem,2.9vw,1.45rem)] leading-snug md:max-w-[36rem] md:text-[clamp(1.1rem,2.2vw,1.5rem)]"
+          : "text-[clamp(2rem,9vw,5rem)] leading-[0.92]"
+      }`}
+    >
       <span className="relative z-[1]">{title}</span>
       <svg
         aria-hidden
@@ -111,22 +117,31 @@ function GallerySectionBackdrop({
   src: string;
   frameW: number;
   frameH: number;
-  placement: "left" | "right" | "bottom";
+  placement: "left" | "right" | "bottom" | "full";
   priority?: boolean;
 }) {
   const zone =
-    placement === "right"
-      ? "absolute inset-y-0 right-0 w-[min(54%,30rem)] max-md:w-[min(62%,20rem)]"
-      : placement === "left"
-        ? "absolute inset-y-0 left-0 w-[min(54%,30rem)] max-md:w-[min(62%,20rem)]"
-        : "absolute bottom-0 left-0 right-0 h-[min(36vh,20rem)] max-md:h-[min(30vh,16rem)]";
+    placement === "full"
+      ? "absolute inset-0"
+      : placement === "right"
+        ? "absolute inset-y-0 right-0 w-[min(54%,30rem)] max-md:w-[min(62%,20rem)]"
+        : placement === "left"
+          ? "absolute inset-y-0 left-0 w-[min(54%,30rem)] max-md:w-[min(62%,20rem)]"
+          : "absolute bottom-0 left-0 right-0 h-[min(36vh,20rem)] max-md:h-[min(30vh,16rem)]";
 
   const veil =
-    placement === "right"
-      ? "bg-gradient-to-r from-[#ede8de] from-[18%] via-[#ede8de]/90 to-transparent dark:from-[var(--background)] dark:from-[18%] dark:via-[color-mix(in_oklab,var(--background)_88%,transparent)]"
-      : placement === "left"
-        ? "bg-gradient-to-l from-[#ede8de] from-[18%] via-[#ede8de]/90 to-transparent dark:from-[var(--background)] dark:from-[18%] dark:via-[color-mix(in_oklab,var(--background)_88%,transparent)]"
-        : "bg-gradient-to-t from-[#ede8de] from-[22%] via-[#ede8de]/92 to-transparent dark:from-[var(--background)] dark:from-[22%] dark:via-[color-mix(in_oklab,var(--background)_90%,transparent)]";
+    placement === "full"
+      ? "bg-gradient-to-br from-[#ede8de]/[0.92] via-[#ede8de]/[0.32] via-[48%] to-[#ede8de]/[0.84] dark:from-[color-mix(in_oklab,var(--background)_90%,transparent)] dark:via-[color-mix(in_oklab,var(--background)_28%,transparent)] dark:to-[color-mix(in_oklab,var(--background)_84%,transparent)]"
+      : placement === "right"
+        ? "bg-gradient-to-r from-[#ede8de] from-[18%] via-[#ede8de]/90 to-transparent dark:from-[var(--background)] dark:from-[18%] dark:via-[color-mix(in_oklab,var(--background)_88%,transparent)]"
+        : placement === "left"
+          ? "bg-gradient-to-l from-[#ede8de] from-[18%] via-[#ede8de]/90 to-transparent dark:from-[var(--background)] dark:from-[18%] dark:via-[color-mix(in_oklab,var(--background)_88%,transparent)]"
+          : "bg-gradient-to-t from-[#ede8de] from-[22%] via-[#ede8de]/92 to-transparent dark:from-[var(--background)] dark:from-[22%] dark:via-[color-mix(in_oklab,var(--background)_90%,transparent)]";
+
+  const imgTone =
+    placement === "full"
+      ? "object-cover object-[center_28%] opacity-[0.48] saturate-[0.82] dark:opacity-[0.55]"
+      : "object-cover opacity-[0.2] saturate-[0.88] dark:opacity-[0.26]";
 
   return (
     <div
@@ -138,8 +153,12 @@ function GallerySectionBackdrop({
           src={src}
           alt=""
           fill
-          sizes="(max-width: 768px) 100vw, 45vw"
-          className="object-cover opacity-[0.2] saturate-[0.88] dark:opacity-[0.26]"
+          sizes={
+            placement === "full"
+              ? "100vw"
+              : "(max-width: 768px) 100vw, 45vw"
+          }
+          className={imgTone}
           priority={priority}
         />
         <div className={`absolute inset-0 ${veil}`} />
@@ -190,9 +209,34 @@ function StorySlide({
   carouselSnap?: boolean;
 }) {
   const wl = site.works.length;
-  const extraA = workToImg(site.works[(index * 3 + 2) % wl]!);
-  const extraB = workToImg(site.works[(index * 3 + 7) % wl]!);
-  const main = slideToImg(slide);
+  const triple =
+    "foregroundCollage" in slide &&
+    slide.foregroundCollage != null &&
+    slide.foregroundCollage.length === 3
+      ? slide.foregroundCollage
+      : null;
+
+  const extraA = triple
+    ? {
+        image: triple[1]!.image,
+        frameW: triple[1]!.frameW,
+        frameH: triple[1]!.frameH,
+      }
+    : workToImg(site.works[(index * 3 + 2) % wl]!);
+  const extraB = triple
+    ? {
+        image: triple[2]!.image,
+        frameW: triple[2]!.frameW,
+        frameH: triple[2]!.frameH,
+      }
+    : workToImg(site.works[(index * 3 + 7) % wl]!);
+  const main = triple
+    ? {
+        image: triple[0]!.image,
+        frameW: triple[0]!.frameW,
+        frameH: triple[0]!.frameH,
+      }
+    : slideToImg(slide);
   const variant = index % 3;
 
   const body = (
@@ -324,7 +368,10 @@ function StorySlide({
       <div className="gallery-reveal-panel relative z-[1] mx-auto flex min-h-0 h-full w-full max-w-[1400px] flex-col overflow-hidden">
         <div className="gallery-reveal-head relative z-10 flex shrink-0 flex-col gap-1 md:max-w-[90%]">
           {kickerBlock}
-          <SlideHeadline title={slide.title} />
+          <SlideHeadline
+            title={slide.title}
+            compact={"compactHeadline" in slide && !!slide.compactHeadline}
+          />
         </div>
 
         {collage}
