@@ -309,7 +309,7 @@ export const site = {
           { image: "/gallery/section-1/memorial-c3.jpg", frameW: 864, frameH: 576 },
         ],
         sectionBackground: {
-          src: "/gallery/section-1/in-memorium-jayanta-mahapatra.jpg",
+          src: "/gallery/section-1/in-memorium-jayanta-mahapatra-v2.jpg",
           frameW: 1280,
           frameH: 721,
           placement: "full" as const,
@@ -328,7 +328,7 @@ export const site = {
           { image: "/gallery/section-2/kala-saman-4.jpg", frameW: 768, frameH: 432 },
         ],
         sectionBackground: {
-          src: "/gallery/section-2/Kala-Saman-Web-Banner-1-min-scaled.jpg",
+          src: "/gallery/section-2/Kala-Saman-Web-Banner-1-min-scaled-v2.jpg",
           frameW: 2560,
           frameH: 1280,
           placement: "full" as const,
