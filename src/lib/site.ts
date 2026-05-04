@@ -420,12 +420,7 @@ export const site = {
           },
           { image: "/gallery/section-6/1.jpg", frameW: 1160, frameH: 600 },
         ],
-        sectionBackground: {
-          src: "/gallery/section-6/Ama-samayara-Manisha-Book-Launch-1-scaled.jpg",
-          frameW: 2560,
-          frameH: 1570,
-          placement: "full" as const,
-        },
+        /** No full-bleed wash — collage tiles carry the imagery. */
       },
     ],
   },
