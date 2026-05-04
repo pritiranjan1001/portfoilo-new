@@ -53,7 +53,7 @@ export function BlogIndexView({ posts }: { posts: readonly BlogPost[] }) {
             Blog
           </h1>
           <p className="mt-4 max-w-2xl text-balance text-[15px] leading-relaxed text-[var(--muted)] md:text-[16px]">
-            Notes on design, motion, and creative coding—built like a small gallery: quiet, tactile, and a little cinematic.
+          A blog for sharing ideas, insights, and articles.
           </p>
         </header>
 
