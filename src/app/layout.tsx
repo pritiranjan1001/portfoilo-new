@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { DM_Sans, JetBrains_Mono, Libre_Baskerville, Syne } from "next/font/google";
 import { ScrollToTopOnNavigate } from "@/components/ScrollToTopOnNavigate";
+import { perfGuardScript } from "@/lib/perf-guard-script";
 import { site } from "@/lib/site";
 import { themeInitScript } from "@/lib/theme-script";
 import "./globals.css";
@@ -115,6 +116,9 @@ export default function RootLayout({
         </noscript>
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
+        </Script>
+        <Script id="perf-guard" strategy="beforeInteractive">
+          {perfGuardScript}
         </Script>
         <ScrollToTopOnNavigate />
         {children}

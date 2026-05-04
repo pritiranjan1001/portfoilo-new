@@ -18,13 +18,14 @@ const navItems = [
   { href: "/about", label: "About" },
   { href: "/#practice", label: "Practice" },
   { href: "/#contact", label: "Contact" },
+  { href: "/blog", label: "Blog" },
 ] as const;
 
 function isActiveNavItem(pathname: string, hash: string, href: string) {
   if (href.startsWith("/#")) {
     return pathname === "/" && hash === href.slice(1);
   }
-  return pathname === href;
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 type NavMarkerTone = "default" | "workLight" | "immersive";
@@ -65,6 +66,7 @@ export function SiteHeader() {
   const immersive = pathname === "/gallery";
   const workRoute = pathname === "/work";
   const aboutRoute = pathname === "/about";
+  const blogRoute = pathname === "/blog" || pathname.startsWith("/blog/");
   const lenis = useLenisInstance();
   /** /work: white nav only when the dark gallery sits under the fixed header (not over the cream intro). */
   const [workGalleryUnderHeader, setWorkGalleryUnderHeader] = useState(false);
@@ -489,18 +491,23 @@ export function SiteHeader() {
   const headerBarElevated =
     surfaceScrollRoute && headerScrolled && !workRoute && !immersive;
 
-  const headerBar =
-    immersive
-      ? "border-b border-black/[0.06] bg-transparent dark:border-white/[0.08]"
-      : workRoute && !workLightNav
-        ? "border-b border-transparent bg-transparent"
-        : workRoute && workLightNav
-          ? "border-b border-white/15 bg-transparent"
-          : headerBarElevated
-            ? "border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_93%,transparent)] shadow-[0_12px_40px_-12px_rgba(20,17,13,0.14)] backdrop-blur-xl backdrop-saturate-150 dark:bg-[color-mix(in_oklab,var(--surface)_88%,transparent)] dark:shadow-[0_16px_48px_-16px_rgba(0,0,0,0.55)]"
-            : surfaceScrollRoute
-              ? "border-b border-transparent bg-transparent"
-              : "border-b border-[var(--border)] bg-transparent";
+  const frostedBar =
+    "bg-[color-mix(in_oklab,var(--surface-elevated)_93%,transparent)] shadow-[0_12px_40px_-12px_rgba(20,17,13,0.14)] backdrop-blur-xl backdrop-saturate-150 dark:bg-[color-mix(in_oklab,var(--surface)_88%,transparent)] dark:shadow-[0_16px_48px_-16px_rgba(0,0,0,0.55)]";
+
+  const headerBar = (() => {
+    if (immersive) return "border-b border-black/[0.06] bg-transparent dark:border-white/[0.08]";
+    if (workRoute && !workLightNav) return "border-b border-transparent bg-transparent";
+    if (workRoute && workLightNav) return "border-b border-white/15 bg-transparent";
+
+    // Blog: keep the frosted header treatment, but remove the 1px bottom rule (the “top line” under the nav).
+    if (blogRoute) {
+      return headerBarElevated ? `border-b border-transparent ${frostedBar}` : "border-b border-transparent bg-transparent";
+    }
+
+    if (headerBarElevated) return `border-b border-[var(--border)] ${frostedBar}`;
+    if (surfaceScrollRoute) return "border-b border-transparent bg-transparent";
+    return "border-b border-[var(--border)] bg-transparent";
+  })();
 
   return (
     <>
