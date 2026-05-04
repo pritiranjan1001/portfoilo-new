@@ -120,7 +120,7 @@ export const blogPosts: readonly BlogPost[] = [
       },
       {
         type: "figure",
-        src: "/blog/news-the-samaj-930x1536.jpg",
+        src: "/blog/news-the-samaj-930x1536-v2.jpg",
         alt: "Scanned newspaper clipping from The Samaja about the Kuala Lumpur exhibition",
         width: 930,
         height: 1536,
