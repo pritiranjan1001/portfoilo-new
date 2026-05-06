@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   images: {
     /** Allow `quality` values used by `<Image />` (Next 16 requires an explicit list). */
-    qualities: [100, 75],
+    qualities: [100, 75, 78],
     /** Cache optimized images longer in production (repeat visits feel instant). */
     minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [

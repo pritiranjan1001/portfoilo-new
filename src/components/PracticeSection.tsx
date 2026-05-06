@@ -29,130 +29,149 @@ export function PracticeSection() {
       /** Align with Lenis + scrollerProxy — otherwise triggers can fire too early / wrong. */
       if (!lenis) return;
 
-      const heading = section.querySelector(".practice-split-heading");
-      if (!(heading instanceof HTMLElement)) return;
+      let cancelled = false;
+      let titleTl: gsap.core.Timeline | undefined;
+      let gridTl: gsap.core.Timeline | undefined;
+      let split: SplitText | undefined;
+      let disciplineSplits: SplitText[] = [];
 
-      const grid = section.querySelector<HTMLElement>(".practice-discipline-grid");
-      if (!grid) return;
+      const boot = async () => {
+        try {
+          await document.fonts.ready;
+        } catch {
+          /* ignore */
+        }
+        if (cancelled) return;
 
-      const split = new SplitText(heading, {
-        type: "lines,words",
-        linesClass: "practice-split-line",
-        wordsClass: "practice-split-word",
-      });
+        const el = root.current;
+        if (!el) return;
+        if (!lenis) return;
 
-      gsap.set(split.words, {
-        display: "inline-block",
-        willChange: "transform, opacity, filter",
-      });
+        const heading = el.querySelector(".practice-split-heading");
+        if (!(heading instanceof HTMLElement)) return;
 
-      const eyebrow = section.querySelector<HTMLElement>(".practice-eyebrow");
-      if (eyebrow) {
-        gsap.set(eyebrow, { opacity: 0, y: 14 });
-      }
-      gsap.set(split.words, {
-        opacity: 0,
-        y: 40,
-        rotateX: -14,
-        transformOrigin: "50% 100%",
-        filter: "blur(8px)",
-      });
+        const grid = el.querySelector<HTMLElement>(".practice-discipline-grid");
+        if (!grid) return;
 
-      const titleTl = gsap.timeline({
-        scrollTrigger: {
-          scroller: document.documentElement,
-          trigger: section,
-          /** Fire when the section actually enters from below — not while still above the fold. */
-          start: "top bottom-=8%",
-          toggleActions: "play none none none",
-          invalidateOnRefresh: true,
-        },
-        defaults: { ease: "power2.out" },
-      });
+        split = new SplitText(heading, {
+          type: "lines,words",
+          linesClass: "practice-split-line",
+          wordsClass: "practice-split-word",
+        });
 
-      titleTl
-        .to(".practice-eyebrow", {
-          opacity: 1,
-          y: 0,
-          duration: 0.48,
-        })
-        .to(
-          split.words,
-          {
-            opacity: 1,
-            y: 0,
-            rotateX: 0,
-            filter: "blur(0px)",
-            duration: 0.68,
-            stagger: 0.052,
-            ease: "power3.out",
+        gsap.set(split.words, {
+          display: "inline-block",
+          willChange: "transform, opacity, filter",
+        });
+
+        const eyebrow = el.querySelector<HTMLElement>(".practice-eyebrow");
+        if (eyebrow) {
+          gsap.set(eyebrow, { opacity: 0, y: 14 });
+        }
+        gsap.set(split.words, {
+          opacity: 0,
+          y: 40,
+          rotateX: -14,
+          transformOrigin: "50% 100%",
+          filter: "blur(8px)",
+        });
+
+        titleTl = gsap.timeline({
+          scrollTrigger: {
+            scroller: document.documentElement,
+            trigger: el,
+            /** Fire when the section actually enters from below — not while still above the fold. */
+            start: "top bottom-=8%",
+            toggleActions: "play none none none",
+            invalidateOnRefresh: true,
           },
-          "-=0.08",
-        );
+          defaults: { ease: "power2.out" },
+        });
 
-      const titleEls = section.querySelectorAll<HTMLElement>(
-        ".practice-discipline-title",
-      );
-      const disciplineSplits = [...titleEls].map(
-        (node) =>
-          new SplitText(node, {
-            type: "words",
-            wordsClass: "practice-discipline-w",
-          }),
-      );
-
-      disciplineSplits.forEach((ds) => {
-        gsap.set(ds.words, { display: "inline-block" });
-        gsap.set(ds.words, { opacity: 0, y: 20 });
-      });
-
-      const cardParas = section.querySelectorAll<HTMLElement>(
-        ".practice-discipline-card p",
-      );
-      gsap.set(cardParas, { opacity: 0, y: 12 });
-
-      const gridTl = gsap.timeline({
-        scrollTrigger: {
-          scroller: document.documentElement,
-          trigger: grid,
-          start: "top bottom-=12%",
-          toggleActions: "play none none none",
-          invalidateOnRefresh: true,
-        },
-      });
-
-      disciplineSplits.forEach((ds, i) => {
-        gridTl.to(
-          ds.words,
-          {
+        titleTl
+          .to(".practice-eyebrow", {
             opacity: 1,
             y: 0,
             duration: 0.48,
-            stagger: 0.035,
+          })
+          .to(
+            split.words,
+            {
+              opacity: 1,
+              y: 0,
+              rotateX: 0,
+              filter: "blur(0px)",
+              duration: 0.68,
+              stagger: 0.052,
+              ease: "power3.out",
+            },
+            "-=0.08",
+          );
+
+        const titleEls = el.querySelectorAll<HTMLElement>(".practice-discipline-title");
+        disciplineSplits = [...titleEls].map(
+          (node) =>
+            new SplitText(node, {
+              type: "words",
+              wordsClass: "practice-discipline-w",
+            }),
+        );
+
+        disciplineSplits.forEach((ds) => {
+          gsap.set(ds.words, { display: "inline-block" });
+          gsap.set(ds.words, { opacity: 0, y: 20 });
+        });
+
+        const cardParas = el.querySelectorAll<HTMLElement>(".practice-discipline-card p");
+        gsap.set(cardParas, { opacity: 0, y: 12 });
+
+        const gridTimeline = gsap.timeline({
+          scrollTrigger: {
+            scroller: document.documentElement,
+            trigger: grid,
+            start: "top bottom-=12%",
+            toggleActions: "play none none none",
+            invalidateOnRefresh: true,
+          },
+        });
+        gridTl = gridTimeline;
+
+        disciplineSplits.forEach((ds, i) => {
+          gridTimeline.to(
+            ds.words,
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.48,
+              stagger: 0.035,
+              ease: "power2.out",
+            },
+            i * 0.14,
+          );
+        });
+
+        gridTimeline.to(
+          cardParas,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.4,
+            stagger: 0.09,
             ease: "power2.out",
           },
-          i * 0.14,
+          disciplineSplits.length ? "<0.2" : 0,
         );
-      });
 
-      gridTl.to(
-        cardParas,
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.4,
-          stagger: 0.09,
-          ease: "power2.out",
-        },
-        disciplineSplits.length ? "<0.2" : 0,
-      );
+        refreshLenisAndScrollTrigger(lenis);
+      };
 
-      refreshLenisAndScrollTrigger(lenis);
+      void boot();
 
       return () => {
-        titleTl.kill();
-        gridTl.kill();
-        split.revert();
+        cancelled = true;
+        titleTl?.kill();
+        gridTl?.kill();
+        split?.revert();
         disciplineSplits.forEach((s) => s.revert());
       };
     },
