@@ -105,7 +105,7 @@ export function BlogIndexView({ posts }: { posts: readonly BlogPost[] }) {
                 <p className="text-[11px] font-mono uppercase tracking-[0.22em] text-[var(--muted)]">
                   {formatBlogDate(p.date)}
                 </p>
-                <h2 className="mt-3 text-pretty font-display text-[clamp(1.25rem,2.4vw,1.55rem)] leading-tight tracking-tight">
+                <h2 className="mt-3 text-pretty font-odia text-[clamp(1.25rem,2.4vw,1.55rem)] font-semibold leading-tight tracking-tight">
                   {p.title}
                 </h2>
                 <p className="mt-3 text-pretty text-[14px] leading-relaxed text-[var(--muted)]">{p.excerpt}</p>

@@ -203,7 +203,7 @@ export function BlogDetailView({ post }: { post: BlogPost }) {
         <header className="px-4 py-10 md:px-10 md:py-14">
           <h1
             data-blog-in
-            className="mx-auto max-w-[min(52rem,92vw)] text-center font-display text-[clamp(2.05rem,4.6vw,3.55rem)] leading-[1.02] tracking-tight text-balance"
+            className="mx-auto max-w-[min(52rem,92vw)] text-balance text-center font-odia text-[clamp(2.05rem,4.6vw,3.55rem)] font-semibold leading-[1.02] tracking-tight"
           >
             {post.title}
           </h1>
@@ -310,7 +310,7 @@ export function BlogDetailView({ post }: { post: BlogPost }) {
                 Blog — Posted {date}
                 {time ? `, ${time}` : ""}
               </p>
-              <h2 className="mt-6 max-w-md font-display text-[clamp(1.35rem,2.4vw,1.85rem)] leading-snug tracking-tight text-balance">
+              <h2 className="mt-6 max-w-md text-balance font-odia text-[clamp(1.35rem,2.4vw,1.85rem)] font-semibold leading-snug tracking-tight">
                 {post.secondaryHeadline}
               </h2>
               <div className="mt-8 flex flex-wrap gap-2">
@@ -326,13 +326,16 @@ export function BlogDetailView({ post }: { post: BlogPost }) {
             </div>
 
             <div className="mt-10 lg:mt-12">
-              <div data-blog-in className="prose prose-neutral max-w-none prose-p:text-[15px] prose-p:leading-[1.85] prose-headings:font-display prose-headings:tracking-tight md:prose-p:text-[16px] dark:prose-invert lg:hidden">
+              <div
+                data-blog-in
+                className="font-odia-body prose prose-neutral max-w-none prose-p:text-[15px] prose-p:leading-[1.85] prose-headings:font-odia prose-headings:tracking-tight md:prose-p:text-[16px] dark:prose-invert lg:hidden"
+              >
                 <BlogBodyBlocks blocks={post.body} />
               </div>
 
               <div
                 data-blog-in
-                className="hidden prose prose-neutral max-w-none prose-p:text-[15px] prose-p:leading-[1.85] prose-headings:font-display prose-headings:tracking-tight md:prose-p:text-[16px] dark:prose-invert lg:block"
+                className="font-odia-body prose prose-neutral hidden max-w-none prose-p:text-[15px] prose-p:leading-[1.85] prose-headings:font-odia prose-headings:tracking-tight md:prose-p:text-[16px] dark:prose-invert lg:block"
               >
                 <BlogBodyBlocks blocks={leftBody} />
               </div>
@@ -346,7 +349,7 @@ export function BlogDetailView({ post }: { post: BlogPost }) {
           >
             <div
               data-blog-in
-              className="hidden prose prose-neutral max-w-none prose-p:text-[15px] prose-p:leading-[1.85] prose-headings:font-display prose-headings:tracking-tight md:prose-p:text-[16px] dark:prose-invert lg:block"
+              className="font-odia-body prose prose-neutral hidden max-w-none prose-p:text-[15px] prose-p:leading-[1.85] prose-headings:font-odia prose-headings:tracking-tight md:prose-p:text-[16px] dark:prose-invert lg:block"
             >
               <BlogBodyBlocks blocks={rightBody} />
             </div>

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { DM_Sans, JetBrains_Mono, Libre_Baskerville, Syne } from "next/font/google";
+import { DM_Sans, JetBrains_Mono, Libre_Baskerville, Noto_Sans_Oriya, Syne } from "next/font/google";
 import { ScrollToTopOnNavigate } from "@/components/ScrollToTopOnNavigate";
 import { perfGuardScript } from "@/lib/perf-guard-script";
 import { site } from "@/lib/site";
@@ -30,6 +30,14 @@ const fontMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains",
   weight: ["400", "500"],
+});
+
+/** Odia (Oriya) — Noto Sans Oriya for blog headings & body (ଓଡ଼ିଆ + Latin). */
+const fontNotoSansOriya = Noto_Sans_Oriya({
+  subsets: ["oriya", "latin"],
+  variable: "--font-noto-sans-odia",
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const viewport: Viewport = {
@@ -81,8 +89,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${fontDisplay.variable} ${fontSerif.variable} ${fontBody.variable} ${fontMono.variable} h-full scroll-smooth antialiased`}
+      className={`${fontDisplay.variable} ${fontSerif.variable} ${fontBody.variable} ${fontMono.variable} ${fontNotoSansOriya.variable} h-full scroll-smooth antialiased`}
     >
       <body
         className="min-h-full min-h-[100dvh] bg-[var(--background)] font-body text-[var(--foreground)]"

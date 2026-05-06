@@ -89,6 +89,10 @@ html.dark {
   --font-serif: var(--font-libre), Georgia, serif;
   --font-body: var(--font-dm), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  /* Odia: Noto Sans Oriya (headings + article copy) */
+  --font-odia: var(--font-noto-sans-odia), var(--font-dm), system-ui, "Noto Sans Oriya", sans-serif;
+  --font-odia-body: var(--font-noto-sans-odia), var(--font-dm), system-ui, "Noto Sans Oriya",
+    sans-serif;
 }
 
 ::selection {

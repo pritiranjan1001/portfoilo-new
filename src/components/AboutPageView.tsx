@@ -228,10 +228,12 @@ export function AboutPageView() {
        * register GSAP. If we hide first and proxy comes later, triggers can miss and stay hidden.
        */
       if (!lenis) {
-        const safe = el.querySelectorAll(
-          ".about-anim-kicker-item, .about-anim-h1-line, .about-anim-job, .about-anim-bio-line, .about-anim-bio-p, .about-anim-bio-toggle, .about-find-heading-line, .about-find-row",
-        );
-        gsap.set(safe, { opacity: 1, y: 0, clearProps: "transform" });
+        const safe = Array.from(
+          el.querySelectorAll(
+            ".about-anim-kicker-item, .about-anim-h1-line, .about-anim-job, .about-anim-bio-line, .about-anim-bio-p, .about-anim-bio-toggle, .about-find-heading-line, .about-find-row",
+          ),
+        ) as Element[];
+        if (safe.length) gsap.set(safe, { opacity: 1, y: 0, clearProps: "transform" });
         el.querySelectorAll<HTMLElement>(".about-find-line").forEach((line) => {
           gsap.set(line, { scaleX: 1, clearProps: "transform" });
         });
@@ -239,15 +241,15 @@ export function AboutPageView() {
       }
       const stScroller = getNativeScrollScroller();
 
-      const kicker = el.querySelectorAll(".about-anim-kicker-item");
-      const h1Lines = el.querySelectorAll(".about-anim-h1-line");
-      const jobs = el.querySelectorAll(".about-anim-job");
-      const bioLines = el.querySelectorAll(".about-anim-bio-line");
-      const bioPs = el.querySelectorAll(".about-anim-bio-p");
+      const kicker = Array.from(el.querySelectorAll(".about-anim-kicker-item")) as HTMLElement[];
+      const h1Lines = Array.from(el.querySelectorAll(".about-anim-h1-line")) as HTMLElement[];
+      const jobs = Array.from(el.querySelectorAll(".about-anim-job")) as HTMLElement[];
+      const bioLines = Array.from(el.querySelectorAll(".about-anim-bio-line")) as HTMLElement[];
+      const bioPs = Array.from(el.querySelectorAll(".about-anim-bio-p")) as HTMLElement[];
       const bioToggle = el.querySelector(".about-anim-bio-toggle");
       const findBlock = el.querySelector(".about-find-block");
-      const findHead = el.querySelectorAll(".about-find-heading-line");
-      const findRows = el.querySelectorAll(".about-find-row");
+      const findHead = Array.from(el.querySelectorAll(".about-find-heading-line")) as HTMLElement[];
+      const findRows = Array.from(el.querySelectorAll(".about-find-row")) as HTMLElement[];
 
       if (shouldReduceMotion()) {
         gsap.set(
@@ -258,38 +260,41 @@ export function AboutPageView() {
           },
         );
         if (bioToggle) gsap.set(bioToggle, { opacity: 1, y: 0 });
-        gsap.set(findHead, { opacity: 1, y: 0 });
+        if (findHead.length) gsap.set(findHead, { opacity: 1, y: 0 });
         findRows.forEach((row) => {
           const line = row.querySelector(".about-find-line");
           const num = row.querySelector(".about-find-num");
           const lab = row.querySelector(".about-find-label");
-          gsap.set(line, { scaleX: 1 });
-          gsap.set([num, lab], { opacity: 1, y: 0 });
+          if (line) gsap.set(line, { scaleX: 1 });
+          if (num && lab) gsap.set([num, lab], { opacity: 1, y: 0 });
         });
         return;
       }
 
       gsap.set([...kicker, ...h1Lines, ...jobs], { opacity: 0, y: 28 });
-      gsap.set(bioLines, { opacity: 0, y: 32 });
-      gsap.set(bioPs, { opacity: 0, y: 36 });
+      if (bioLines.length) gsap.set(bioLines, { opacity: 0, y: 32 });
+      if (bioPs.length) gsap.set(bioPs, { opacity: 0, y: 36 });
       if (bioToggle) gsap.set(bioToggle, { opacity: 0, y: 14 });
-      gsap.set(findHead, { opacity: 0, y: 36 });
+      if (findHead.length) gsap.set(findHead, { opacity: 0, y: 36 });
       findRows.forEach((row) => {
         const line = row.querySelector(".about-find-line");
         const num = row.querySelector(".about-find-num");
         const lab = row.querySelector(".about-find-label");
-        gsap.set(line, { scaleX: 0, transformOrigin: "0% 50%" });
-        gsap.set([num, lab], { opacity: 0, y: 18 });
+        if (line) gsap.set(line, { scaleX: 0, transformOrigin: "0% 50%" });
+        if (num && lab) gsap.set([num, lab], { opacity: 0, y: 18 });
       });
 
       const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-      tl.to(kicker, {
-        opacity: 1,
-        y: 0,
-        duration: 0.65,
-        stagger: 0.09,
-      })
-        .to(
+      if (kicker.length) {
+        tl.to(kicker, {
+          opacity: 1,
+          y: 0,
+          duration: 0.65,
+          stagger: 0.09,
+        });
+      }
+      if (bioLines.length) {
+        tl.to(
           bioLines,
           {
             opacity: 1,
@@ -297,8 +302,9 @@ export function AboutPageView() {
             duration: 0.78,
             stagger: 0.14,
           },
-          "-=0.28",
+          kicker.length ? "-=0.28" : 0,
         );
+      }
 
       const bioIntroTargets: Element[] = [...bioPs];
       if (bioToggle) bioIntroTargets.push(bioToggle);
@@ -315,7 +321,8 @@ export function AboutPageView() {
         );
       }
 
-      tl.to(
+      if (h1Lines.length) {
+        tl.to(
           h1Lines,
           {
             opacity: 1,
@@ -324,8 +331,10 @@ export function AboutPageView() {
             stagger: 0.14,
           },
           "-=0.4",
-        )
-        .to(
+        );
+      }
+      if (jobs.length) {
+        tl.to(
           jobs,
           {
             opacity: 1,
@@ -333,8 +342,9 @@ export function AboutPageView() {
             duration: 0.55,
             stagger: 0.065,
           },
-          "-=0.45",
+          h1Lines.length ? "-=0.45" : "-=0.4",
         );
+      }
 
       let findTl: gsap.core.Timeline | undefined;
       if (findBlock && findRows.length > 0 && stScroller) {
@@ -347,13 +357,15 @@ export function AboutPageView() {
             invalidateOnRefresh: true,
           },
         });
-        findTimeline.to(findHead, {
-          opacity: 1,
-          y: 0,
-          duration: 0.72,
-          stagger: 0.14,
-          ease: "power2.out",
-        });
+        if (findHead.length) {
+          findTimeline.to(findHead, {
+            opacity: 1,
+            y: 0,
+            duration: 0.72,
+            stagger: 0.14,
+            ease: "power2.out",
+          });
+        }
         findRows.forEach((row, i) => {
           const line = row.querySelector(".about-find-line");
           const num = row.querySelector(".about-find-num");
@@ -394,7 +406,7 @@ export function AboutPageView() {
       registerGsapPlugins();
       const wrap = bioExtraRef.current;
       if (!wrap) return;
-      const extras = wrap.querySelectorAll(".about-bio-p-extra");
+      const extras = Array.from(wrap.querySelectorAll(".about-bio-p-extra")) as HTMLElement[];
       if (extras.length === 0) return;
 
       if (shouldReduceMotion()) {
@@ -423,13 +435,13 @@ export function AboutPageView() {
       const overlay = detailsOverlayRef.current;
       if (!overlay) return;
       const zoomPanel = overlay.querySelector(".about-details-zoom");
-      const heading = overlay.querySelectorAll(".about-details-heading-line");
-      const labels = overlay.querySelectorAll(".about-details-label");
+      const heading = Array.from(overlay.querySelectorAll(".about-details-heading-line")) as HTMLElement[];
+      const labels = Array.from(overlay.querySelectorAll(".about-details-label")) as HTMLElement[];
       if (!zoomPanel) return;
 
       if (shouldReduceMotion()) {
         gsap.set([zoomPanel, ...heading], { opacity: 1, x: 0, y: 0, scale: 1 });
-        gsap.set(labels, { opacity: 1, y: 0 });
+        if (labels.length) gsap.set(labels, { opacity: 1, y: 0 });
         return;
       }
 
@@ -439,15 +451,16 @@ export function AboutPageView() {
         scale: 0.88,
         transformOrigin: `${Math.round(detailsZoomOrigin.x * 100)}% ${Math.round(detailsZoomOrigin.y * 100)}%`,
       });
-      gsap.set(heading, { opacity: 0, y: 22 });
+      if (heading.length) gsap.set(heading, { opacity: 0, y: 22 });
 
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
       tl.to(zoomPanel, {
         opacity: 1,
         scale: 1,
         duration: 0.78,
-      })
-        .to(
+      });
+      if (heading.length) {
+        tl.to(
           heading,
           {
             opacity: 1,
@@ -457,6 +470,7 @@ export function AboutPageView() {
           },
           "-=0.35",
         );
+      }
 
       return () => tl.kill();
     },

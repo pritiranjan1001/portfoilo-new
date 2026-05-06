@@ -341,7 +341,8 @@ function Scene({
 
         <Birds
           enabled={!reduceMotion && !enterCabin}
-          color={isDark ? "rgba(255,255,255,0.55)" : "rgba(20,17,13,0.55)"}
+          color={isDark ? "#ffffff" : "#14110d"}
+          opacity={0.55}
         />
 
         {!enterCabin ? (
@@ -611,7 +612,15 @@ type BirdSeed = {
   scale: number;
 };
 
-function Birds({ enabled, color }: { enabled: boolean; color: string }) {
+function Birds({
+  enabled,
+  color,
+  opacity = 1,
+}: {
+  enabled: boolean;
+  color: string;
+  opacity?: number;
+}) {
   const mesh = useRef<THREE.InstancedMesh>(null);
   const tmp = useMemo(() => new THREE.Object3D(), []);
 
@@ -669,7 +678,7 @@ function Birds({ enabled, color }: { enabled: boolean; color: string }) {
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, birds.length]} position={[0, 0, 0]}>
       <tetrahedronGeometry args={[0.22, 0]} />
-      <meshStandardMaterial color={color} roughness={1} metalness={0} />
+      <meshStandardMaterial color={color} opacity={opacity} transparent roughness={1} metalness={0} />
     </instancedMesh>
   );
 }
@@ -819,7 +828,8 @@ function LowPolyVillage({
         wood={palette.wood}
         position={[3.4, terrainMain.posY + terrainHeightAt(terrainMain, 3.4, 2.0) + 0.06, 2.0]}
         smokeEnabled={!reduceMotion}
-        smokeColor={isDark ? "rgba(255,255,255,0.38)" : "rgba(255,255,255,0.26)"}
+        smokeColor="#ffffff"
+        smokeStrength={isDark ? 0.38 : 0.26}
         windowGlow={isDark ? 1.15 : 0.35}
         doorPortalRef={doorPortalRef}
         doorLeafRef={doorLeafRef}
@@ -1194,6 +1204,7 @@ function Cabin({
   position,
   smokeEnabled,
   smokeColor,
+  smokeStrength,
   windowGlow,
   doorPortalRef,
   doorLeafRef,
@@ -1204,7 +1215,9 @@ function Cabin({
   wood: string;
   position: [number, number, number];
   smokeEnabled: boolean;
+  /** RGB only — `THREE.Color` ignores alpha in rgba(); use `smokeStrength` for translucency. */
   smokeColor: string;
+  smokeStrength: number;
   windowGlow: number;
   doorPortalRef?: RefObject<THREE.Group | null>;
   doorLeafRef?: RefObject<THREE.Group | null>;
@@ -1355,12 +1368,21 @@ function Cabin({
         <boxGeometry args={[0.14, 0.35, 0.14]} />
         <meshStandardMaterial color={wood} roughness={1} />
       </mesh>
-      <ChimneySmoke enabled={smokeEnabled} color={smokeColor} />
+      <ChimneySmoke enabled={smokeEnabled} color={smokeColor} strength={smokeStrength} />
     </group>
   );
 }
 
-function ChimneySmoke({ enabled, color }: { enabled: boolean; color: string }) {
+function ChimneySmoke({
+  enabled,
+  color,
+  strength,
+}: {
+  enabled: boolean;
+  color: string;
+  /** Multiplies animated smoke opacity (replaces rgba alpha; THREE.Color has no alpha). */
+  strength: number;
+}) {
   const group = useRef<THREE.Group>(null);
 
   const tex = useMemo(() => {
@@ -1413,7 +1435,7 @@ function ChimneySmoke({ enabled, color }: { enabled: boolean; color: string }) {
       child.position.set(x, y, z);
       child.scale.setScalar(sc);
       const mat = child.material as THREE.SpriteMaterial;
-      mat.opacity = 0.55 * alpha;
+      mat.opacity = 0.55 * alpha * strength;
     }
   });
 
