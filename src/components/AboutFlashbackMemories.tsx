@@ -135,8 +135,9 @@ export function AboutFlashbackMemories({
     return () => ro.disconnect();
   }, [measure]);
 
-  const slideW = w > 0 ? w * 0.76 : 0;
-  const gap = w > 0 ? Math.max(12, w * 0.02) : 0;
+  /** Slightly wider hero slide + tighter gap for a more editorial, cinematic strip */
+  const slideW = w > 0 ? w * 0.8 : 0;
+  const gap = w > 0 ? Math.max(10, w * 0.018) : 0;
   const pad = w > 0 && slideW > 0 ? (w - slideW) / 2 : 0;
   const tx = pad - index * (slideW + gap);
 
@@ -483,7 +484,7 @@ export function AboutFlashbackMemories({
       const root = sectionRef.current;
       if (!root) return;
 
-      const head = root.querySelectorAll(".about-flashback-head");
+      const head = Array.from(root.querySelectorAll(".about-flashback-head"));
       const intro = root.querySelector(".about-flashback-intro");
       const chrome = root.querySelector(".about-flashback-carousel");
 
@@ -496,22 +497,22 @@ export function AboutFlashbackMemories({
       }
 
       if (shouldReduceMotion()) {
-        gsap.set([...head, intro, chrome], { opacity: 1, y: 0 });
+        gsap.set([...head, intro, chrome].filter(Boolean), { opacity: 1, y: 0 });
         return;
       }
 
       if (!lenis) {
-        gsap.set([...head, intro, chrome], { opacity: 1, y: 0 });
+        gsap.set([...head, intro, chrome].filter(Boolean), { opacity: 1, y: 0 });
         return;
       }
 
-      gsap.set(head, { opacity: 0, y: 28 });
-      gsap.set(intro, { opacity: 0, y: 20 });
-      gsap.set(chrome, { opacity: 0, y: 40 });
+      if (head.length) gsap.set(head, { opacity: 0, y: 28 });
+      if (intro) gsap.set(intro, { opacity: 0, y: 20 });
+      if (chrome) gsap.set(chrome, { opacity: 0, y: 40 });
 
       const stScroller = getNativeScrollScroller();
       if (!stScroller) {
-        gsap.set([...head, intro, chrome], { opacity: 1, y: 0 });
+        gsap.set([...head, intro, chrome].filter(Boolean), { opacity: 1, y: 0 });
         return;
       }
 
@@ -526,9 +527,15 @@ export function AboutFlashbackMemories({
         defaults: { ease: "power2.out" },
       });
 
-      tl.to(head, { opacity: 1, y: 0, duration: 0.75, stagger: 0.12 })
-        .to(intro, { opacity: 1, y: 0, duration: 0.6 }, "-=0.35")
-        .to(chrome, { opacity: 1, y: 0, duration: 0.85 }, "-=0.3");
+      if (head.length) {
+        tl.to(head, { opacity: 1, y: 0, duration: 0.75, stagger: 0.12 });
+      }
+      if (intro) {
+        tl.to(intro, { opacity: 1, y: 0, duration: 0.6 }, head.length ? "-=0.35" : 0);
+      }
+      if (chrome) {
+        tl.to(chrome, { opacity: 1, y: 0, duration: 0.85 }, intro || head.length ? "-=0.3" : 0);
+      }
 
       requestAnimationFrame(() => {
         ScrollTrigger.refresh();
@@ -590,11 +597,11 @@ export function AboutFlashbackMemories({
             }
           : undefined
       }
-      className={`about-flashback-block relative isolate overflow-hidden border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 ${
+      className={`about-flashback-block relative isolate overflow-hidden border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] shadow-[0_1px_0_color-mix(in_oklab,var(--foreground)_6%,transparent)] dark:border-neutral-800/80 dark:bg-[#070708] dark:bg-[radial-gradient(ellipse_100%_80%_at_50%_-18%,color-mix(in_oklab,var(--accent)_18%,transparent)_0%,transparent_50%),radial-gradient(ellipse_90%_60%_at_50%_100%,color-mix(in_oklab,var(--foreground)_6%,transparent)_0%,transparent_45%),#070708] dark:text-neutral-100 ${
         fullWidth
           ? "w-full max-w-none rounded-none border-x-0 border-b-0 border-t"
-          : "mt-10 rounded-sm border md:mt-12"
-      } ${overlayMode ? "border-0 bg-transparent outline-none focus:outline-none" : ""} ${
+          : "mt-10 rounded-2xl border md:mt-12 md:rounded-3xl"
+      } ${overlayMode ? "border-0 bg-transparent shadow-none outline-none focus:outline-none dark:bg-transparent" : ""} ${
         overlayMinimal ? "flex min-h-0 flex-1 flex-col" : ""
       } ${className ?? ""}`}
       aria-labelledby={headingId}
@@ -611,7 +618,7 @@ export function AboutFlashbackMemories({
         : null}
       {!overlayMinimal && <AboutFlashbackPatterns />}
       {!overlayMinimal ? (
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-[var(--accent)]/40 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-[2px] bg-gradient-to-r from-transparent via-[color-mix(in_oklab,var(--accent)_55%,transparent)] to-transparent opacity-90 dark:via-[color-mix(in_oklab,var(--accent)_70%,white_8%)]" />
       ) : null}
 
       <div
@@ -625,19 +632,22 @@ export function AboutFlashbackMemories({
       >
         {!overlayMinimal ? (
           <>
-            <p className="font-mono text-[10px] uppercase tracking-[0.32em] text-[var(--accent)]">
+            <p className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_oklab,var(--accent)_35%,var(--border))] bg-[color-mix(in_oklab,var(--accent)_10%,transparent)] px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.28em] text-[var(--accent)] dark:border-white/10 dark:bg-white/[0.06] dark:text-[color-mix(in_oklab,var(--accent)_92%,white)]">
+              <span className="h-1 w-1 rounded-full bg-[var(--accent)] shadow-[0_0_12px_color-mix(in_oklab,var(--accent)_80%,transparent)]" aria-hidden />
               {aboutFlashback.eyebrow}
             </p>
             <h2
               id={headingId}
-              className="mt-3 font-display text-[clamp(1.75rem,4vw,2.65rem)] font-bold leading-[0.98] tracking-tight"
+              className="mt-5 font-display text-[clamp(1.85rem,4.2vw,2.85rem)] font-bold leading-[0.98] tracking-tight md:mt-6"
             >
-              <span className="about-flashback-head whitespace-nowrap text-[var(--foreground)]">
-                {aboutFlashback.titleLine1}{" "}
-                <span className="text-[var(--muted)]">{aboutFlashback.titleLine2}</span>
+              <span className="about-flashback-head block max-w-[18ch] text-balance text-[var(--foreground)] md:max-w-none md:whitespace-nowrap">
+                <span className="inline-block bg-gradient-to-br from-[var(--foreground)] via-[var(--foreground)] to-[var(--muted)] bg-clip-text text-transparent dark:from-white dark:via-neutral-100 dark:to-neutral-400">
+                  {aboutFlashback.titleLine1}
+                </span>{" "}
+                <span className="text-[var(--muted)] dark:text-neutral-500">{aboutFlashback.titleLine2}</span>
               </span>
             </h2>
-            <p className="about-flashback-intro mt-4 max-w-2xl text-pretty text-sm leading-relaxed text-[var(--muted)] md:text-base">
+            <p className="about-flashback-intro mt-4 max-w-2xl text-pretty text-sm leading-relaxed text-[var(--muted)] md:mt-5 md:text-base md:leading-relaxed dark:text-neutral-400">
               {aboutFlashback.intro}
             </p>
           </>
@@ -657,22 +667,28 @@ export function AboutFlashbackMemories({
             className={
               overlayMinimal
                 ? "flex min-h-0 flex-1 flex-col max-lg:justify-center gap-4 lg:grid lg:grid-cols-[1fr_minmax(0,2.75rem)] lg:items-center lg:gap-5 xl:gap-6"
-                : "flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,3.5rem)_1fr_minmax(0,2.75rem)] lg:items-stretch lg:gap-6 xl:gap-8"
+                : "flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,4.25rem)_1fr_minmax(0,3.5rem)] lg:items-stretch lg:gap-7 xl:gap-10"
             }
           >
             {/* Slide counter — hidden in cabin overlay (single-screen gallery) */}
             {!overlayMinimal ? (
               <div
-                className="flex flex-row items-end gap-4 lg:flex-col lg:items-start lg:justify-center lg:gap-0"
+                className="flex flex-row items-end gap-4 lg:items-center lg:gap-5"
                 aria-hidden={false}
               >
-                <span className="font-display text-4xl tabular-nums leading-none text-[var(--foreground)] md:text-5xl">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <div className="hidden h-px w-10 bg-[var(--border-strong)] lg:block dark:bg-white/25" />
-                <span className="font-mono text-xs tabular-nums text-[var(--muted)] md:text-sm">
-                  {String(count).padStart(2, "0")}
-                </span>
+                <div
+                  className="hidden w-[3px] shrink-0 self-stretch rounded-full bg-gradient-to-b from-[var(--accent)] via-[color-mix(in_oklab,var(--accent)_40%,transparent)] to-transparent lg:block lg:min-h-[4.5rem]"
+                  aria-hidden
+                />
+                <div className="flex flex-row items-end gap-4 lg:flex-col lg:items-start lg:justify-center lg:gap-2">
+                  <span className="font-display text-4xl tabular-nums leading-none tracking-tight text-[var(--foreground)] md:text-5xl dark:text-white">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <div className="hidden h-px w-12 bg-gradient-to-r from-[var(--border-strong)] to-transparent lg:block dark:from-white/30" />
+                  <span className="font-mono text-[11px] tabular-nums tracking-[0.12em] text-[var(--muted)] md:text-xs dark:text-neutral-500">
+                    {String(count).padStart(2, "0")}
+                  </span>
+                </div>
               </div>
             ) : (
               <p className="sr-only" aria-live="polite">
@@ -694,7 +710,7 @@ export function AboutFlashbackMemories({
               } ${
                 overlayMinimal
                   ? "h-[min(58dvh,calc(100dvh-7.25rem))] max-h-[calc(100dvh-7.25rem)] sm:h-[min(60dvh,calc(100dvh-7.5rem))]"
-                  : "sm:min-h-[min(48vh,380px)] md:min-h-[min(58vh,520px)]"
+                  : "sm:min-h-[min(52vh,400px)] md:min-h-[min(62vh,560px)]"
               }`}
             >
               {w > 0 && slideW > 0 ? (
@@ -716,22 +732,22 @@ export function AboutFlashbackMemories({
                     return (
                       <div
                         key={`slide-${i}-${slide.src}`}
-                        className={`relative shrink-0 overflow-hidden rounded-sm bg-[var(--surface-elevated)] dark:bg-neutral-900 ${
-                          dim ? "opacity-[0.38]" : "opacity-100"
+                        className={`relative shrink-0 overflow-hidden rounded-2xl bg-[var(--surface-elevated)] shadow-[0_18px_50px_-28px_rgba(15,15,18,0.35)] ring-1 ring-black/[0.06] dark:bg-neutral-900/90 dark:shadow-[0_28px_70px_-36px_rgba(0,0,0,0.75)] dark:ring-white/[0.08] ${
+                          dim ? "opacity-[0.42] saturate-[0.88]" : "opacity-100 ring-[color-mix(in_oklab,var(--accent)_28%,transparent)] dark:ring-[color-mix(in_oklab,var(--accent)_35%,transparent)]"
                         } ${overlayMinimal ? "flex h-full min-h-0 flex-col" : ""}`}
                         style={{
                           width: slideW,
-                          transition: reduce ? "none" : "opacity 0.45s ease",
+                          transition: reduce ? "none" : "opacity 0.5s ease, box-shadow 0.5s ease, filter 0.5s ease",
                         }}
                         aria-hidden={!isActive}
                         aria-current={isActive ? "true" : undefined}
                       >
                         <div
-                          className={
+                          className={`${
                             overlayMinimal
                               ? "relative min-h-0 w-full flex-1"
                               : "relative aspect-[16/10] w-full md:aspect-[16/9]"
-                          }
+                          } ${dim && !reduce ? "scale-[0.98] transition-transform duration-500 ease-out" : "scale-100 transition-transform duration-500 ease-out"}`}
                         >
                           {slide.kind === "image" ? (
                             <Image
@@ -740,7 +756,7 @@ export function AboutFlashbackMemories({
                               fill
                               draggable={false}
                               className="object-cover"
-                              sizes="(max-width: 1024px) 76vw, 58vw"
+                              sizes="(max-width: 1024px) 82vw, 64vw"
                               priority={i === 0}
                             />
                           ) : slide.poster ? (
@@ -764,17 +780,17 @@ export function AboutFlashbackMemories({
                                   fill
                                   draggable={false}
                                   className={`object-cover ${isActive ? "" : "opacity-85"}`}
-                                  sizes="(max-width: 1024px) 76vw, 58vw"
+                                  sizes="(max-width: 1024px) 82vw, 64vw"
                                 />
                               )}
                               {isActive && !videoReady ? (
                                 <button
                                   type="button"
                                   onClick={startVideo}
-                                  className="group/watch absolute bottom-5 right-5 flex h-28 w-28 flex-col items-center justify-center rounded-full border border-dashed border-[var(--border-strong)] bg-white/90 text-center text-[9px] font-mono uppercase tracking-[0.18em] text-[var(--foreground)] shadow-sm backdrop-blur-sm transition hover:border-[var(--accent)] hover:bg-white dark:border-white/35 dark:bg-black/25 dark:text-white/90 dark:shadow-none dark:hover:border-white/55 dark:hover:bg-black/40 md:h-32 md:w-32 md:text-[10px]"
+                                  className="group/watch absolute bottom-5 right-5 flex h-[7.25rem] w-[7.25rem] flex-col items-center justify-center rounded-full border border-white/25 bg-[color-mix(in_oklab,var(--foreground)_8%,white)]/90 text-center text-[9px] font-mono uppercase tracking-[0.2em] text-[var(--foreground)] shadow-[0_12px_40px_-12px_rgba(0,0,0,0.35)] backdrop-blur-md transition hover:scale-[1.03] hover:border-[color-mix(in_oklab,var(--accent)_55%,white)] hover:shadow-[0_16px_48px_-10px_color-mix(in_oklab,var(--accent)_35%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] dark:border-white/20 dark:bg-black/45 dark:text-white dark:shadow-[0_20px_50px_-16px_rgba(0,0,0,0.65)] dark:hover:border-[color-mix(in_oklab,var(--accent)_60%,white)] md:bottom-6 md:right-6 md:h-32 md:w-32 md:text-[10px]"
                                   aria-label="Watch video"
                                 >
-                                  <span className="mb-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] dark:border-white/40 dark:bg-white/10">
+                                  <span className="mb-1.5 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-[0_6px_20px_color-mix(in_oklab,var(--accent)_45%,transparent)] ring-2 ring-white/30 transition group-hover/watch:scale-105 dark:ring-black/20">
                                     <svg
                                       viewBox="0 0 24 24"
                                       className="ml-0.5 h-4 w-4 fill-current"
@@ -783,10 +799,8 @@ export function AboutFlashbackMemories({
                                       <path d="M8 5v14l11-7z" />
                                     </svg>
                                   </span>
-                                  <span className="max-w-[5.5rem] leading-tight">
-                                    Watch
-                                    <br />
-                                    video
+                                  <span className="max-w-[6rem] leading-snug text-[var(--foreground)]/90 dark:text-white/90">
+                                    Watch video
                                   </span>
                                 </button>
                               ) : null}
@@ -815,20 +829,21 @@ export function AboutFlashbackMemories({
                           {/* Bottom-left copy block — reference style */}
                           {isActive ? (
                             <div
-                              className={`absolute bottom-0 left-0 z-[2] border border-[var(--border)]/60 bg-white/92 shadow-2xl backdrop-blur-md dark:border-transparent dark:bg-zinc-900/88 ${
+                              className={`absolute bottom-0 left-0 z-[2] overflow-hidden rounded-tr-2xl border border-white/20 bg-gradient-to-br from-white/95 via-white/88 to-white/75 shadow-[0_20px_50px_-24px_rgba(0,0,0,0.28)] backdrop-blur-xl before:pointer-events-none before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-[var(--accent)] dark:border-white/10 dark:from-zinc-950/92 dark:via-zinc-950/88 dark:to-zinc-950/75 dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.65)] ${
                                 overlayMinimal
-                                  ? "m-2 max-w-[min(100%,17rem)] p-3 sm:m-3 sm:p-4"
-                                  : "m-3 max-w-[min(100%,20rem)] p-4 sm:m-4 md:max-w-sm md:p-5"
+                                  ? "m-2 max-w-[min(100%,18rem)] p-3.5 sm:m-3 sm:max-w-[min(100%,20rem)] sm:p-4"
+                                  : "m-3 max-w-[min(100%,22rem)] p-4 sm:m-4 sm:rounded-tr-3xl md:max-w-md md:p-6"
                               }`}
                             >
-                              <p className="font-display text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--foreground)] md:text-xs dark:text-white">
+                              <p className="font-display text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)] md:text-[11px] dark:text-[color-mix(in_oklab,var(--accent)_90%,white)]">
                                 {slide.title}
                               </p>
-                              <p className="mt-2 font-body text-xs leading-relaxed text-[var(--muted)] md:text-sm dark:text-neutral-300">
+                              <p className="mt-2 font-body text-xs leading-relaxed text-[var(--foreground)]/85 md:text-sm dark:text-neutral-200">
                                 {slide.description}
                               </p>
                               {slide.year ? (
-                                <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--muted)] dark:text-neutral-500">
+                                <p className="mt-3 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--muted)] dark:text-neutral-500">
+                                  <span className="h-px w-6 bg-[var(--border-strong)] dark:bg-white/20" aria-hidden />
                                   {slide.year}
                                 </p>
                               ) : null}
@@ -851,29 +866,34 @@ export function AboutFlashbackMemories({
             </div>
 
             {/* Arrows — reference: prev thin, next in circle */}
-            <div className="flex flex-row items-center justify-center gap-6 lg:flex-col lg:justify-center lg:gap-5">
+            <div className="flex flex-row items-center justify-center gap-4 sm:gap-5 lg:flex-col lg:justify-center lg:gap-4">
               <button
                 type="button"
-                className="group flex h-11 w-11 items-center justify-center text-[var(--foreground)]/75 transition hover:text-[var(--foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] dark:text-white/80 dark:hover:text-white"
+                className="group flex h-12 w-12 items-center justify-center rounded-full border border-[color-mix(in_oklab,var(--foreground)_12%,var(--border)))] bg-[color-mix(in_oklab,var(--surface-elevated)_92%,white)] text-lg text-[var(--foreground)]/80 shadow-sm backdrop-blur-sm transition hover:border-[color-mix(in_oklab,var(--accent)_45%,var(--border)))] hover:text-[var(--foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] dark:border-white/12 dark:bg-white/[0.07] dark:text-white/85 dark:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.5)] dark:hover:border-white/25 dark:hover:bg-white/[0.12] md:h-14 md:w-14 md:text-xl"
                 aria-label="Previous memory"
                 onClick={() => go(-1)}
               >
-                <span className="text-2xl font-light leading-none">←</span>
+                <span className="transition group-hover:-translate-x-0.5" aria-hidden>
+                  ←
+                </span>
               </button>
               <button
                 type="button"
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] text-[var(--foreground)] shadow-md transition hover:bg-[color-mix(in_oklab,var(--surface-elevated)_92%,var(--foreground))] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] dark:border-transparent dark:bg-neutral-800 dark:text-white dark:shadow-lg dark:hover:bg-neutral-700 md:h-14 md:w-14"
+                className="group flex h-12 w-12 items-center justify-center rounded-full border border-[color-mix(in_oklab,var(--accent)_35%,var(--border)))] bg-[var(--foreground)] text-lg text-[var(--background)] shadow-[0_10px_30px_-8px_color-mix(in_oklab,var(--foreground)_35%,transparent)] transition hover:scale-[1.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] dark:border-[color-mix(in_oklab,var(--accent)_40%,transparent)] dark:bg-white dark:text-neutral-950 dark:shadow-[0_14px_40px_-10px_rgba(0,0,0,0.55)] dark:hover:bg-neutral-100 md:h-14 md:w-14 md:text-xl"
                 aria-label="Next memory"
                 onClick={() => go(1)}
               >
-                <span className="text-xl font-light leading-none md:text-2xl">→</span>
+                <span className="transition group-hover:translate-x-0.5" aria-hidden>
+                  →
+                </span>
               </button>
             </div>
           </div>
 
           {!overlayMinimal ? (
-            <p className="mt-6 hidden font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--muted)] sm:block">
-              Arrow keys · Drag · Prev / Next
+            <p className="mt-8 hidden items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--muted)] sm:flex dark:text-neutral-500">
+              <span className="h-1 w-1 rounded-full bg-[var(--muted)]/60" aria-hidden />
+              Arrow keys · drag · prev / next
             </p>
           ) : null}
         </div>

@@ -1002,8 +1002,8 @@ export function AboutPageView() {
                     onClick={() => setDetailsOpen(false)}
                   />
                   <div className="pointer-events-none relative z-10 h-full w-full">
-                    <div className="about-details-zoom pointer-events-auto flex h-full w-full flex-col overflow-y-auto overscroll-contain border-0 bg-[color-mix(in_oklab,var(--surface)_95%,var(--background))]">
-                      <div className="min-h-0 flex flex-1 items-center px-4 py-10 text-left sm:px-6 sm:py-12 md:px-10 md:py-14">
+                    <div className="about-details-zoom pointer-events-auto relative isolate flex h-full w-full flex-col overflow-y-auto overscroll-contain border-0">
+                      <div className="relative z-10 min-h-0 flex flex-1 items-center px-4 py-10 text-left sm:px-6 sm:py-12 md:px-10 md:py-14">
                         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-6 sm:gap-8 md:gap-10">
                           <div className="relative mb-6 grid grid-cols-1 items-start justify-items-center gap-y-3 sm:mb-8 sm:gap-y-4 md:mb-10 md:grid-cols-[1fr_auto] md:justify-items-stretch md:gap-x-6 md:gap-y-2">
                             <div className="min-w-0">
