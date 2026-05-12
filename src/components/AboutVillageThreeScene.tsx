@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Sparkles } from "@react-three/drei";
+import { Sparkles, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import {
   useCallback,
@@ -106,6 +106,32 @@ function makeCabinSmokeVignetteTexture() {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = THREE.ClampToEdgeWrapping;
   tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+/** Soft disc for window “lamp” bloom — `toneMapped: false` so it reads like UI hotspots under ACES. */
+function makeWindowBloomTexture() {
+  const size = 256;
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d");
+  if (!ctx) return null;
+  const cx = size * 0.5;
+  const cy = size * 0.5;
+  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.5);
+  g.addColorStop(0, "rgba(255, 252, 248, 1)");
+  g.addColorStop(0.18, "rgba(255, 238, 210, 0.72)");
+  g.addColorStop(0.42, "rgba(255, 210, 150, 0.35)");
+  g.addColorStop(0.72, "rgba(255, 170, 90, 0.12)");
+  g.addColorStop(1, "rgba(255, 140, 60, 0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.minFilter = THREE.LinearFilter;
+  tex.magFilter = THREE.LinearFilter;
   tex.needsUpdate = true;
   return tex;
 }
@@ -346,16 +372,40 @@ function Scene({
         />
 
         {!enterCabin ? (
-        <Sparkles
-          count={48}
-          speed={0}
-          size={1.8}
-          opacity={isDark ? 0.18 : 0.12}
-          color={palette.sun}
-          scale={[Math.max(18, viewport.width * 1.8), 6, 14]}
-          position={[0, 1.0, -4]}
-          noise={0.8}
-        />
+          isDark ? (
+            <>
+              <Stars
+                radius={72}
+                depth={28}
+                count={reduceMotion ? 900 : 1800}
+                factor={3.2}
+                saturation={0.1}
+                fade
+                speed={reduceMotion ? 0 : 0.28}
+              />
+              <Sparkles
+                count={reduceMotion ? 40 : 88}
+                speed={reduceMotion ? 0 : 0.2}
+                size={2.45}
+                opacity={0.48}
+                color="#eaf4ff"
+                scale={[Math.max(24, viewport.width * 2.05), 10, 18]}
+                position={[0, 2.35, -5.5]}
+                noise={0.62}
+              />
+            </>
+          ) : (
+            <Sparkles
+              count={48}
+              speed={0}
+              size={1.8}
+              opacity={0.12}
+              color={palette.sun}
+              scale={[Math.max(18, viewport.width * 1.8), 6, 14]}
+              position={[0, 1.0, -4]}
+              noise={0.8}
+            />
+          )
         ) : null}
       </group>
 
@@ -831,6 +881,7 @@ function LowPolyVillage({
         smokeColor="#ffffff"
         smokeStrength={isDark ? 0.38 : 0.26}
         windowGlow={isDark ? 1.15 : 0.35}
+        isDark={isDark}
         doorPortalRef={doorPortalRef}
         doorLeafRef={doorLeafRef}
         enterCabin={enterCabin}
@@ -1206,6 +1257,7 @@ function Cabin({
   smokeColor,
   smokeStrength,
   windowGlow,
+  isDark,
   doorPortalRef,
   doorLeafRef,
   enterCabin,
@@ -1219,10 +1271,17 @@ function Cabin({
   smokeColor: string;
   smokeStrength: number;
   windowGlow: number;
+  isDark: boolean;
   doorPortalRef?: RefObject<THREE.Group | null>;
   doorLeafRef?: RefObject<THREE.Group | null>;
   enterCabin: boolean;
 }) {
+  const windowBloomMap = useMemo(() => (isDark ? makeWindowBloomTexture() : null), [isDark]);
+  useEffect(() => () => windowBloomMap?.dispose(), [windowBloomMap]);
+
+  /** Strong lamp read only in dark mode; light mode keeps the original subtle emissive. */
+  const emissiveIntensity = windowGlow * (isDark ? 0.62 : 0.22);
+
   return (
     <group position={position} rotation={[0, 0.18, 0]}>
       {/* base deck */}
@@ -1256,6 +1315,16 @@ function Cabin({
       <group position={[0, 0, 0.605]}>
         {/* WINDOW (left): frame + glass + interior glow — not a solid wall patch */}
         <group position={[0.14, 0.32, 0.055]}>
+          {!enterCabin && isDark ? (
+            <pointLight
+              position={[0, 0, 0.28]}
+              color="#ffd8b0"
+              intensity={1.05}
+              distance={3.2}
+              decay={2}
+            />
+          ) : null}
+
           {/* Warm interior (recessed “room”) */}
           <mesh position={[0, 0, -0.045]}>
             <planeGeometry args={[0.36, 0.22]} />
@@ -1263,11 +1332,41 @@ function Cabin({
               color={"#1a140f"}
               roughness={1}
               metalness={0}
-              emissive={"#ffd7a6"}
-              emissiveIntensity={windowGlow * 0.22}
+              emissive={isDark ? "#ffe8c8" : "#ffd7a6"}
+              emissiveIntensity={emissiveIntensity}
               side={THREE.DoubleSide}
             />
           </mesh>
+
+          {/* Billboard bloom — dark mode only (matches `.hotspot` perceptual brightness; no bloom pass). */}
+          {!enterCabin && isDark && windowBloomMap ? (
+            <>
+              <sprite position={[0, 0, -0.02]} scale={[0.68, 0.46, 1]}>
+                <spriteMaterial
+                  map={windowBloomMap}
+                  color="#fffaf4"
+                  transparent
+                  opacity={0.55}
+                  depthWrite={false}
+                  depthTest
+                  toneMapped={false}
+                  blending={THREE.AdditiveBlending}
+                />
+              </sprite>
+              <sprite position={[0, 0, -0.015]} scale={[0.42, 0.28, 1]}>
+                <spriteMaterial
+                  map={windowBloomMap}
+                  color="#fff2dc"
+                  transparent
+                  opacity={0.72}
+                  depthWrite={false}
+                  depthTest
+                  toneMapped={false}
+                  blending={THREE.AdditiveBlending}
+                />
+              </sprite>
+            </>
+          ) : null}
 
           {/* Wood frame (opening, not a filled rectangle) */}
           <mesh position={[0, 0.2, 0]}>
@@ -1298,6 +1397,8 @@ function Cabin({
               thickness={0.08}
               transparent
               toneMapped={false}
+              emissive={isDark ? "#ffd6a0" : "#000000"}
+              emissiveIntensity={isDark ? 0.14 : 0}
             />
           </mesh>
 
