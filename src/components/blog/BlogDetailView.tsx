@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import type { BlogBodyBlock, BlogPost } from "@/content/blog";
@@ -16,6 +16,42 @@ function formatBlogDateTime(iso: string) {
   const date = d.toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
   const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   return { date, time };
+}
+
+function blogLangStorageKey(slug: string) {
+  return `blog-lang:${slug}`;
+}
+
+function BlogLanguageToggle({
+  value,
+  onChange,
+}: {
+  value: "en" | "odia";
+  onChange: (next: "en" | "odia") => void;
+}) {
+  const base =
+    "rounded-full px-3 py-1.5 text-[11px] font-semibold tracking-wide focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+  const idle = "text-[var(--muted)] hover:text-[var(--foreground)]";
+  const active = "bg-[color-mix(in_oklab,var(--accent)_22%,var(--surface-elevated))] text-[var(--foreground)] shadow-sm dark:bg-[color-mix(in_oklab,var(--accent)_18%,transparent)]";
+  return (
+    <div
+      className="inline-flex rounded-full border border-[color-mix(in_oklab,var(--border)_88%,transparent)] bg-[color-mix(in_oklab,var(--surface-elevated)_45%,transparent)] p-0.5 dark:bg-[color-mix(in_oklab,var(--surface-elevated)_28%,transparent)]"
+      role="group"
+      aria-label="Article language"
+    >
+      <button type="button" className={`${base} ${value === "en" ? active : idle}`} aria-pressed={value === "en"} onClick={() => onChange("en")}>
+        English
+      </button>
+      <button
+        type="button"
+        className={`${base} font-odia ${value === "odia" ? active : idle}`}
+        aria-pressed={value === "odia"}
+        onClick={() => onChange("odia")}
+      >
+        ଓଡ଼ିଆ
+      </button>
+    </div>
+  );
 }
 
 function SocialRail({ items }: { items: readonly { label: string; href?: string }[] }) {
@@ -137,8 +173,39 @@ export function BlogDetailView({ post }: { post: BlogPost }) {
   const root = useRef<HTMLElement>(null);
   const palette = useMemo(() => post.palette, [post.palette]);
   const { date, time } = useMemo(() => formatBlogDateTime(post.date), [post.date]);
-  const { left: leftBody, right: rightBody } = useMemo(() => splitBodyBlocks(post.body), [post.body]);
-  const singleColumnArticle = rightBody.length === 0;
+
+  const [articleLang, setArticleLang] = useState<"en" | "odia">("en");
+
+  useEffect(() => {
+    try {
+      const v = window.sessionStorage.getItem(blogLangStorageKey(post.slug));
+      if (v === "odia") setArticleLang("odia");
+    } catch {
+      /* private mode */
+    }
+  }, [post.slug]);
+
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(blogLangStorageKey(post.slug), articleLang);
+    } catch {
+      /* private mode */
+    }
+  }, [articleLang, post.slug]);
+
+  const activeTitle = articleLang === "odia" ? post.odiaTranslation.title : post.title;
+  const activeSecondary =
+    articleLang === "odia" ? post.odiaTranslation.secondaryHeadline : post.secondaryHeadline;
+  const activeBody = articleLang === "odia" ? post.odiaTranslation.body : post.body;
+  const articleLangAttr = articleLang === "odia" ? "or" : "en";
+
+  /** Column split follows English body so toggling language only swaps text. */
+  const layoutSplit = useMemo(() => splitBodyBlocks(post.body), [post.body]);
+
+  const splitAt = layoutSplit.left.length;
+  const leftBody = useMemo(() => activeBody.slice(0, splitAt), [activeBody, splitAt]);
+  const rightBody = useMemo(() => activeBody.slice(splitAt), [activeBody, splitAt]);
+  const singleColumnArticle = layoutSplit.right.length === 0;
 
   useGSAP(
     () => {
@@ -187,14 +254,19 @@ export function BlogDetailView({ post }: { post: BlogPost }) {
 
       <article className="relative mx-auto w-full max-w-6xl px-[max(1rem,env(safe-area-inset-left))] pb-24 md:px-8">
         <div className="relative">
-          <div className="flex items-center justify-between gap-4 py-5" data-blog-in>
+          <div className="relative flex min-h-[2.75rem] items-center justify-between gap-4 py-5" data-blog-in>
             <Link
               href="/blog"
-              className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)] transition-colors hover:text-[var(--foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]"
+              className="relative z-[1] font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)] transition-colors hover:text-[var(--foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]"
             >
               ← Journal
             </Link>
-            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">Blog</p>
+            <div className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center">
+              <div className="pointer-events-auto">
+                <BlogLanguageToggle value={articleLang} onChange={setArticleLang} />
+              </div>
+            </div>
+            <p className="relative z-[1] font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">Blog</p>
           </div>
           <div data-blog-line="x" className="h-px w-full bg-[color-mix(in_oklab,var(--border)_92%,transparent)]" />
         </div>
@@ -203,9 +275,10 @@ export function BlogDetailView({ post }: { post: BlogPost }) {
         <header className="px-4 py-10 md:px-10 md:py-14">
           <h1
             data-blog-in
+            lang={articleLangAttr}
             className="mx-auto max-w-[min(52rem,92vw)] text-balance text-center font-odia text-[clamp(2.05rem,4.6vw,3.55rem)] font-semibold leading-[1.02] tracking-tight"
           >
-            {post.title}
+            {activeTitle}
           </h1>
         </header>
 
@@ -310,8 +383,11 @@ export function BlogDetailView({ post }: { post: BlogPost }) {
                 Blog — Posted {date}
                 {time ? `, ${time}` : ""}
               </p>
-              <h2 className="mt-6 max-w-md text-balance font-odia text-[clamp(1.35rem,2.4vw,1.85rem)] font-semibold leading-snug tracking-tight">
-                {post.secondaryHeadline}
+              <h2
+                lang={articleLangAttr}
+                className="mt-6 max-w-md text-balance font-odia text-[clamp(1.35rem,2.4vw,1.85rem)] font-semibold leading-snug tracking-tight"
+              >
+                {activeSecondary}
               </h2>
               <div className="mt-8 flex flex-wrap gap-2">
                 {post.tags.map((t) => (
@@ -328,13 +404,15 @@ export function BlogDetailView({ post }: { post: BlogPost }) {
             <div className="mt-10 lg:mt-12">
               <div
                 data-blog-in
+                lang={articleLangAttr}
                 className="font-odia-body prose prose-neutral max-w-none prose-p:text-[15px] prose-p:leading-[1.85] prose-headings:font-odia prose-headings:tracking-tight md:prose-p:text-[16px] dark:prose-invert lg:hidden"
               >
-                <BlogBodyBlocks blocks={post.body} />
+                <BlogBodyBlocks blocks={activeBody} />
               </div>
 
               <div
                 data-blog-in
+                lang={articleLangAttr}
                 className="font-odia-body prose prose-neutral hidden max-w-none prose-p:text-[15px] prose-p:leading-[1.85] prose-headings:font-odia prose-headings:tracking-tight md:prose-p:text-[16px] dark:prose-invert lg:block"
               >
                 <BlogBodyBlocks blocks={leftBody} />
@@ -349,6 +427,7 @@ export function BlogDetailView({ post }: { post: BlogPost }) {
           >
             <div
               data-blog-in
+              lang={articleLangAttr}
               className="font-odia-body prose prose-neutral hidden max-w-none prose-p:text-[15px] prose-p:leading-[1.85] prose-headings:font-odia prose-headings:tracking-tight md:prose-p:text-[16px] dark:prose-invert lg:block"
             >
               <BlogBodyBlocks blocks={rightBody} />
