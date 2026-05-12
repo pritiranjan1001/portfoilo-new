@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AboutPageView } from "@/components/AboutPageView";
 import { LenisScroll } from "@/components/LenisScroll";
+import { PageRoutePreloader } from "@/components/PageRoutePreloader";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -10,8 +11,10 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <LenisScroll>
-      <AboutPageView />
-    </LenisScroll>
+    <PageRoutePreloader pageLabel="About">
+      <LenisScroll>
+        <AboutPageView />
+      </LenisScroll>
+    </PageRoutePreloader>
   );
 }

@@ -1,0 +1,401 @@
+/* Cinematic route preloader — editorial layout, ambient depth, staggered type */
+
+.contentRoot {
+  width: 100%;
+  min-height: 100dvh;
+}
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 2.5rem);
+  pointer-events: auto;
+  isolation: isolate;
+  background: var(--background);
+}
+
+.ambient {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ambientBlobA,
+.ambientBlobB {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.55;
+  will-change: transform, opacity;
+}
+
+.ambientBlobA {
+  width: min(72vw, 42rem);
+  height: min(72vw, 42rem);
+  left: -18%;
+  top: -22%;
+  background: radial-gradient(
+    circle at 40% 40%,
+    color-mix(in oklab, var(--accent) 42%, transparent) 0%,
+    color-mix(in oklab, var(--glow-2) 18%, transparent) 45%,
+    transparent 70%
+  );
+  animation: ambient-drift-a 22s ease-in-out infinite;
+}
+
+.ambientBlobB {
+  width: min(85vw, 48rem);
+  height: min(85vw, 48rem);
+  right: -24%;
+  bottom: -28%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklab, var(--accent-soft) 28%, transparent) 0%,
+    color-mix(in oklab, var(--foreground) 8%, transparent) 50%,
+    transparent 68%
+  );
+  animation: ambient-drift-b 28s ease-in-out infinite;
+}
+
+.root[data-reduce="1"] .ambientBlobA,
+.root[data-reduce="1"] .ambientBlobB {
+  animation: none;
+  opacity: 0.38;
+}
+
+@keyframes ambient-drift-a {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(4%, 6%) scale(1.06);
+    opacity: 0.62;
+  }
+}
+
+@keyframes ambient-drift-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1.02);
+    opacity: 0.42;
+  }
+  50% {
+    transform: translate(-5%, -4%) scale(1.08);
+    opacity: 0.55;
+  }
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 min(100px, 14vw) color-mix(in oklab, var(--foreground) 14%, transparent),
+    inset 0 0 min(220px, 28vw) color-mix(in oklab, var(--background) 55%, transparent);
+}
+
+.shell {
+  position: relative;
+  width: min(36rem, 100%);
+  z-index: 1;
+}
+
+.plate {
+  position: relative;
+  padding: clamp(1.75rem, 4.5vw, 2.75rem) clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid color-mix(in oklab, var(--foreground) 11%, transparent);
+  background: color-mix(in oklab, var(--surface) 58%, transparent);
+  box-shadow:
+    0 1px 0 color-mix(in oklab, var(--foreground) 6%, transparent),
+    0 24px 80px color-mix(in oklab, var(--foreground) 6%, transparent),
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 5%, transparent);
+  backdrop-filter: blur(20px) saturate(1.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+}
+
+.plateGlow {
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--accent) 22%, transparent) 0%,
+    transparent 42%,
+    color-mix(in oklab, var(--glow-2) 12%, transparent) 100%
+  );
+  opacity: 0.35;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+}
+
+.mainCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.85rem, 2.5vw, 1.15rem);
+}
+
+.birdRing {
+  width: clamp(5.75rem, 20vw, 7.25rem);
+  height: clamp(5.75rem, 20vw, 7.25rem);
+  color: color-mix(in oklab, var(--foreground) 68%, var(--accent));
+}
+
+.birdSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.ringStroke {
+  fill: none;
+}
+
+.ringSpin {
+  transform-origin: 0 0;
+  animation: ring-spin 22s linear infinite;
+}
+
+.ringStrokeInner {
+  fill: none;
+}
+
+.root[data-reduce="1"] .ringSpin {
+  animation: none;
+}
+
+@keyframes ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.birdOrbit {
+  transform-origin: 0 0;
+  animation: bird-orbit 11s linear infinite;
+}
+
+.root[data-reduce="1"] .birdOrbit {
+  animation: none;
+}
+
+@keyframes bird-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.birdTail {
+  fill: currentColor;
+  opacity: 0.88;
+}
+
+.birdBody {
+  fill: currentColor;
+}
+
+.birdWing {
+  fill: color-mix(in oklab, currentColor 78%, transparent);
+  opacity: 0.96;
+  transform-origin: 0 0;
+  transform-box: fill-box;
+  animation: wing-flap 0.32s ease-in-out infinite alternate;
+}
+
+.root[data-reduce="1"] .birdWing {
+  animation: none;
+}
+
+@keyframes wing-flap {
+  from {
+    transform: rotate(-6deg);
+  }
+  to {
+    transform: rotate(14deg);
+  }
+}
+
+.birdEye {
+  fill: var(--background);
+  opacity: 0.96;
+}
+
+.birdPupil {
+  fill: currentColor;
+}
+
+.pageTag {
+  margin: 0;
+  font-family: var(--font-syne), system-ui, sans-serif;
+  font-size: clamp(0.72rem, 2vw, 0.82rem);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--muted) 55%, var(--foreground));
+}
+
+.meter {
+  margin-top: clamp(1.35rem, 3.5vw, 1.85rem);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.meterDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--accent) 70%, var(--foreground));
+  opacity: 0.35;
+  animation: meter-dot 1.2s ease-in-out infinite;
+}
+
+.meterDot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.meterDot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.root[data-reduce="1"] .meterDot {
+  animation: none;
+  opacity: 0.5;
+}
+
+@keyframes meter-dot {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.meterTrack {
+  flex: 1;
+  height: 2px;
+  margin-left: 0.25rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--foreground) 8%, transparent);
+  overflow: hidden;
+}
+
+.meterFill {
+  display: block;
+  height: 100%;
+  width: 38%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--accent) 90%, white),
+    color-mix(in oklab, var(--accent-soft) 70%, white),
+    transparent
+  );
+  animation: meter-sweep 1.35s ease-in-out infinite;
+}
+
+.root[data-reduce="1"] .meterFill {
+  animation: none;
+  width: 55%;
+  opacity: 0.45;
+}
+
+@keyframes meter-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+.root[data-phase="boot"] .plate {
+  opacity: 0;
+  transform: translateY(18px);
+  filter: blur(12px);
+  transition: none;
+}
+
+.root[data-phase="boot"] .birdRing,
+.root[data-phase="boot"] .pageTag,
+.root[data-phase="boot"] .meter {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: none;
+}
+
+.root[data-phase="loading"] .plate,
+.root[data-phase="exit"] .plate {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+  transition:
+    opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.65s ease;
+}
+
+.root[data-phase="loading"] .birdRing,
+.root[data-phase="exit"] .birdRing {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 0.55s ease 0.06s,
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.06s;
+}
+
+.root[data-phase="loading"] .pageTag,
+.root[data-phase="exit"] .pageTag {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 0.5s ease 0.16s,
+    transform 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.16s;
+}
+
+.root[data-phase="loading"] .meter,
+.root[data-phase="exit"] .meter {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 0.5s ease 0.36s,
+    transform 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.36s;
+}
+
+.root[data-phase="exit"] {
+  pointer-events: none;
+  animation: preloader-exit 1s cubic-bezier(0.4, 0, 0.2, 1) forwards 0.04s;
+}
+
+.root[data-reduce="1"][data-phase="exit"] {
+  animation: preloader-exit 0.38s ease forwards;
+}
+
+@keyframes preloader-exit {
+  to {
+    opacity: 0;
+    filter: blur(14px) saturate(0.85);
+    transform: scale(1.02);
+  }
+}

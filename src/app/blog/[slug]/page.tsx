@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { blogPosts, getBlogPost } from "@/content/blog";
 import { BlogDetailView } from "@/components/blog/BlogDetailView";
 import { LenisScroll } from "@/components/LenisScroll";
+import { PageRoutePreloader } from "@/components/PageRoutePreloader";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -35,13 +36,17 @@ export default async function BlogPostPage({
   const { slug } = await params;
   const post = getBlogPost(slug);
   if (!post) notFound();
+  const subtitle =
+    post.title.length > 72 ? `${post.title.slice(0, 70).trimEnd()}…` : post.title;
   return (
-    <LenisScroll>
-      <ScrollProgress />
-      <SiteHeader />
-      <BlogDetailView post={post} />
-      <SiteFooter />
-    </LenisScroll>
+    <PageRoutePreloader pageLabel="Blog" pageSubtitle={subtitle}>
+      <LenisScroll>
+        <ScrollProgress />
+        <SiteHeader />
+        <BlogDetailView post={post} />
+        <SiteFooter />
+      </LenisScroll>
+    </PageRoutePreloader>
   );
 }
 

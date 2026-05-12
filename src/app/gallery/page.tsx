@@ -3,6 +3,7 @@ import { ScrollProgress } from "@/components/ScrollProgress";
 import { SiteHeader } from "@/components/SiteHeader";
 import { GalleryHorizontalStory } from "@/components/GalleryHorizontalStory";
 import { LenisScroll } from "@/components/LenisScroll";
+import { PageRoutePreloader } from "@/components/PageRoutePreloader";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -12,12 +13,14 @@ export const metadata: Metadata = {
 
 export default function GalleryPage() {
   return (
-    <LenisScroll variant="immersive">
-      <ScrollProgress />
-      <SiteHeader />
-      <main className="min-h-[100dvh] bg-[#ede8de] p-0 dark:bg-[var(--background)]">
-        <GalleryHorizontalStory />
-      </main>
-    </LenisScroll>
+    <PageRoutePreloader pageLabel="Gallery">
+      <LenisScroll variant="immersive">
+        <ScrollProgress />
+        <SiteHeader />
+        <main className="min-h-[100dvh] bg-[#ede8de] p-0 dark:bg-[var(--background)]">
+          <GalleryHorizontalStory />
+        </main>
+      </LenisScroll>
+    </PageRoutePreloader>
   );
 }
