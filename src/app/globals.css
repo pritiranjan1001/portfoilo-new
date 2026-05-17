@@ -128,6 +128,12 @@ body {
     color 0.45s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
+/* Lenis + iOS: allow vertical finger pan on the document */
+html.lenis,
+html.lenis body {
+  touch-action: pan-y;
+}
+
 /* Stylized document scrollbar (Chromium / Safari) */
 html::-webkit-scrollbar {
   width: 10px;
@@ -701,6 +707,82 @@ html.dark .about-details-zoom::before {
 
   .header-inner--entrance {
     opacity: 0;
+  }
+}
+
+/**
+ * Small / touch screens: do not rely on scroll-scrub or Lenis for first paint.
+ * GSAP still animates when it runs; if it fails, copy stays readable (not background-only).
+ */
+@media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+  #top .landing-hero-tagline,
+  #top .landing-hero-name .landing-hero-name-line,
+  #top .landing-hero-cta > a,
+  #top .landing-hero-cta .landing-hero-cta-rule,
+  #top .landing-hero-portrait-motion,
+  #top .landing-hero-scroll,
+  #prelude .bvc-kicker,
+  #prelude .bvc-step,
+  #prelude .bvc-tag,
+  #prelude .bvc-cta,
+  #prelude .bvc-bottom-cap,
+  #prelude .bvc-line1,
+  #prelude .bvc-line2,
+  #prelude .bvc-eye,
+  #prelude .bvc-pattern-svg {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Landing page — custom pointer (desktop); native cursor hidden inside zone */
+@media (pointer: fine) {
+  html[data-landing-cursor="1"] .landing-cursor-zone,
+  html[data-landing-cursor="1"] .landing-cursor-zone * {
+    cursor: none !important;
+  }
+
+  html[data-landing-drag-scroll="1"] .landing-cursor-zone,
+  html[data-landing-drag-scroll="1"] .landing-cursor-zone * {
+    cursor: none !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+  }
+}
+
+/* Hero / home: avoid highlight when click-dragging to scroll */
+#top .landing-hero-copy,
+#top .landing-hero-name,
+#top .landing-hero-tagline {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.landing-cursor__spark::before,
+.landing-cursor__spark::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: color-mix(in oklab, var(--accent) 70%, var(--foreground));
+  border-radius: 1px;
+  transform: translate(-50%, -50%);
+}
+
+.landing-cursor__spark::before {
+  width: 14px;
+  height: 1px;
+}
+
+.landing-cursor__spark::after {
+  width: 1px;
+  height: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-cursor__spark::before,
+  .landing-cursor__spark::after {
+    display: none;
   }
 }
 

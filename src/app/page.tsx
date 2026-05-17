@@ -1,5 +1,6 @@
 import { BeyondVisibleCover } from "@/components/BeyondVisibleCover";
 import { ContactSection } from "@/components/ContactSection";
+import { HomeCursorZone } from "@/components/HomeCursorZone";
 import { HomeScrollOrchestrator } from "@/components/HomeScrollOrchestrator";
 import { LandingAbout } from "@/components/LandingAbout";
 import { LandingHero } from "@/components/LandingHero";
@@ -12,10 +13,11 @@ import { SiteHeader } from "@/components/SiteHeader";
 export default function Home() {
   return (
     <LenisScroll>
-      <ScrollProgress />
-      <SiteHeader />
-      <main id="home-main" className="relative">
-        <HomeScrollOrchestrator />
+      <HomeCursorZone>
+        <ScrollProgress />
+        <SiteHeader />
+        <main id="home-main" className="relative">
+          <HomeScrollOrchestrator />
         <LandingHero />
         <BeyondVisibleCover />
         <LandingAbout />
@@ -28,6 +30,7 @@ export default function Home() {
           <SiteFooter className="shrink-0 !py-7 md:!py-8" />
         </div>
       </main>
+      </HomeCursorZone>
     </LenisScroll>
   );
 }

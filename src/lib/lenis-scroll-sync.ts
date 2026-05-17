@@ -20,6 +20,46 @@ export function lenisScrollToImmediateClamped(lenis: Lenis, y: number) {
   lenis.scrollTo(next, { immediate: true, programmatic: true });
 }
 
+function clampScroll(lenis: Lenis, y: number) {
+  return Math.max(0, Math.min(lenis.limit, y));
+}
+
+/** Sync Lenis internal state before / after a drag gesture. */
+export function lenisSyncDragScroll(lenis: Lenis) {
+  const y = lenis.scroll;
+  lenis.scrollTo(y, { immediate: true, programmatic: true, force: true });
+}
+
+/**
+ * Smooth follow while dragging (Lenis lerp). Coalesce with rAF in the caller.
+ * `lerp` 0.45–0.65 reads fluid without lagging far behind the pointer.
+ */
+export function lenisScrollDragSmooth(
+  lenis: Lenis,
+  y: number,
+  lerp = 0.52,
+) {
+  lenis.scrollTo(clampScroll(lenis, y), {
+    programmatic: false,
+    lerp,
+    force: true,
+  });
+}
+
+/** Release drag with light inertia (matches Lenis wheel feel). */
+export function lenisScrollDragRelease(
+  lenis: Lenis,
+  velocityPxPerMs: number,
+) {
+  const throwPx = velocityPxPerMs * 220;
+  const target = clampScroll(lenis, lenis.scroll - throwPx);
+  lenis.scrollTo(target, {
+    programmatic: false,
+    lerp: lenis.options.lerp ?? 0.09,
+    force: true,
+  });
+}
+
 /** After layout / pin / programmatic scroll — keep Lenis dimensions and ScrollTrigger in sync. */
 export function refreshLenisAndScrollTrigger(lenis: Lenis | null) {
   requestAnimationFrame(() => {

@@ -55,13 +55,16 @@ export function LenisScroll({
     }
     // Don't force a pre-init scroll jump here; it can fight pinning on route changes.
 
+    /**
+     * Native touch scroll (`syncTouch: false`) — virtual touch fights iOS Safari and
+     * ScrollTrigger pin/scrub; finger “drag down” then does nothing. Wheel stays smooth on desktop.
+     */
     const instance = new Lenis({
       lerp: immersive ? 0.038 : 0.09,
       smoothWheel: true,
-      syncTouch: true,
+      syncTouch: false,
       touchMultiplier: immersive ? 0.88 : 1,
       wheelMultiplier: immersive ? 0.72 : 1,
-      syncTouchLerp: immersive ? 0.048 : 0.08,
       stopInertiaOnNavigate: true,
     });
 

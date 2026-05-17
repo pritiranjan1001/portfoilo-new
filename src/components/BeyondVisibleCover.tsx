@@ -13,6 +13,11 @@ import {
   shouldReduceMotion,
   SplitText,
 } from "@/lib/gsap-plugins";
+import {
+  BVC_REVEAL_SELECTORS,
+  forceRevealInScope,
+  isCoarsePointerDevice,
+} from "@/lib/entrance-reveal";
 
 function HeroLinePatterns({ className }: { className?: string }) {
   return (
@@ -331,8 +336,8 @@ export function BeyondVisibleCover() {
       const ctaRoot = el.querySelector<HTMLElement>(".bvc-cta");
       if (
         !kickerEl ||
-        !line1El ||
         !line2El ||
+        !line1El ||
         !tagL1 ||
         !tagL2 ||
         !ctaWords ||
@@ -340,36 +345,50 @@ export function BeyondVisibleCover() {
         !tagRoot ||
         !ctaRoot
       ) {
+        forceRevealInScope(el, [...BVC_REVEAL_SELECTORS]);
         return;
       }
 
+      const revealFallback = () => {
+        forceRevealInScope(el, [...BVC_REVEAL_SELECTORS]);
+      };
+
       registerSplitText(gsap);
 
-      const kickerSplit = new SplitText(kickerEl, {
+      let kickerSplit: SplitText;
+      let line1Split: SplitText;
+      let line2Split: SplitText;
+      let tag1Split: SplitText;
+      let tag2Split: SplitText;
+      let ctaSplit: SplitText;
+      let capSplit: SplitText;
+
+      try {
+      kickerSplit = new SplitText(kickerEl, {
         type: "chars",
         charsClass: "bvc-split-c",
       });
-      const line1Split = new SplitText(line1El, {
+      line1Split = new SplitText(line1El, {
         type: "words",
         wordsClass: "bvc-line1-w",
       });
-      const line2Split = new SplitText(line2El, {
+      line2Split = new SplitText(line2El, {
         type: "words",
         wordsClass: "bvc-line2-w",
       });
-      const tag1Split = new SplitText(tagL1, {
+      tag1Split = new SplitText(tagL1, {
         type: "words",
         wordsClass: "bvc-split-w",
       });
-      const tag2Split = new SplitText(tagL2, {
+      tag2Split = new SplitText(tagL2, {
         type: "words",
         wordsClass: "bvc-split-w",
       });
-      const ctaSplit = new SplitText(ctaWords, {
+      ctaSplit = new SplitText(ctaWords, {
         type: "words",
         wordsClass: "bvc-split-w",
       });
-      const capSplit = new SplitText(capEl, {
+      capSplit = new SplitText(capEl, {
         type: "words",
         wordsClass: "bvc-split-w",
       });
@@ -454,6 +473,126 @@ export function BeyondVisibleCover() {
             });
           }
         });
+      }
+
+      const textSplits = [
+        kickerSplit,
+        line1Split,
+        line2Split,
+        tag1Split,
+        tag2Split,
+        ctaSplit,
+        capSplit,
+      ];
+
+      /** Touch / narrow: skip pin+scrub (often stuck at progress 0 → background only). */
+      if (isCoarsePointerDevice()) {
+        gsap.set(
+          [kickerEl, line1El, line2El, tagRoot, ctaRoot, capEl],
+          { opacity: 1, clearProps: "transform" },
+        );
+        gsap.set(".bvc-eye", { opacity: 1, scale: 1 });
+        gsap.set(".bvc-step", { opacity: 0.55, y: 0 });
+        if (patternSvg) gsap.set(patternSvg, { opacity: 1 });
+
+        const mobileTl = gsap.timeline({
+          defaults: { ease: "power2.out" },
+          onComplete: () => refreshLenisAndScrollTrigger(lenis),
+        });
+        mobileTl
+          .to(".bvc-eye", { scale: 1, duration: 0.6 }, 0)
+          .to(
+            line1Split.words,
+            {
+              opacity: 1,
+              yPercent: 0,
+              x: 0,
+              filter: "blur(0px)",
+              duration: 0.55,
+              stagger: 0.05,
+            },
+            0.12,
+          )
+          .to(
+            line2Split.words,
+            {
+              opacity: 1,
+              yPercent: 0,
+              x: 0,
+              filter: "blur(0px)",
+              duration: 0.55,
+              stagger: 0.05,
+            },
+            0.22,
+          )
+          .to(
+            kickerSplit.chars,
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              rotateZ: 0,
+              filter: "blur(0px)",
+              duration: 0.7,
+              stagger: 0.02,
+            },
+            0.35,
+          )
+          .to(
+            tag1Split.words,
+            {
+              opacity: 1,
+              y: 0,
+              skewX: 0,
+              filter: "blur(0px)",
+              duration: 0.45,
+              stagger: 0.04,
+            },
+            0.55,
+          )
+          .to(
+            tag2Split.words,
+            {
+              opacity: 1,
+              y: 0,
+              skewX: 0,
+              filter: "blur(0px)",
+              duration: 0.45,
+              stagger: 0.04,
+            },
+            0.68,
+          )
+          .to(
+            ctaSplit.words,
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              rotateZ: 0,
+              duration: 0.5,
+              stagger: 0.06,
+            },
+            0.82,
+          )
+          .to(
+            capSplit.words,
+            {
+              opacity: 0.92,
+              y: 0,
+              rotateZ: 0,
+              filter: "blur(0px)",
+              duration: 0.5,
+              stagger: 0.03,
+            },
+            0.95,
+          );
+
+        refreshLenisAndScrollTrigger(lenis);
+
+        return () => {
+          mobileTl.kill();
+          textSplits.forEach((s) => s.revert());
+        };
       }
 
       let patternLoopsStarted = false;
@@ -676,16 +815,6 @@ export function BeyondVisibleCover() {
           ">0.05",
         );
 
-      const textSplits = [
-        kickerSplit,
-        line1Split,
-        line2Split,
-        tag1Split,
-        tag2Split,
-        ctaSplit,
-        capSplit,
-      ];
-
       refreshLenisAndScrollTrigger(lenis);
 
       const gradTween = grad
@@ -715,6 +844,10 @@ export function BeyondVisibleCover() {
         patternMarch?.kill();
         patternDrift?.kill();
       };
+      } catch {
+        revealFallback();
+        return;
+      }
     },
     { scope: root, dependencies: [lenis] },
   );
@@ -775,7 +908,7 @@ export function BeyondVisibleCover() {
       ref={root}
       id="prelude"
       data-home-section="prelude"
-      className="relative flex min-h-[100dvh] flex-col overflow-hidden border-b border-[var(--border)] px-5 pb-10 pt-[max(4rem,calc(var(--site-header-height)+0.75rem))] md:px-12 md:pb-12 md:pt-[max(5rem,calc(var(--site-header-height)+1rem))]"
+      className="relative flex min-h-[100dvh] flex-col overflow-x-clip overflow-y-visible border-b border-[var(--border)] px-5 pb-10 pt-[max(4rem,calc(var(--site-header-height)+0.75rem))] md:px-12 md:pb-12 md:pt-[max(5rem,calc(var(--site-header-height)+1rem))]"
     >
       <div
         ref={layer}

@@ -15,6 +15,11 @@ import {
   shouldReduceMotion,
   SplitText,
 } from "@/lib/gsap-plugins";
+import {
+  forceRevealInScope,
+  isCoarsePointerDevice,
+  LANDING_HERO_REVEAL_SELECTORS,
+} from "@/lib/entrance-reveal";
 
 export function LandingHero() {
   const root = useRef<HTMLElement>(null);
@@ -82,15 +87,27 @@ export function LandingHero() {
       const el = root.current;
       if (!el) return;
 
+      const revealFallback = () => {
+        forceRevealInScope(el, [...LANDING_HERO_REVEAL_SELECTORS]);
+      };
+
       const taglineEl = el.querySelector<HTMLElement>(".landing-hero-tagline");
       const nameLines = el.querySelectorAll<HTMLElement>(".landing-hero-name-line");
-      if (!taglineEl || nameLines.length === 0) return;
+      if (!taglineEl || nameLines.length === 0) {
+        revealFallback();
+        return;
+      }
 
-      const taglineSplit = new SplitText(taglineEl, {
+      let taglineSplit: SplitText | undefined;
+      let nameSplits: SplitText[] = [];
+      let fallbackTimer = 0;
+
+      try {
+      taglineSplit = new SplitText(taglineEl, {
         type: "words",
         wordsClass: "landing-hero-smoke-w",
       });
-      const nameSplits = [...nameLines].map(
+      nameSplits = [...nameLines].map(
         (line) =>
           new SplitText(line, {
             type: "chars",
@@ -234,8 +251,17 @@ export function LandingHero() {
         ease: "sine.inOut",
       });
 
+      if (isCoarsePointerDevice()) {
+        fallbackTimer = window.setTimeout(revealFallback, 3200);
+      }
+      } catch {
+        revealFallback();
+        return;
+      }
+
       return () => {
-        taglineSplit.revert();
+        if (fallbackTimer) window.clearTimeout(fallbackTimer);
+        taglineSplit?.revert();
         nameSplits.forEach((s) => s.revert());
       };
     },
@@ -247,7 +273,7 @@ export function LandingHero() {
       ref={root}
       id="top"
       data-home-section="hero"
-      className="relative flex min-h-[100svh] w-full max-w-[100vw] flex-col overflow-x-clip bg-[var(--background)] text-[var(--foreground)] dark:bg-black dark:text-[color-mix(in_oklab,var(--foreground)_92%,white)] md:min-h-[100dvh]"
+      className="relative flex min-h-[100svh] w-full max-w-[100vw] flex-col overflow-x-clip bg-[var(--background)] text-[var(--foreground)] select-none dark:bg-black dark:text-[color-mix(in_oklab,var(--foreground)_92%,white)] md:min-h-[100dvh]"
     >
       <div className="mx-auto grid min-h-0 w-full max-w-5xl flex-1 grid-cols-1 content-center items-center gap-6 px-[max(1rem,env(safe-area-inset-left))] pb-[calc(max(2.75rem,calc(env(safe-area-inset-bottom)+2.5rem))+var(--hero-vv-bottom,0px))] pt-[max(7rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] md:gap-16 md:px-14 md:pb-12 md:pt-32 lg:grid-cols-2 lg:gap-2 xl:gap-10">
         <div className="landing-hero-copy flex min-w-0 flex-col justify-center text-center md:text-left [contain:layout_style]">
