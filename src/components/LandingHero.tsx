@@ -54,21 +54,20 @@ export function LandingHero() {
     };
   }, []);
 
-  const scrollToPrelude = useCallback(
-    (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const scrollToNextSection = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
-      const prelude = document.getElementById("prelude");
-      if (!prelude) return;
-      /** Prelude is full-bleed under the fixed header; scroll-margin on #prelude is 0. */
+      const next = document.getElementById("prelude");
+      if (!next) return;
       const offset = -ANCHOR_SCROLL_NUDGE_PX;
       if (lenis) {
-        lenis.scrollTo(prelude, {
+        lenis.scrollTo(next, {
           offset,
           duration: 1.15,
           onComplete: () => refreshLenisAndScrollTrigger(lenis),
         });
       } else {
-        prelude.scrollIntoView({ behavior: "smooth", block: "start" });
+        next.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     },
     [lenis],
@@ -141,7 +140,7 @@ export function LandingHero() {
 
       gsap.set(
         el.querySelectorAll<HTMLElement>(
-          ".landing-hero-cta a, .landing-hero-cta .landing-hero-cta-rule",
+          ".landing-hero-cta a",
         ),
         { filter: "blur(8px)" },
       );
@@ -198,7 +197,7 @@ export function LandingHero() {
       }
 
       tl.to(
-        ".landing-hero-cta a, .landing-hero-cta .landing-hero-cta-rule",
+        ".landing-hero-cta a",
         {
           opacity: 1,
           y: 0,
@@ -290,17 +289,6 @@ export function LandingHero() {
           </h1>
           <div className="landing-hero-cta mt-14 flex flex-wrap items-center justify-center gap-4 md:justify-start md:gap-6">
             <Link
-              href="#prelude"
-              onClick={scrollToPrelude}
-              className="font-mono text-[10px] uppercase tracking-[0.35em] text-[var(--muted)] transition-colors hover:text-[var(--foreground)] dark:hover:text-white"
-            >
-              Continue ↓
-            </Link>
-            <span
-              className="landing-hero-cta-rule h-px w-10 bg-[var(--border)] md:w-12 dark:bg-zinc-600"
-              aria-hidden
-            />
-            <Link
               href="/work"
               className="font-mono text-[10px] uppercase tracking-[0.35em] text-[var(--accent)] transition-colors hover:text-[var(--foreground)] dark:hover:text-[color-mix(in_oklab,var(--accent)_85%,white)]"
             >
@@ -339,10 +327,10 @@ export function LandingHero() {
         </div>
       </div>
 
-      <Link
-        href="#prelude"
-        onClick={scrollToPrelude}
-        className="landing-hero-scroll pointer-events-auto absolute bottom-[calc(max(1.25rem,calc(env(safe-area-inset-bottom)+2.5rem))+var(--hero-vv-bottom,0px))] left-1/2 right-auto top-auto z-10 -translate-x-1/2 md:bottom-8"
+      <button
+        type="button"
+        onClick={scrollToNextSection}
+        className="landing-hero-scroll pointer-events-auto absolute bottom-[calc(max(1.25rem,calc(env(safe-area-inset-bottom)+2.5rem))+var(--hero-vv-bottom,0px))] left-1/2 right-auto top-auto z-10 -translate-x-1/2 border-0 bg-transparent p-0 md:bottom-8"
         aria-label="Scroll to next section"
       >
         <div
@@ -353,7 +341,7 @@ export function LandingHero() {
             <span className="landing-hero-scroll-dot pointer-events-none absolute left-1/2 top-2 h-2 w-[3px] -translate-x-1/2 rounded-full bg-[var(--accent)] shadow-[0_0_8px_color-mix(in_oklab,var(--accent)_45%,transparent)] will-change-transform" />
           </div>
         </div>
-      </Link>
+      </button>
     </section>
   );
 }

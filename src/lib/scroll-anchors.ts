@@ -4,8 +4,19 @@ export const ANCHOR_SCROLL_NUDGE_PX = 8;
 type AnchorAlign = "top" | "center";
 
 function getHeaderHeightPx(): number {
-  const header = document.querySelector<HTMLElement>("[data-site-header]");
-  return header?.offsetHeight ?? 0;
+  const header = document.querySelector<HTMLElement>("header");
+  if (header?.offsetHeight) return header.offsetHeight;
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue("--site-header-height")
+    .trim();
+  const n = parseFloat(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Resolved `scroll-margin-top` in px (e.g. prelude = 0, other home sections = header height). */
+function getScrollMarginTopPx(target: HTMLElement): number {
+  const margin = parseFloat(getComputedStyle(target).scrollMarginTop);
+  return Number.isFinite(margin) ? margin : getHeaderHeightPx();
 }
 
 /**
@@ -26,7 +37,7 @@ export function getAnchorScrollTopPx(target: HTMLElement, align: AnchorAlign): n
     return Math.max(0, centerAbs - usableViewport / 2);
   }
 
-  return Math.max(0, topAbs - headerH - ANCHOR_SCROLL_NUDGE_PX);
+  return Math.max(0, topAbs - getScrollMarginTopPx(target) - ANCHOR_SCROLL_NUDGE_PX);
 }
 
 export function getAnchorAlignFromTarget(target: HTMLElement): AnchorAlign {

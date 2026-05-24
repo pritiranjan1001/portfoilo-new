@@ -4,13 +4,19 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useLenisInstance } from "@/components/lenis-context";
 import { getAnchorAlignFromTarget, getAnchorScrollTopPx } from "@/lib/scroll-anchors";
+import { refreshLenisAndScrollTrigger } from "@/lib/lenis-scroll-sync";
 
 function scrollToId(id: string, lenis: ReturnType<typeof useLenisInstance>) {
   const el = document.getElementById(id);
   if (!el) return false;
+
   if (lenis) {
     const align = getAnchorAlignFromTarget(el);
-    lenis.scrollTo(getAnchorScrollTopPx(el, align), { immediate: true });
+    lenis.scrollTo(getAnchorScrollTopPx(el, align), {
+      immediate: true,
+      programmatic: true,
+    });
+    refreshLenisAndScrollTrigger(lenis);
   } else {
     el.scrollIntoView({ block: "start", behavior: "auto" });
   }
@@ -34,6 +40,15 @@ export function HomeHashResolver() {
       if (hash.length < 2) return;
       const id = decodeURIComponent(hash.slice(1));
       if (!id) return;
+      /** Prelude is no longer a public hash target — strip `/#prelude` from the URL. */
+      if (id === "prelude") {
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}${window.location.search}`,
+        );
+        return;
+      }
       scrollToId(id, lenis);
     };
 

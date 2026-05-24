@@ -105,7 +105,6 @@ export default function RootLayout({
 #top .landing-hero-tagline,
 #top .landing-hero-name .landing-hero-name-line,
 #top .landing-hero-cta > a,
-#top .landing-hero-cta .landing-hero-cta-rule,
 #top .landing-hero-portrait-motion,
 #top .landing-hero-scroll,
 #prelude .bvc-kicker,

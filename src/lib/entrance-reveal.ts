@@ -29,7 +29,6 @@ export const LANDING_HERO_REVEAL_SELECTORS = [
   ".landing-hero-tagline",
   ".landing-hero-name-line",
   ".landing-hero-cta > a",
-  ".landing-hero-cta .landing-hero-cta-rule",
   ".landing-hero-portrait-motion",
   ".landing-hero-scroll",
 ] as const;

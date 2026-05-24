@@ -664,8 +664,7 @@ html.dark .about-details-zoom::before {
     transform: translate3d(0, 2.75rem, 0);
   }
 
-  #top .landing-hero-cta > a,
-  #top .landing-hero-cta .landing-hero-cta-rule {
+  #top .landing-hero-cta > a {
     opacity: 0;
     transform: translate3d(0, 1.125rem, 0);
   }
@@ -718,7 +717,6 @@ html.dark .about-details-zoom::before {
   #top .landing-hero-tagline,
   #top .landing-hero-name .landing-hero-name-line,
   #top .landing-hero-cta > a,
-  #top .landing-hero-cta .landing-hero-cta-rule,
   #top .landing-hero-portrait-motion,
   #top .landing-hero-scroll,
   #prelude .bvc-kicker,
@@ -791,7 +789,6 @@ html.dark .about-details-zoom::before {
   #top .landing-hero-tagline,
   #top .landing-hero-name .landing-hero-name-line,
   #top .landing-hero-cta > a,
-  #top .landing-hero-cta .landing-hero-cta-rule,
   #top .landing-hero-portrait-motion,
   #top .landing-hero-scroll,
   #prelude .bvc-kicker,

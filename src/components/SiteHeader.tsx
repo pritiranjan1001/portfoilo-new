@@ -17,7 +17,7 @@ const navItems = [
   { href: "/gallery", label: "Gallery" },
   { href: "/about", label: "About" },
   { href: "/#practice", label: "Practice" },
-  { href: "/#contact", label: "Contact" },
+  { href: "/contact", label: "Contact" },
   { href: "/blog", label: "Blog" },
 ] as const;
 
@@ -66,6 +66,7 @@ export function SiteHeader() {
   const immersive = pathname === "/gallery";
   const workRoute = pathname === "/work";
   const aboutRoute = pathname === "/about";
+  const contactRoute = pathname === "/contact";
   const blogRoute = pathname === "/blog" || pathname.startsWith("/blog/");
   const lenis = useLenisInstance();
   /** /work: white nav only when the dark gallery sits under the fixed header (not over the cream intro). */
@@ -249,7 +250,7 @@ export function SiteHeader() {
     };
   }, [workRoute]);
 
-  const surfaceScrollRoute = home || aboutRoute;
+  const surfaceScrollRoute = home || aboutRoute || contactRoute;
 
   useEffect(() => {
     if (!surfaceScrollRoute || workRoute || immersive) {
@@ -280,7 +281,7 @@ export function SiteHeader() {
     };
   }, [surfaceScrollRoute, workRoute, immersive, lenis]);
 
-  const hideHeaderOnScrollRoute = home || aboutRoute;
+  const hideHeaderOnScrollRoute = home || aboutRoute || contactRoute;
 
   useEffect(() => {
     if (menuOpen) {
@@ -480,9 +481,17 @@ export function SiteHeader() {
 
   const workLightNav = workRoute && workGalleryUnderHeader;
 
-  const navMarkerTone: NavMarkerTone = workLightNav ? "workLight" : immersive ? "immersive" : "default";
+  const navMarkerTone: NavMarkerTone = contactRoute
+    ? "workLight"
+    : workLightNav
+      ? "workLight"
+      : immersive
+        ? "immersive"
+        : "default";
 
-  const navTone = immersive
+  const navTone = contactRoute
+    ? "[&_a]:transition-colors [&_a]:duration-300 text-white/75 [&_a]:text-white/75 [&_a:hover]:text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.75)]"
+    : immersive
     ? "text-neutral-600 [&_a]:transition-colors [&_a]:duration-300 [&_a:hover]:text-neutral-900 dark:text-neutral-400 dark:[&_a:hover]:text-neutral-100"
     : workLightNav
       ? "[&_a]:transition-colors [&_a]:duration-300 text-white/92 [&_a]:text-white/92 [&_a:hover]:text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.85),0_0_24px_rgba(0,0,0,0.35)]"
@@ -495,6 +504,11 @@ export function SiteHeader() {
     "bg-[color-mix(in_oklab,var(--surface-elevated)_93%,transparent)] shadow-[0_12px_40px_-12px_rgba(20,17,13,0.14)] backdrop-blur-xl backdrop-saturate-150 dark:bg-[color-mix(in_oklab,var(--surface)_88%,transparent)] dark:shadow-[0_16px_48px_-16px_rgba(0,0,0,0.55)]";
 
   const headerBar = (() => {
+    if (contactRoute) {
+      return headerBarElevated
+        ? `border-b border-white/10 ${frostedBar}`
+        : "border-b border-transparent bg-transparent";
+    }
     if (immersive) return "border-b border-black/[0.06] bg-transparent dark:border-white/[0.08]";
     if (workRoute && !workLightNav) return "border-b border-transparent bg-transparent";
     if (workRoute && workLightNav) return "border-b border-white/15 bg-transparent";
@@ -513,6 +527,7 @@ export function SiteHeader() {
     <>
       <header
         ref={root}
+        data-site-header
         aria-hidden={headerRetracted && hideHeaderOnScrollRoute && !menuOpen}
         className={`fixed top-0 right-0 left-0 z-50 w-full pt-[env(safe-area-inset-top)] will-change-transform transition-[border-color,background-color,box-shadow,backdrop-filter] duration-300 ease-out ${headerBar}`}
       >
@@ -532,7 +547,7 @@ export function SiteHeader() {
               sizes="(max-width: 768px) min(50vw, 8.25rem), 8.25rem"
               quality={100}
               className={`block h-8 w-auto max-w-[min(8.25rem,50vw)] object-contain object-left transition-[filter] duration-300 sm:h-10 md:h-12 ${
-                workLightNav
+                workLightNav || contactRoute
                   ? "brightness-0 invert drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]"
                   : "invert dark:invert-0"
               }`}
@@ -543,7 +558,7 @@ export function SiteHeader() {
           <button
             type="button"
             className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg md:hidden ${
-              workLightNav
+              workLightNav || contactRoute
                 ? "border border-white/30 bg-black/35 text-white shadow-[0_1px_3px_rgba(0,0,0,0.6)] backdrop-blur-sm"
                 : "border border-[var(--border)] bg-[color-mix(in_oklab,var(--surface-elevated)_88%,transparent)] text-[var(--foreground)]"
             }`}
@@ -569,7 +584,7 @@ export function SiteHeader() {
                     aria-current={active ? "page" : undefined}
                     className={`relative z-[1] leading-none transition-[color,font-weight,text-shadow] duration-300 ${
                       active
-                        ? workLightNav
+                        ? workLightNav || contactRoute
                           ? "font-semibold text-white [text-shadow:0_0_20px_rgba(0,0,0,0.45)]"
                           : immersive
                             ? "font-semibold text-neutral-900 dark:text-neutral-100"
@@ -590,7 +605,7 @@ export function SiteHeader() {
             })}
             <span
               className={
-                workLightNav
+                workLightNav || contactRoute
                   ? "[&>div[role='group']]:border-white/35 [&>div[role='group']]:bg-black/40 [&>div[role='group']]:shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] [&_button]:text-white/95 [&_button]:ring-offset-black/50"
                   : ""
               }
