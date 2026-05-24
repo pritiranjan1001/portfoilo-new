@@ -144,15 +144,13 @@ export function ContactPageView() {
         <video
           ref={videoRef}
           className={styles.video}
+          src="/new-full-contact.mp4"
           autoPlay
           muted
           loop
           playsInline
           preload="auto"
-        >
-          <source src="/contact-video.webm" type="video/webm" />
-          <source src="/contact-video.mp4" type="video/mp4" />
-        </video>
+        />
         <div className={styles.mediaScrim} />
         <div className={styles.mediaVignette} />
         <div className={styles.mediaGrain} />
